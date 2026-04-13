@@ -3,15 +3,19 @@
 <head>
     @php
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
-        $appLogo = \App\Models\Setting::valueOr('app_logo');
+        $appLogo = \App\Models\Setting::appLogoPath();
         $appColor = \App\Models\Setting::valueOr('app_color', '#FFFFFF');
     @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Auth' }} - {{ $appName }}</title>
+    @if ($appLogo)
+        <link rel="icon" type="image/png" href="{{ asset($appLogo) }}">
+    @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -171,6 +175,32 @@
             background: rgba(254,242,242,0.9);
             color: #b91c1c;
         }
+        .pw-field {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .pw-field .input-lib {
+            padding-right: 3rem !important;
+        }
+        .pw-toggle {
+            position: absolute;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #7A5A28;
+            opacity: 0.5;
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .pw-toggle:hover {
+            opacity: 1;
+            color: #B8923A;
+        }
         @media (max-width: 1023px) {
             .side-illustration { display: none !important; }
         }
@@ -184,7 +214,7 @@
         <div class="w-full max-w-md relative z-10">
             <div class="lg:hidden flex items-center justify-center gap-3 mb-10">
                 <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lib-300 text-sm font-bold overflow-hidden" style="background: var(--brand-logo-bg);">
-                    @if ($appLogo && file_exists(public_path($appLogo)))
+                    @if ($appLogo)
                         <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain p-2">
                     @else
                         {{ strtoupper(substr($appName, 0, 2)) }}
@@ -211,7 +241,7 @@
 
                 <div class="text-center mb-8">
                     <div class="logo-slot inline-flex items-center justify-center w-24 h-24 rounded-[1.75rem] mb-4 overflow-hidden">
-                        @if ($appLogo && file_exists(public_path($appLogo)))
+                        @if ($appLogo)
                             <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain p-3">
                         @else
                             <div class="text-center leading-tight">
@@ -228,5 +258,36 @@
             </div>
         </div>
     </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+
+            // Password visibility toggle
+            document.addEventListener('click', function (event) {
+                const toggle = event.target.closest('.js-pw-toggle');
+                if (!toggle) return;
+
+                const input = toggle.parentElement.querySelector('input');
+                const icon = toggle.querySelector('i');
+
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    if (icon && window.lucide) {
+                        toggle.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+                        window.lucide.createIcons();
+                    }
+                } else {
+                    input.type = 'password';
+                    if (icon && window.lucide) {
+                        toggle.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
+                        window.lucide.createIcons();
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

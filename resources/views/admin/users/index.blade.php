@@ -39,6 +39,10 @@
     .drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .drawer-note{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--gold-light);color:#7b5a07;font-size:12px;line-height:1.6}
     .drawer-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .pw-field{position:relative;display:flex;align-items:center}
+    .pw-field .form-input{padding-right:44px!important;width:100%}
+    .pw-toggle{position:absolute;right:14px;background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:.2s}
+    .pw-toggle:hover{color:var(--accent)}
     @media (max-width:1100px){.account-shell{grid-template-columns:1fr}}
     @media (max-width:640px){
         .drawer-grid{grid-template-columns:1fr}
@@ -103,7 +107,10 @@
                         <option value="{{ $role->id }}">{{ $role->label }}</option>
                     @endforeach
                 </select>
-                <input type="text" name="password" class="form-input px-3 py-3 text-sm" placeholder="Password login" required>
+                <div class="pw-field">
+                    <input type="password" name="password" class="form-input px-3 py-3 text-sm" placeholder="Password login" required>
+                    <button type="button" class="pw-toggle js-pw-toggle"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                </div>
                 <label class="member-check"><input type="checkbox" name="is_active" value="1" checked> Aktifkan akun setelah disimpan</label>
                 <button class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold w-full">Simpan Akun</button>
             </form>
@@ -205,7 +212,10 @@
                 <label class="member-check"><input id="drawerIsActive" type="checkbox" name="is_active" value="1"> Akun aktif</label>
             </div>
 
-            <input id="drawerPassword" type="text" name="password" class="form-input px-3 py-3 text-sm" placeholder="Masukkan password baru jika ingin diganti">
+            <div class="pw-field">
+                <input id="drawerPassword" type="password" name="password" class="form-input px-3 py-3 text-sm" placeholder="Masukkan password baru jika ingin diganti">
+                <button type="button" class="pw-toggle js-pw-toggle"><i data-lucide="eye" class="w-4 h-4"></i></button>
+            </div>
 
             <div class="drawer-note">
                 Password lama tidak bisa ditampilkan kembali dari database. Jika ingin mengubah password, isi field di atas dengan password baru lalu simpan.
@@ -268,6 +278,29 @@
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             closeUserDrawer();
+        }
+    });
+
+    // Password visibility toggle
+    document.addEventListener('click', function (event) {
+        const toggle = event.target.closest('.js-pw-toggle');
+        if (!toggle) return;
+
+        const input = toggle.parentElement.querySelector('input');
+        const icon = toggle.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            if (icon && window.lucide) {
+                toggle.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+                window.lucide.createIcons();
+            }
+        } else {
+            input.type = 'password';
+            if (icon && window.lucide) {
+                toggle.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
+                window.lucide.createIcons();
+            }
         }
     });
 </script>

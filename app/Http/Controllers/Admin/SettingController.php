@@ -78,21 +78,18 @@ class SettingController extends Controller
             $file = $request->file('app_logo');
             $fileName = 'app-logo-'.Str::random(8).'.'.$file->getClientOriginalExtension();
             $targetDirectory = public_path('branding');
+            $oldLogoPath = $logoSetting->value ? public_path($logoSetting->value) : null;
 
             if (! is_dir($targetDirectory)) {
                 mkdir($targetDirectory, 0755, true);
             }
 
-            if ($logoSetting->value) {
-                $oldPath = public_path($logoSetting->value);
-
-                if (is_file($oldPath)) {
-                    @unlink($oldPath);
-                }
-            }
-
             $file->move($targetDirectory, $fileName);
             $logoSetting->update(['value' => 'branding/'.$fileName]);
+
+            if ($oldLogoPath && $oldLogoPath !== public_path('branding/'.$fileName) && is_file($oldLogoPath)) {
+                @unlink($oldLogoPath);
+            }
         }
 
         ActivityLogger::log('settings', 'update', 'Memperbarui konfigurasi aplikasi');

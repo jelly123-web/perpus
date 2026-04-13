@@ -4,7 +4,7 @@
 @php($title = 'Setting')
 @php($eyebrow = 'Khusus Superadmin')
 @php($appName = $settings['app_name']->value ?? 'LibraVault')
-@php($appLogo = $settings['app_logo']->value ?? null)
+@php($appLogo = \App\Models\Setting::appLogoPath())
 @php($appColor = $settings['app_color']->value ?? '#c4956a')
 
 <style>
@@ -105,7 +105,7 @@
                     <button type="button" class="setting-logo-remove" id="settingLogoRemove">X</button>
                 </div>
 
-                @if ($appLogo && file_exists(public_path($appLogo)))
+                @if ($appLogo)
                     <div class="setting-current-logo">
                         <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
                     </div>
@@ -123,7 +123,7 @@
             <div class="setting-preview-shell">
                 <div class="setting-brand">
                     <div class="setting-brand-logo">
-                        @if ($appLogo && file_exists(public_path($appLogo)))
+                        @if ($appLogo)
                             <img id="settingPreviewLogo" src="{{ asset($appLogo) }}" alt="{{ $appName }}">
                         @else
                             <i id="settingPreviewIcon" data-lucide="book-open" style="width:26px;height:26px;color:#7A5A28;"></i>

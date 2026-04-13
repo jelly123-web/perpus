@@ -1,3 +1,38 @@
+## Perpustakaan Sekolah
+
+Aplikasi ini Laravel 12 untuk sistem perpustakaan sekolah.
+
+### Jalan cepat di Windows
+
+1. Pastikan `PHP 8.2+`, `Composer`, `Node.js`, dan `MySQL` sudah terpasang.
+2. Buat database, lalu sesuaikan `DB_DATABASE`, `DB_USERNAME`, dan `DB_PASSWORD` di `.env`.
+3. Jalankan `START-WINDOWS.bat`.
+4. Buka `http://127.0.0.1:8000` atau `http://localhost:8000`.
+
+### Kalau project dipindah ke komputer lain
+
+Jalankan langkah ini minimal sekali:
+
+```bat
+composer install
+copy .env.example .env
+php artisan key:generate
+php artisan migrate --force
+php artisan storage:link
+npm install
+npm run build
+php artisan optimize:clear
+php artisan serve
+```
+
+Catatan:
+
+- Jika halaman tidak bisa masuk atau pindah, cek dulu apakah MySQL aktif dan `.env` mengarah ke database yang benar.
+- Jika tampilan gambar/cover tidak muncul, jalankan lagi `php artisan storage:link`.
+- Navigasi utama sekarang memakai full page load agar lebih stabil saat dibuka di laptop dan komputer lain.
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

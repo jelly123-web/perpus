@@ -16,6 +16,85 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    public function chatbotRespond(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'message' => ['required', 'string', 'max:500'],
+        ]);
+
+        $message = trim((string) $data['message']);
+        $lower = mb_strtolower($message);
+        $user = $request->user();
+
+        $reply = 'Maaf, saya belum paham. Coba tulis: "cara pinjam", "cara kembali", "batas pinjam", atau "cari buku <judul>".';
+
+        $contains = function (array $needles) use ($lower): bool {
+            foreach ($needles as $needle) {
+                if ($needle !== '' && str_contains($lower, $needle)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if ($contains(['halo', 'hai', 'hello', 'assalamualaikum', 'permisi'])) {
+            $reply = 'Halo! Saya chatbot perpustakaan. Saya bisa bantu: cari buku, aturan pinjam, aturan kembali, dan status pinjaman kamu.';
+        } elseif ($contains(['cara pinjam', 'pinjam buku', 'ajukan pinjam', 'peminjaman'])) {
+            $reply = "Cara pinjam:\n1) Cari buku di dashboard peminjam.\n2) Klik buku yang dipilih.\n3) Isi tanggal (otomatis 1 hari) lalu klik Ajukan Pinjam.\n4) Tunggu petugas memproses pengajuan.";
+        } elseif ($contains(['cara kembali', 'pengembalian', 'kembaliin', 'kembalikan'])) {
+            $reply = "Cara pengembalian:\n1) Serahkan buku ke petugas.\n2) Petugas input pengembalian di menu Peminjaman Buku.\n3) Kalau lewat jatuh tempo, status jadi terlambat dan bisa kena sanksi.";
+        } elseif ($contains(['batas', 'durasi', 'berapa hari', 'jatuh tempo'])) {
+            $reply = 'Batas waktu peminjaman adalah 1 hari dari tanggal pinjam. Pastikan dikembalikan sebelum jatuh tempo untuk menghindari sanksi.';
+        } elseif ($contains(['sanksi', 'kena sanksi', 'denda', 'hukuman'])) {
+            $reply = 'Jika terlambat, akun bisa dikenai sanksi (misalnya suspend pinjam beberapa hari, warning, atau ganti buku). Status sanksi bisa dilihat di dashboard peminjam.';
+        } elseif ($contains(['laporan', 'report', 'cetak'])) {
+            $reply = 'Untuk laporan, buka menu Laporan. Di sana ada tombol Cetak, Unduh Excel, dan Unduh PDF.';
+        } elseif ($contains(['status saya', 'status pinjam', 'pinjaman saya', 'riwayat'])) {
+            if ($user && $user->hasPermission('view_borrower_history')) {
+                $active = Loan::query()->where('member_id', $user->id)->whereIn('status', ['borrowed', 'late'])->count();
+                $requested = Loan::query()->where('member_id', $user->id)->where('status', 'requested')->count();
+                $returned = Loan::query()->where('member_id', $user->id)->where('status', 'returned')->count();
+                $reply = "Status kamu:\n- Pengajuan: {$requested}\n- Sedang dipinjam: {$active}\n- Riwayat selesai: {$returned}";
+            } else {
+                $reply = 'Fitur status pinjaman tersedia untuk akun peminjam.';
+            }
+        } elseif ($contains(['cari', 'cari buku', 'buku', 'judul'])) {
+            $keyword = '';
+            if (preg_match('/cari\s+buku\s+(.+)$/i', $message, $matches)) {
+                $keyword = trim($matches[1]);
+            } elseif (preg_match('/buku\s+(.+)$/i', $message, $matches)) {
+                $keyword = trim($matches[1]);
+            } elseif (preg_match('/cari\s+(.+)$/i', $message, $matches)) {
+                $keyword = trim($matches[1]);
+            }
+
+            if ($keyword === '' || mb_strlen($keyword) < 2) {
+                $reply = 'Tulis seperti: "cari buku matematika" atau "cari novel".';
+            } else {
+                $books = Book::query()
+                    ->where('title', 'like', '%'.$keyword.'%')
+                    ->orderByRaw("CASE WHEN title LIKE ? THEN 0 ELSE 1 END", [$keyword.'%'])
+                    ->orderBy('title')
+                    ->take(5)
+                    ->get();
+
+                if ($books->isEmpty()) {
+                    $reply = 'Buku dengan kata kunci "'.$keyword.'" belum ditemukan.';
+                } else {
+                    $lines = $books->map(function (Book $book): string {
+                        return '- '.$book->title.' (stok '.$book->stock_available.')';
+                    })->implode("\n");
+                    $reply = "Hasil pencarian \"{$keyword}\":\n{$lines}";
+                }
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'reply' => $reply,
+        ]);
+    }
+
     public function index(Request $request)
     {
         $today = now();

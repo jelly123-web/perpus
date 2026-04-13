@@ -4,7 +4,7 @@
 @php($title = 'Laporan')
 @php($eyebrow = 'Superadmin dan Petugas')
 @php($appName = \App\Models\Setting::valueOr('app_name', 'LibraVault'))
-@php($appLogo = \App\Models\Setting::valueOr('app_logo'))
+@php($appLogo = \App\Models\Setting::appLogoPath())
 @php($appColor = \App\Models\Setting::valueOr('app_color', '#FAFAFA'))
 
 <style>

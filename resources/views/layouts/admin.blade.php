@@ -4,7 +4,7 @@
     @php
         $user = auth()->user();
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
-        $appLogo = \App\Models\Setting::valueOr('app_logo');
+        $appLogo = \App\Models\Setting::appLogoPath();
         $appColor = \App\Models\Setting::valueOr('app_color', '#FAFAFA');
         $isPetugasPanel = $user?->role?->name === 'petugas';
         $headerNotifications = collect();
@@ -88,6 +88,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Admin' }} - {{ $appName }}</title>
+    @if ($appLogo)
+        <link rel="icon" type="image/png" href="{{ asset($appLogo) }}">
+    @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -398,6 +401,33 @@
         .dbx-drawer-alert{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:rgba(212,160,58,.12);border:1px solid rgba(212,160,58,.3);color:#d4a03a;font-size:12px;margin-bottom:18px;line-height:1.5}
         .dbx-drawer-alert i{flex-shrink:0}
         .dbx-drawer-alert strong{font-weight:700;color:#1a2e35}
+        .chatbot-fab{position:fixed;right:18px;bottom:18px;width:54px;height:54px;border-radius:18px;border:1px solid rgba(196,149,106,.25);background:#fff;color:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 18px 40px rgba(87,59,33,.14);transition:.25s cubic-bezier(.4,0,.2,1);z-index:160}
+        .chatbot-fab:hover{transform:translateY(-2px);box-shadow:0 22px 50px rgba(87,59,33,.18)}
+        .chatbot-panel{position:fixed;right:18px;bottom:86px;width:min(380px,calc(100vw - 36px));height:520px;background:var(--bg-raised);border:1px solid var(--border);border-radius:22px;box-shadow:0 28px 70px rgba(0,0,0,.18);opacity:0;pointer-events:none;transform:translateY(10px) scale(.98);transition:.22s cubic-bezier(.4,0,.2,1);z-index:160;display:flex;flex-direction:column;overflow:hidden}
+        .chatbot-panel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+        .chatbot-head{padding:14px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fffdf9,#fbf8f2)}
+        .chatbot-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--fg)}
+        .chatbot-actions{display:flex;align-items:center;gap:8px}
+        .chatbot-close{width:34px;height:34px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer}
+        .chatbot-menu{position:relative}
+        .chatbot-menu-btn{width:34px;height:34px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+        .chatbot-menu-btn:hover{color:var(--accent);border-color:rgba(196,149,106,.45);background:rgba(196,149,106,.06)}
+        .chatbot-menu-pop{position:absolute;right:0;top:42px;min-width:190px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.16);padding:8px;display:none;z-index:180}
+        .chatbot-menu-pop.open{display:block}
+        .chatbot-menu-item{width:100%;display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:12px;border:none;background:transparent;color:var(--fg);font-size:13px;font-weight:700;cursor:pointer;text-align:left;transition:.18s}
+        .chatbot-menu-item:hover{background:rgba(196,149,106,.08)}
+        .chatbot-menu-item.danger{color:var(--red)}
+        .chatbot-menu-item.danger:hover{background:rgba(196,69,54,.08)}
+        .chatbot-menu-item i{width:16px;height:16px}
+        .chatbot-messages{flex:1;overflow:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px}
+        .chatbot-bubble{max-width:86%;padding:10px 12px;border-radius:16px;font-size:13px;line-height:1.5;white-space:pre-line}
+        .chatbot-bubble.user{align-self:flex-end;background:rgba(15,76,92,.10);color:var(--fg);border:1px solid rgba(15,76,92,.14)}
+        .chatbot-bubble.bot{align-self:flex-start;background:#fff;border:1px solid var(--border);color:var(--fg)}
+        .chatbot-form{display:flex;gap:10px;padding:12px 12px;border-top:1px solid var(--border);background:#fff}
+        .chatbot-input{flex:1;border:1px solid var(--border);border-radius:14px;padding:12px 12px;font-size:13px;background:var(--bg-soft)}
+        .chatbot-input:focus{outline:none;border-color:rgba(196,149,106,.6);box-shadow:0 0 0 3px rgba(196,149,106,.14);background:#fff}
+        .chatbot-send{width:46px;height:46px;border-radius:14px;border:1px solid rgba(196,149,106,.25);background:#fff;color:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}
+        .chatbot-send:hover{background:rgba(196,149,106,.08);border-color:rgba(196,149,106,.45)}
         @media (max-width:1200px){.dbx-stats{grid-template-columns:repeat(2,1fr)}.dbx-content{grid-template-columns:1fr}.dbx-book-filters{grid-template-columns:1fr 1fr}}
         @media (max-width:900px){.dbx-book-filters,.dbx-book-form-grid,.dbx-borrower-stats,.dbx-drawer-book-meta,.dbx-borrower-profile{grid-template-columns:1fr}.dbx-book-section-head{display:flex;flex-direction:column;align-items:flex-start}}
         @media (max-width:640px){.dbx-stats,.dbx-quick,.dbx-book-grid{grid-template-columns:1fr}.dbx-welcome-title{font-size:24px}.dbx-card-body{padding:16px}.dbx-table td{padding:12px 8px}.dbx-drawer{width:100vw}}
@@ -411,7 +441,7 @@
             <div class="sidebar-logo">
                     <div style="display:flex;align-items:center;gap:12px;">
                     <div class="sidebar-brand-mark">
-                            @if ($appLogo && file_exists(public_path($appLogo)))
+                            @if ($appLogo)
                                 <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
                             @else
                                 <i data-lucide="book-open" style="width:18px;height:18px;color:#7A5A28;"></i>
@@ -469,7 +499,7 @@
                         >=</button>
                         <div class="topbar-brand">
                             <div class="topbar-brand-mark">
-                                @if ($appLogo && file_exists(public_path($appLogo)))
+                                @if ($appLogo)
                                     <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
                                 @else
                                     <i data-lucide="book-open" style="width:18px;height:18px;color:#7A5A28;"></i>
@@ -541,7 +571,7 @@
                 </div>
             </header>
 
-            <main class="page-wrap space-y-6">
+            <main id="lightMain" class="page-wrap space-y-6">
                 <div id="asyncToast" class="async-toast" aria-live="polite"></div>
                 @if (session('status'))
                     <div class="alert-box alert-success">{{ session('status') }}</div>
@@ -552,6 +582,45 @@
 
                 @yield('content')
             </main>
+        </div>
+    </div>
+
+    <div id="chatbotRoot" data-user-id="{{ auth()->id() }}" data-endpoint="{{ route('chatbot.respond') }}">
+        <button id="chatbotFab" class="chatbot-fab" type="button" aria-label="Chatbot" aria-expanded="false">
+            <i data-lucide="message-circle" class="w-5 h-5"></i>
+        </button>
+        <div id="chatbotPanel" class="chatbot-panel" aria-hidden="true">
+            <div class="chatbot-head">
+                <div class="chatbot-title">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>ChatBot Perpus</span>
+                </div>
+                <div class="chatbot-actions">
+                    <div class="chatbot-menu">
+                        <button type="button" id="chatbotMenuBtn" class="chatbot-menu-btn" aria-label="Menu" aria-expanded="false">
+                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                        </button>
+                        <div id="chatbotMenuPop" class="chatbot-menu-pop" aria-hidden="true">
+                            <button type="button" class="chatbot-menu-item danger" data-action="clear-chat">
+                                <i data-lucide="trash-2"></i>
+                                Hapus chat
+                            </button>
+                            <button type="button" class="chatbot-menu-item" data-action="close-chat">
+                                <i data-lucide="x"></i>
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" id="chatbotClose" class="chatbot-close" aria-label="Tutup">X</button>
+                </div>
+            </div>
+            <div id="chatbotMessages" class="chatbot-messages"></div>
+            <form id="chatbotForm" class="chatbot-form">
+                <input id="chatbotInput" class="chatbot-input" placeholder="Tulis pesan..." autocomplete="off">
+                <button class="chatbot-send" type="submit" aria-label="Kirim">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -925,6 +994,173 @@
             }
         }
 
+        const chatbotRoot = document.getElementById('chatbotRoot');
+        const chatbotFab = document.getElementById('chatbotFab');
+        const chatbotPanel = document.getElementById('chatbotPanel');
+        const chatbotClose = document.getElementById('chatbotClose');
+        const chatbotMenuBtn = document.getElementById('chatbotMenuBtn');
+        const chatbotMenuPop = document.getElementById('chatbotMenuPop');
+        const chatbotMessages = document.getElementById('chatbotMessages');
+        const chatbotForm = document.getElementById('chatbotForm');
+        const chatbotInput = document.getElementById('chatbotInput');
+
+        function chatbotStorageKey() {
+            const userId = chatbotRoot?.dataset?.userId || 'guest';
+            return 'chatbot_history_' + userId;
+        }
+
+        function loadChatbotHistory() {
+            try {
+                const raw = localStorage.getItem(chatbotStorageKey());
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveChatbotHistory(items) {
+            try {
+                localStorage.setItem(chatbotStorageKey(), JSON.stringify(items.slice(-50)));
+            } catch (e) {}
+        }
+
+        function appendChatbotBubble(role, text) {
+            if (!chatbotMessages) return;
+            const bubble = document.createElement('div');
+            bubble.className = 'chatbot-bubble ' + (role === 'user' ? 'user' : 'bot');
+            bubble.textContent = text;
+            chatbotMessages.appendChild(bubble);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+
+        function renderChatbotHistory() {
+            if (!chatbotMessages) return;
+            chatbotMessages.innerHTML = '';
+            const history = loadChatbotHistory();
+            if (history.length === 0) {
+                appendChatbotBubble('bot', 'Halo! Tulis: "cara pinjam", "cara kembali", "batas pinjam", atau "cari buku matematika".');
+                saveChatbotHistory([{ role: 'bot', text: 'Halo! Tulis: "cara pinjam", "cara kembali", "batas pinjam", atau "cari buku matematika".' }]);
+                return;
+            }
+            history.forEach(item => appendChatbotBubble(item.role, item.text));
+        }
+
+        function setChatbotOpen(isOpen) {
+            if (!chatbotPanel || !chatbotFab) return;
+            chatbotPanel.classList.toggle('open', isOpen);
+            chatbotPanel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            chatbotFab.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (isOpen) {
+                renderChatbotHistory();
+                setTimeout(() => chatbotInput?.focus(), 0);
+            }
+        }
+
+        function setChatbotMenuOpen(isOpen) {
+            if (!chatbotMenuPop || !chatbotMenuBtn) return;
+            chatbotMenuPop.classList.toggle('open', isOpen);
+            chatbotMenuPop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            chatbotMenuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (isOpen && window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        if (chatbotFab) {
+            chatbotFab.addEventListener('click', function () {
+                setChatbotOpen(!chatbotPanel.classList.contains('open'));
+            });
+        }
+
+        if (chatbotClose) {
+            chatbotClose.addEventListener('click', function () {
+                setChatbotOpen(false);
+            });
+        }
+
+        if (chatbotMenuBtn) {
+            chatbotMenuBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                setChatbotMenuOpen(!chatbotMenuPop.classList.contains('open'));
+            });
+        }
+
+        if (chatbotMenuPop) {
+            chatbotMenuPop.addEventListener('click', function (e) {
+                const item = e.target.closest('[data-action]');
+                if (!item) return;
+                const action = item.dataset.action;
+
+                if (action === 'clear-chat') {
+                    try {
+                        localStorage.removeItem(chatbotStorageKey());
+                    } catch (e) {}
+                    renderChatbotHistory();
+                    if (typeof showAsyncToast === 'function') {
+                        showAsyncToast('Chat berhasil dihapus.', 'success');
+                    }
+                    setChatbotMenuOpen(false);
+                }
+
+                if (action === 'close-chat') {
+                    setChatbotMenuOpen(false);
+                    setChatbotOpen(false);
+                }
+            });
+        }
+
+        document.addEventListener('click', function () {
+            if (chatbotMenuPop?.classList.contains('open')) {
+                setChatbotMenuOpen(false);
+            }
+        });
+
+        if (chatbotForm) {
+            chatbotForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const message = (chatbotInput?.value || '').trim();
+                if (!message) return;
+
+                const history = loadChatbotHistory();
+                history.push({ role: 'user', text: message });
+                saveChatbotHistory(history);
+                appendChatbotBubble('user', message);
+                chatbotInput.value = '';
+
+                appendChatbotBubble('bot', 'Mengetik...');
+                const typingNode = chatbotMessages?.lastElementChild;
+
+                try {
+                    const endpoint = chatbotRoot?.dataset?.endpoint;
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]')?.content
+                        },
+                        body: JSON.stringify({ message })
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+                    const reply = data.reply || 'Maaf, terjadi kesalahan.';
+
+                    if (typingNode) typingNode.remove();
+
+                    const updated = loadChatbotHistory();
+                    updated.push({ role: 'bot', text: reply });
+                    saveChatbotHistory(updated);
+                    appendChatbotBubble('bot', reply);
+                } catch (error) {
+                    if (typingNode) typingNode.remove();
+                    appendChatbotBubble('bot', 'Maaf, tidak bisa terhubung ke server.');
+                }
+            });
+        }
+
         document.addEventListener('submit', function (event) {
             const form = event.target.closest('form[data-async="true"]');
             if (!form) {
@@ -935,15 +1171,17 @@
             handleAsyncFormSubmit(form);
         });
 
-        // AJAX Pagination & Global Link Handling
+        // Keep main navigation on normal page loads for reliability across devices/browsers.
         document.addEventListener('click', async function (event) {
-            const link = event.target.closest('a[data-async="true"], .pagination a, #lightSide .nav-link');
+            const link = event.target.closest('a[data-async="true"]');
             if (!link || !link.href || link.href.startsWith('#') || link.href.includes('javascript:void(0)')) {
                 return;
             }
 
-            // Don't intercept if it's an export or external link
-            if (link.href.includes('export') || link.href.includes('download')) {
+            const isSameOrigin = link.origin === window.location.origin;
+            const isDownload = link.hasAttribute('download') || link.href.includes('export') || link.href.includes('download');
+
+            if (!isSameOrigin || isDownload) {
                 return;
             }
 

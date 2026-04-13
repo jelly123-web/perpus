@@ -13,6 +13,31 @@ use Illuminate\View\View;
 
 class LoginController extends Controller
 {
+    protected function resolveHomeRouteFor(User $user): string
+    {
+        $routePriority = [
+            'dashboard' => 'access_dashboard',
+            'borrower.history' => 'view_borrower_history',
+            'admin.loans.index' => 'manage_loans',
+            'admin.reports.index' => 'view_reports',
+            'admin.users.index' => 'manage_users',
+            'admin.roles.index' => 'manage_roles',
+            'admin.categories.index' => 'manage_categories',
+            'admin.books.index' => 'manage_books',
+            'admin.books.scan' => 'scan_books',
+            'admin.backups.index' => 'manage_backups',
+            'admin.settings.index' => 'manage_settings',
+        ];
+
+        foreach ($routePriority as $route => $permission) {
+            if ($user->hasPermission($permission)) {
+                return route($route);
+            }
+        }
+
+        return route('profile.show');
+    }
+
     public function show(): View
     {
         return view('auth.login');
@@ -79,7 +104,7 @@ class LoginController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'))
+        return redirect()->intended($this->resolveHomeRouteFor($user))
             ->with('status', 'Selamat datang, '.$user->name.'!');
     }
 

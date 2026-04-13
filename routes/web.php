@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/riwayat-peminjaman', [DashboardController::class, 'history'])->middleware('permission:view_borrower_history')->name('borrower.history');
     Route::get('/borrower/books', [DashboardController::class, 'borrowerBooks'])->middleware('permission:view_borrower_history')->name('borrower.books');
     Route::get('/borrower/notifications', [DashboardController::class, 'notifications'])->middleware('permission:view_borrower_history,manage_loans')->name('borrower.notifications');
+    Route::post('/chatbot/respond', [DashboardController::class, 'chatbotRespond'])->name('chatbot.respond');
     Route::get('/profil-saya', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profil-saya', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
