@@ -12,6 +12,8 @@ use App\Models\Sanction;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -20,13 +22,48 @@ class DashboardController extends Controller
     {
         $data = $request->validate([
             'message' => ['required', 'string', 'max:500'],
+            'history' => ['nullable', 'array', 'max:20'],
+            'history.*.role' => ['required_with:history', 'string', 'in:user,bot'],
+            'history.*.text' => ['required_with:history', 'string', 'max:4000'],
         ]);
 
         $message = trim((string) $data['message']);
         $lower = mb_strtolower($message);
         $user = $request->user();
+        $history = collect($data['history'] ?? [])
+            ->map(fn (array $item): array => [
+                'role' => $item['role'],
+                'text' => trim((string) $item['text']),
+            ])
+            ->filter(fn (array $item): bool => $item['text'] !== '')
+            ->take(-12)
+            ->values()
+            ->all();
+        $apiKey = config('services.gemini.key');
+        $aiConfigured = $apiKey && $apiKey !== 'your_gemini_api_key_here';
 
-        $reply = 'Maaf, saya belum paham. Coba tulis: "cara pinjam", "cara kembali", "batas pinjam", atau "cari buku <judul>".';
+        if ($aiConfigured) {
+            try {
+                $aiResponse = $this->getGeminiResponse($message, $history, $user);
+                if ($aiResponse) {
+                    return response()->json([
+                        'status' => 'success',
+                        'reply' => $aiResponse,
+                        'source' => 'gemini',
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Chatbot AI Error: '.$e->getMessage());
+
+                return response()->json([
+                    'status' => 'error',
+                    'reply' => $e->getMessage(),
+                    'source' => 'gemini',
+                ], 503);
+            }
+        }
+
+        $reply = 'Mode AI belum aktif. Isi `GEMINI_API_KEY` yang valid agar chatbot bisa menjawab pertanyaan umum, lalu coba lagi.';
 
         $contains = function (array $needles) use ($lower): bool {
             foreach ($needles as $needle) {
@@ -92,7 +129,149 @@ class DashboardController extends Controller
         return response()->json([
             'status' => 'success',
             'reply' => $reply,
+            'source' => 'fallback',
         ]);
+    }
+
+    private function getGeminiResponse(string $message, array $history, ?User $user): ?string
+    {
+        $apiKey = config('services.gemini.key');
+        $preferredModel = (string) config('services.gemini.model', 'gemma-3-1b-it');
+
+        if (!$apiKey || $apiKey === 'your_gemini_api_key_here') {
+            return null;
+        }
+
+        $context = $this->getLibraryContext($user);
+        $instructionText = implode("\n\n", [
+            'Anda adalah asisten AI percakapan umum di aplikasi perpustakaan sekolah bernama Perpus Pintar.',
+            'Jawab seperti asisten chat modern: natural, langsung, membantu, dan bisa membahas topik umum apa pun, bukan hanya aturan pinjam buku.',
+            'Jika pertanyaan menyentuh data perpustakaan atau akun, gunakan konteks yang tersedia dan jangan mengarang data.',
+            'Jika pengguna meminta opini, penjelasan, ide, rangkuman, bantuan belajar, coding, atau pengetahuan umum, jawab secara normal seperti chatbot AI umum.',
+            'Jika jawaban berkaitan dengan fitur aplikasi perpustakaan, sesuaikan dengan konteks berikut:',
+            $context,
+        ]);
+
+        $contents = collect($history)
+            ->map(function (array $item): array {
+                return [
+                    'role' => $item['role'] === 'bot' ? 'model' : 'user',
+                    'parts' => [
+                        ['text' => $item['text']],
+                    ],
+                ];
+            })
+            ->push([
+                'role' => 'user',
+                'parts' => [
+                    ['text' => $message],
+                ],
+            ])
+            ->values()
+            ->all();
+
+        $models = collect([$preferredModel, 'gemma-3-1b-it', 'gemma-3-4b-it', 'gemini-2.0-flash', 'gemini-flash-lite-latest'])
+            ->filter()
+            ->unique()
+            ->values();
+        $response = null;
+        $lastStatus = null;
+
+        foreach ($models as $model) {
+            $usesGemma = str_starts_with($model, 'gemma-');
+            $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+            $payload = [
+                'contents' => $usesGemma
+                    ? array_merge(
+                        [[
+                            'role' => 'user',
+                            'parts' => [[
+                                'text' => $instructionText,
+                            ]],
+                        ]],
+                        $contents
+                    )
+                    : $contents,
+                'generationConfig' => [
+                    'temperature' => 0.8,
+                    'topP' => 0.95,
+                    'maxOutputTokens' => 900,
+                ],
+            ];
+
+            if (! $usesGemma) {
+                $payload['systemInstruction'] = [
+                    'parts' => [
+                        [
+                            'text' => $instructionText,
+                        ],
+                    ],
+                ];
+            }
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'X-goog-api-key' => $apiKey,
+            ])->timeout(45)->post($apiUrl, $payload);
+
+            if ($response->successful()) {
+                $text = data_get($response->json(), 'candidates.0.content.parts.0.text');
+                if (is_string($text) && trim($text) !== '') {
+                    return trim($text);
+                }
+            }
+
+            $lastStatus = $response->status();
+
+            Log::warning('Gemini API request failed.', [
+                'model' => $model,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            if ($lastStatus === 429) {
+                break;
+            }
+
+            if (!in_array($lastStatus, [404, 500, 503], true)) {
+                break;
+            }
+        }
+
+        $status = $lastStatus ?? ($response?->status() ?? 0);
+
+        if ($status === 429) {
+            throw new \RuntimeException('AI Google terhubung, tetapi quota atau rate limit API key Gemini sedang habis. Tunggu limit reset atau pakai API key/proyek Google AI lain yang masih punya quota.');
+        }
+
+        if ($status === 404) {
+            throw new \RuntimeException('Model Gemini tidak ditemukan untuk API key ini. Coba ganti `GEMINI_MODEL` ke model yang tersedia, misalnya `gemini-2.0-flash`.');
+        }
+
+        throw new \RuntimeException('AI tidak bisa dihubungi saat ini. Periksa model Gemini, API key, quota, atau koneksi server ke Google AI.');
+    }
+
+    private function getLibraryContext(?User $user): string
+    {
+        $context = "";
+        if ($user) {
+            $context .= "- Nama Pengguna: {$user->name}\n";
+            $context .= "- Role: " . ($user->role?->name ?? 'User') . "\n";
+
+            if ($user->hasPermission('view_borrower_history')) {
+                $active = Loan::query()->where('member_id', $user->id)->whereIn('status', ['borrowed', 'late'])->count();
+                $requested = Loan::query()->where('member_id', $user->id)->where('status', 'requested')->count();
+                $returned = Loan::query()->where('member_id', $user->id)->where('status', 'returned')->count();
+                $context .= "- Status Pinjaman: {$requested} pengajuan, {$active} dipinjam, {$returned} selesai.\n";
+            }
+        } else {
+            $context .= "- Pengguna belum login (Guest).\n";
+        }
+
+        $totalBooks = Book::query()->count();
+        $context .= "- Total koleksi buku di perpustakaan: {$totalBooks} judul.\n";
+
+        return $context;
     }
 
     public function index(Request $request)

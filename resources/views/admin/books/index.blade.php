@@ -5,25 +5,42 @@
 @php($eyebrow = 'Khusus Superadmin')
 
 <style>
-    .book-shell{display:grid;grid-template-columns:minmax(320px,430px) minmax(0,1fr);gap:20px}
-    .book-add{position:relative;overflow:hidden;border-radius:20px;padding:24px;background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
-    .book-add:before{content:'';position:absolute;right:-50px;top:-50px;width:170px;height:170px;border-radius:999px;background:radial-gradient(circle,rgba(13,155,106,.10),transparent 70%)}
+    .book-shell{display:grid;grid-template-columns:minmax(320px,430px) minmax(0,1fr);gap:32px}
+    .book-add{position:relative;overflow:hidden;border-radius:24px;padding:32px;background:var(--bg-card);border:1px solid var(--border-light);box-shadow:var(--shadow-sm)}
+    .book-add:before{content:'';position:absolute;right:-50px;top:-50px;width:170px;height:170px;border-radius:999px;background:radial-gradient(circle,rgba(var(--accent-rgb),.12),transparent 70%)}
     .book-add > *{position:relative;z-index:1}
-    .book-add-title{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;letter-spacing:-.03em;color:var(--fg)}
-    .book-card{background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:20px 20px 12px;box-shadow:var(--shadow-sm)}
-    .book-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-    .book-list-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--fg)}
-    .book-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 6px;border-top:1px solid var(--border)}
+    .book-add-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:800;letter-spacing:-.03em;color:var(--fg)}
+    .book-card{background:var(--bg-card);border:1px solid var(--border-light);border-radius:24px;padding:32px 32px 18px;box-shadow:var(--shadow-sm)}
+    .book-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+    .book-list-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:800;color:var(--fg)}
+    .book-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 6px;border-top:1px solid var(--border-light)}
     .book-row:first-child{border-top:none}
-    .book-row-main{display:flex;align-items:center;gap:14px;min-width:0}
-    .book-cover-chip{width:50px;height:64px;border-radius:14px;background:linear-gradient(135deg,#2e6f7c,#5ab6b0);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;flex-shrink:0}
+    .book-row-main{display:flex;align-items:center;gap:18px;min-width:0}
+    .book-cover-chip{width:56px;height:74px;border-radius:14px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px;font-weight:800;flex-shrink:0;box-shadow:var(--shadow-sm)}
     .book-row-meta{min-width:0}
-    .book-row-title{font-size:15px;font-weight:700;color:var(--fg)}
-    .book-row-sub{font-size:13px;color:var(--muted);margin-top:3px}
+    .book-row-title{font-size:16px;font-weight:800;color:var(--fg)}
+    .book-row-sub{font-size:14px;color:var(--muted);margin-top:3px}
     .book-row-sub2{font-size:12px;color:var(--dim);margin-top:3px}
     .book-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-    .btn-danger-soft{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:var(--red);border:1px solid rgba(209,67,67,.18);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
-    .btn-danger-soft:hover{background:var(--red-light)}
+    .btn-book-glow{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:var(--fg);border:1px solid var(--border-light);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:.3s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-sm)}
+    .btn-book-glow:hover{background:var(--bg-soft);color:var(--accent);border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px var(--accent-glow)}
+    .btn-book-glow:focus,
+    .btn-book-glow:focus-visible,
+    .btn-book-glow:active{outline:none}
+    .btn-book-glow.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .btn-book-glow.primary:hover,
+    .btn-book-glow.primary:focus,
+    .btn-book-glow.primary:focus-visible,
+    .btn-book-glow.primary:active{background:var(--accent-light);color:#fff;border-color:var(--accent-light);box-shadow:0 0 0 3px rgba(196,149,106,.18)}
+    .btn-book-glow.danger{background:var(--red-light);color:var(--red);border-color:rgba(196,69,54,.16)}
+    .btn-book-glow.danger:hover,
+    .btn-book-glow.danger:focus,
+    .btn-book-glow.danger:focus-visible,
+    .btn-book-glow.danger:active{background:var(--red-light);color:var(--red);border-color:var(--red);box-shadow:0 0 0 3px rgba(196,69,54,.14)}
+    
+    .member-toolbar{border-bottom: 1px solid var(--border-light); padding-bottom: 24px; margin-bottom: 32px;}
+    .member-title{font-size: 36px; font-weight: 800;}
+    .member-subtitle{font-size: 16px; color: var(--muted); margin-top: 8px;}
     .book-empty{border:1px dashed var(--border-light);border-radius:18px;padding:40px 20px;text-align:center;color:var(--muted);background:var(--bg-soft)}
     .book-drawer-mask{position:fixed;inset:0;background:rgba(8,15,12,.28);opacity:0;pointer-events:none;transition:opacity .28s ease;z-index:70}
     .book-drawer-mask.show{opacity:1;pointer-events:auto}
@@ -85,8 +102,9 @@
     <div class="member-toolbar">
         <div>
             <h1 class="font-display member-title">Kelola Data Buku</h1>
+            <p class="member-subtitle">Manajemen koleksi perpustakaan: tambah buku baru, update stok, dan hapus data buku.</p>
         </div>
-        <div class="member-badge"><i data-lucide="book-copy" class="w-3.5 h-3.5"></i> Akses superadmin</div>
+        <div class="member-badge" style="background:var(--accent);color:#fff;"><i data-lucide="book-copy" class="w-4 h-4"></i> Akses superadmin</div>
     </div>
 
     <section id="bookStatsWrap" class="member-mini-stats">
@@ -163,7 +181,9 @@
                     <div></div>
                 </div>
                 <textarea name="description" class="form-textarea px-3 py-3 text-sm" rows="4" placeholder="Deskripsi buku"></textarea>
-                <button class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold w-full">Simpan Buku</button>
+                <button type="submit" class="btn-book-glow primary w-full py-4 rounded-xl font-bold mt-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Simpan Buku
+                </button>
             </form>
 
             <div class="book-category-box" style="margin-top:18px;">
@@ -216,7 +236,7 @@
                         <div class="book-actions">
                             <button
                                 type="button"
-                                class="btn-primary rounded-xl px-4 py-2 text-xs font-semibold js-edit-book"
+                                class="btn-book-glow js-edit-book"
                                 data-id="{{ $book->id }}"
                                 data-title="{{ $book->title }}"
                                 data-author="{{ $book->author }}"
@@ -229,11 +249,15 @@
                                 data-category-id="{{ $book->category_id }}"
                                 data-description="{{ $book->description }}"
                                 data-cover-url="{{ $book->cover_image ? asset('storage/'.$book->cover_image) : '' }}"
-                            >Edit</button>
+                            >
+                                <i data-lucide="edit-3" class="w-4 h-4"></i> Edit
+                            </button>
                             <form method="POST" action="{{ route('admin.books.destroy', $book) }}" data-async="true" data-confirm="Hapus buku ini?" data-remove-closest=".book-row" data-refresh-targets="#bookStatsWrap,#bookListWrap">
                                 @csrf
                                 @method('DELETE')
-                                <button class="btn-danger-soft" type="submit">Hapus</button>
+                                <button type="submit" class="btn-book-glow danger">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i> Hapus
+                                </button>
                             </form>
                         </div>
                     </div>

@@ -5,422 +5,279 @@
 @php($eyebrow = 'Petugas Perpustakaan')
 
 <style>
-    .loan-shell{display:grid;grid-template-columns:minmax(320px,430px) minmax(0,1fr);gap:20px}
-    .loan-stack{display:flex;flex-direction:column;gap:20px}
-    .loan-add,.loan-list{background:var(--bg-card);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-sm)}
-    .loan-add{padding:24px}
-    .loan-add-title{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;letter-spacing:-.03em;color:var(--fg)}
-    .loan-list{padding:20px}
-    .loan-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-    .loan-list-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--fg)}
-    .loan-form-grid{display:grid;gap:14px}
-    .loan-field{display:flex;flex-direction:column;gap:8px}
-    .loan-label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-    .loan-help{font-size:12px;color:var(--muted);line-height:1.6}
-    .loan-return-preview{padding:14px 16px;border-radius:16px;background:var(--bg-soft);border:1px solid var(--border)}
-    .loan-return-preview-title{font-size:12px;font-weight:700;color:var(--fg)}
-    .loan-return-preview-sub{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
-    .loan-sanction-list{display:flex;flex-direction:column;gap:12px;margin-top:16px}
-    .loan-sanction-item{padding:14px 16px;border-radius:16px;background:#fff;border:1px solid var(--border)}
-    .loan-sanction-type{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:var(--gold-light);color:var(--accent);font-size:11px;font-weight:700}
-    .loan-sanction-reason{font-size:13px;color:var(--fg);margin-top:10px;line-height:1.6}
-    .loan-sanction-meta{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
-    .loan-monitoring-list{display:flex;flex-direction:column;gap:12px}
-    .loan-monitoring-item{padding:14px 16px;border-radius:16px;background:#fff;border:1px solid var(--border)}
-    .loan-monitoring-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-    .loan-monitoring-name{font-size:14px;font-weight:700;color:var(--fg)}
-    .loan-monitoring-sub{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6}
-    .loan-monitoring-status{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700}
-    .loan-monitoring-status.active{background:var(--red-light);color:var(--red)}
-    .loan-monitoring-status.completed{background:var(--teal-light);color:var(--teal)}
-    .loan-monitoring-status.expired{background:rgba(212,160,58,.12);color:var(--orange)}
-    .loan-table-wrap{overflow-x:auto}
-    .loan-table{width:100%;border-collapse:collapse}
-    .loan-table th{padding:12px 14px;border-bottom:1px solid var(--border);text-align:left;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-    .loan-table td{padding:16px 14px;border-bottom:1px solid var(--border);font-size:14px;vertical-align:top}
-    .loan-table tr:last-child td{border-bottom:none}
-    .loan-book{display:flex;align-items:center;gap:12px;min-width:220px}
-    .loan-cover{width:44px;height:58px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-light));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0}
-    .loan-book-title{font-size:14px;font-weight:700;color:var(--fg)}
-    .loan-book-sub{font-size:12px;color:var(--muted);margin-top:3px}
-    .loan-member{min-width:180px}
-    .loan-member-name{font-size:14px;font-weight:700;color:var(--fg)}
-    .loan-member-sub{font-size:12px;color:var(--muted);margin-top:3px}
-    .loan-date{font-size:13px;color:var(--fg)}
-    .loan-date-sub{display:block;font-size:12px;color:var(--muted);margin-top:4px}
-    .loan-late{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:var(--red-light);color:var(--red);font-size:12px;font-weight:700}
-    .loan-safe{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:var(--teal-light);color:var(--teal);font-size:12px;font-weight:700}
-    .loan-status{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px;font-size:13px;color:var(--fg)}
-    .loan-empty{border:1px dashed var(--border-light);border-radius:18px;padding:40px 20px;text-align:center;color:var(--muted);background:var(--bg-soft)}
+    .loan-shell{display:grid;grid-template-columns:minmax(350px,450px) minmax(0,1fr);gap:32px;width:100%}
+    .loan-stack{display:flex;flex-direction:column;gap:32px}
+    .loan-card{background:#fff;border:1px solid var(--border-light);border-radius:32px;box-shadow:var(--shadow-sm);overflow:hidden;transition:.3s ease}
+    .loan-card:hover{box-shadow:var(--shadow-md)}
+    .loan-card-header{padding:32px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;gap:20px;background:linear-gradient(to right, var(--bg-soft), transparent)}
+    .loan-card-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:800;color:var(--fg);margin:0}
+    .loan-card-subtitle{font-size:15px;color:var(--muted);margin-top:6px;line-height:1.5}
+    .loan-card-body{padding:32px}
+    
+    .loan-form-grid{display:grid;gap:24px}
+    .loan-field{display:flex;flex-direction:column;gap:10px}
+    .loan-label{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+    .loan-input-group{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    
+    .loan-item-card{padding:24px;border-radius:24px;background:var(--bg-soft);border:1px solid var(--border-light);display:flex;flex-direction:column;gap:16px;transition:.2s ease}
+    .loan-item-card:hover{background:#fff;transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+    .loan-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+    .loan-item-name{font-size:16px;font-weight:800;color:var(--fg)}
+    .loan-item-info{font-size:14px;color:var(--muted);line-height:1.6}
+    .loan-item-badge{padding:6px 14px;border-radius:10px;font-size:12px;font-weight:800;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.05)}
+    .loan-item-badge.pending{background:var(--gold-glow);color:var(--gold)}
+    .loan-item-badge.active{background:var(--red-glow);color:var(--red)}
+    .loan-item-badge.done{background:var(--teal-glow);color:var(--teal)}
+    
+    .loan-table-wrap{width:100%;overflow-x:auto}
+    .loan-table{width:100%;border-collapse:collapse;table-layout:fixed}
+    .loan-table th{background:rgba(var(--accent-rgb), 0.02);padding:20px 24px;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;border-bottom:2px solid var(--border-light);text-align:left}
+    .loan-table td{padding:20px 24px;border-bottom:1px solid var(--border-light);font-size:15px;color:var(--fg);vertical-align:middle;word-wrap:break-word}
+    .loan-table tr:hover td{background:rgba(var(--accent-rgb), 0.01)}
+    
+    .loan-book-box{display:flex;align-items:center;gap:16px}
+    .loan-book-cover-mini{width:48px;height:64px;border-radius:12px;overflow:hidden;background:var(--accent-glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;flex-shrink:0;box-shadow:var(--shadow-sm)}
+    .loan-book-title-text{font-weight:800;color:var(--fg);font-size:15px;line-clamp:1;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+    .loan-book-author-text{font-size:13px;color:var(--muted);margin-top:2px}
+    
+    .loan-status-select{width:100%;padding:12px 16px;border-radius:14px;border:1px solid var(--border-light);background:#fff;font-size:14px;font-weight:700;color:var(--fg);cursor:pointer;transition:.2s ease;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+    .loan-status-select:hover{border-color:var(--accent);box-shadow:0 0 15px var(--accent-glow)}
+    
+    .btn-loan-submit{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 24px;border-radius:16px;background:#fff;border:1px solid var(--border-light);color:var(--fg);font-size:14px;font-weight:700;cursor:pointer;transition:.3s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-sm);width:100%;height:52px}
+    .btn-loan-submit:hover{background:var(--bg-soft);color:var(--accent);border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px var(--accent-glow)}
+    .btn-loan-submit:active{transform:translateY(0);box-shadow:0 4px 10px var(--accent-glow)}
+
+    .report-usage-row{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:20px}
+    .report-usage-widget{background:#fff;border:1px solid var(--border-light);border-radius:24px;padding:24px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:12px;min-height:130px;transition:.2s ease}
+    .report-usage-widget:hover{background:var(--bg-soft)}
+    .report-usage-tag{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+    .report-usage-number{font-size:24px;font-weight:800;color:var(--fg)}
+    .report-usage-desc{font-size:14px;color:var(--dim);font-weight:500}
+
     @media (max-width:1100px){.loan-shell{grid-template-columns:1fr}}
 </style>
 
 <div class="member-page">
-    <div class="member-toolbar">
+    <div class="member-toolbar" style="border-bottom: 1px solid var(--border-light); padding-bottom: 24px; margin-bottom: 32px;">
         <div>
-            <h1 class="font-display member-title">Peminjaman Buku</h1>
-            <p class="member-subtitle">Input data peminjaman, catat nama peminjam, lalu tentukan tanggal pinjam dan tanggal kembali.</p>
+            <h1 class="font-display member-title" style="font-size: 36px; font-weight: 800;">Peminjaman Buku</h1>
+            <p class="member-subtitle" style="font-size: 16px; color: var(--muted); margin-top: 8px;">Input data peminjaman, catat nama peminjam, lalu tentukan tanggal pinjam dan tanggal kembali.</p>
         </div>
-        <div class="member-badge"><i data-lucide="book-up-2" class="w-3.5 h-3.5"></i> Akses petugas</div>
+        <div class="btn-report-action" style="cursor: default; pointer-events: none;">
+            <i data-lucide="book-up-2" class="w-4 h-4"></i> Akses petugas
+        </div>
     </div>
 
-    <section id="loanStatsWrap" class="member-mini-stats">
-        <div class="member-mini-stat">
-            <div class="member-mini-icon" style="background:rgba(212,160,58,.12);color:var(--orange);"><i data-lucide="inbox" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $loanStats['requested'] }}</div><div class="member-mini-label">Pengajuan Baru</div></div>
+    <section id="loanStatsWrap" class="report-usage-row" style="margin-bottom: 32px;">
+        <div class="report-usage-widget">
+            <div class="report-usage-tag" style="color: var(--accent);">Pengajuan Baru</div>
+            <div class="report-usage-number">{{ $loanStats['requested'] }}</div>
+            <div class="report-usage-desc">Menunggu proses</div>
         </div>
-        <div class="member-mini-stat">
-            <div class="member-mini-icon" style="background:var(--accent);color:#fff;"><i data-lucide="files" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $loanStats['total'] }}</div><div class="member-mini-label">Total Peminjaman</div></div>
+        <div class="report-usage-widget">
+            <div class="report-usage-tag" style="color: var(--gold);">Total Pinjam</div>
+            <div class="report-usage-number">{{ $loanStats['total'] }}</div>
+            <div class="report-usage-desc">Semua transaksi</div>
         </div>
-        <div class="member-mini-stat">
-            <div class="member-mini-icon" style="background:var(--gold-light);color:var(--gold);"><i data-lucide="book-up-2" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $loanStats['borrowed'] }}</div><div class="member-mini-label">Sedang Dipinjam</div></div>
+        <div class="report-usage-widget">
+            <div class="report-usage-tag" style="color: var(--teal);">Sedang Dipinjam</div>
+            <div class="report-usage-number">{{ $loanStats['borrowed'] }}</div>
+            <div class="report-usage-desc">Buku di luar</div>
         </div>
-        <div class="member-mini-stat">
-            <div class="member-mini-icon" style="background:var(--teal-light);color:var(--teal);"><i data-lucide="badge-check" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $loanStats['returned'] }}</div><div class="member-mini-label">Sudah Kembali</div></div>
+        <div class="report-usage-widget">
+            <div class="report-usage-tag" style="color: var(--accent-dark);">Sudah Kembali</div>
+            <div class="report-usage-number">{{ $loanStats['returned'] }}</div>
+            <div class="report-usage-desc">Selesai pinjam</div>
         </div>
-        <div class="member-mini-stat">
-            <div class="member-mini-icon" style="background:var(--red-light);color:var(--red);"><i data-lucide="triangle-alert" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $loanStats['late'] }}</div><div class="member-mini-label">Terlambat</div></div>
+        <div class="report-usage-widget">
+            <div class="report-usage-tag" style="color: var(--red);">Terlambat</div>
+            <div class="report-usage-number">{{ $loanStats['late'] }}</div>
+            <div class="report-usage-desc">Perlu tindakan</div>
         </div>
     </section>
 
     <div id="loanPageWrap" class="loan-shell">
         <div class="loan-stack">
-            <div class="loan-add">
-                <div class="flex items-start justify-between gap-4">
+            <!-- Section: Pengajuan -->
+            <div class="loan-card">
+                <div class="loan-card-header">
                     <div>
-                        <div class="loan-add-title">Pengajuan dari Peminjam</div>
-                        <div class="loan-help mt-2">Daftar ini berisi pengajuan pinjam yang masuk lewat akun peminjam dan menunggu diproses petugas.</div>
+                        <h2 class="loan-card-title">Pengajuan</h2>
+                        <p class="loan-card-subtitle">Pengajuan dari akun peminjam.</p>
                     </div>
-                    <div class="member-badge"><i data-lucide="inbox" class="w-3.5 h-3.5"></i> Menunggu</div>
+                    <span class="loan-item-badge pending">{{ $requestedLoans->count() }} Menunggu</span>
                 </div>
-
-                <div class="loan-sanction-list mt-5">
-                    @forelse ($requestedLoans as $requestedLoan)
-                        <div class="loan-sanction-item">
-                            <div class="loan-monitoring-head">
-                                <div>
-                                    <div class="loan-monitoring-name">{{ $requestedLoan->member?->name ?? 'Peminjam tidak ditemukan' }}</div>
-                                    <div class="loan-monitoring-sub">
-                                        {{ $requestedLoan->book?->title ?? 'Buku tidak ditemukan' }}
-                                        | Pinjam {{ optional($requestedLoan->borrowed_at)->translatedFormat('d M Y') ?? '-' }}
-                                        | Batas kembali {{ optional($requestedLoan->due_at)->translatedFormat('d M Y') ?? '-' }}
-                                        @if ($requestedLoan->member?->academicLabel())
-                                            | {{ $requestedLoan->member->academicLabel() }}
-                                        @endif
+                <div class="loan-card-body">
+                    <div class="flex flex-col gap-4">
+                        @forelse ($requestedLoans as $requestedLoan)
+                            <div class="loan-item-card">
+                                <div class="loan-item-head">
+                                    <div>
+                                        <div class="loan-item-name">{{ $requestedLoan->member?->name ?? 'Peminjam' }}</div>
+                                        <div class="loan-item-info mt-1">
+                                            <strong>{{ $requestedLoan->book?->title ?? 'Buku' }}</strong>
+                                        </div>
                                     </div>
+                                    <span class="loan-item-badge pending">Sistem</span>
                                 </div>
-                                <div class="loan-monitoring-status expired">Pengajuan sistem</div>
-                            </div>
-                            <div class="loan-sanction-reason">{{ $requestedLoan->notes ?? 'Tanpa catatan dari peminjam.' }}</div>
-                        </div>
-                    @empty
-                        <div class="loan-return-preview">
-                            <div class="loan-return-preview-title">Belum ada pengajuan baru</div>
-                            <div class="loan-return-preview-sub">Kalau peminjam mengajukan pinjam lewat sistem, datanya akan tampil di sini.</div>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <div class="loan-add">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <div class="loan-add-title">Input Peminjaman</div>
-                        <div class="loan-help mt-2">Isi data transaksi peminjaman buku untuk anggota perpustakaan. Batas waktu pinjam otomatis 1 hari dari tanggal pinjam.</div>
-                    </div>
-                    <div class="member-badge"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Transaksi Baru</div>
-                </div>
-
-                <form method="POST" action="{{ route('admin.loans.store') }}" class="loan-form-grid mt-5" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                    @csrf
-                    <div class="loan-field">
-                        <label class="loan-label" for="loanBookId">Buku Yang Dipinjam</label>
-                        <select id="loanBookId" name="book_id" class="form-select px-3 py-3 text-sm" required>
-                            <option value="">Pilih buku</option>
-                            @foreach ($books as $book)
-                                <option value="{{ $book->id }}">{{ $book->title }} (stok {{ $book->stock_available }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="loanMemberId">Nama Peminjam</label>
-                        <select id="loanMemberId" name="member_id" class="form-select px-3 py-3 text-sm" required>
-                            <option value="">Pilih peminjam</option>
-                            @foreach ($members as $member)
-                                <option value="{{ $member->id }}">{{ $member->name }} - {{ $member->role?->label ?? 'Tanpa role' }}{{ $member->academicLabel() ? ' | '.$member->academicLabel() : '' }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="member-form-grid">
-                        <div class="loan-field">
-                            <label class="loan-label" for="loanBorrowedAt">Tanggal Pinjam</label>
-                            <input id="loanBorrowedAt" type="date" name="borrowed_at" class="form-input px-3 py-3 text-sm" value="{{ now()->toDateString() }}" required>
-                        </div>
-                        <div class="loan-field">
-                            <label class="loan-label" for="loanDueAt">Tanggal Kembali</label>
-                            <input id="loanDueAt" type="date" name="due_at" class="form-input px-3 py-3 text-sm" value="{{ now()->addDay()->toDateString() }}" required readonly>
-                        </div>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="loanNotes">Catatan</label>
-                        <textarea id="loanNotes" name="notes" class="form-textarea px-3 py-3 text-sm" rows="4" placeholder="Catatan peminjaman"></textarea>
-                    </div>
-                    <button class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold w-full">Simpan Peminjaman</button>
-                </form>
-            </div>
-
-            <div class="loan-add">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <div class="loan-add-title">Pengembalian Buku</div>
-                        <div class="loan-help mt-2">Input pengembalian dan sistem akan cek apakah buku dikembalikan telat atau tidak.</div>
-                    </div>
-                    <div class="member-badge"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i> Return</div>
-                </div>
-
-                <form method="POST" action="{{ route('admin.loans.return') }}" class="loan-form-grid mt-5" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                    @csrf
-                    <div class="loan-field">
-                        <label class="loan-label" for="returnLoanId">Transaksi Peminjaman</label>
-                        <select id="returnLoanId" name="loan_id" class="form-select px-3 py-3 text-sm" required>
-                            <option value="">Pilih transaksi aktif</option>
-                            @foreach ($activeLoans as $activeLoan)
-                                <option value="{{ $activeLoan->id }}">
-                                    {{ $activeLoan->member?->name ?? 'Member' }} - {{ $activeLoan->book?->title ?? 'Buku' }}{{ $activeLoan->member?->academicLabel() ? ' | '.$activeLoan->member->academicLabel() : '' }} | jatuh tempo {{ optional($activeLoan->due_at)->translatedFormat('d M Y') ?? '-' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="loanReturnedAt">Tanggal Pengembalian</label>
-                        <input id="loanReturnedAt" type="date" name="returned_at" class="form-input px-3 py-3 text-sm" value="{{ now()->toDateString() }}" required>
-                    </div>
-                    <div class="loan-return-preview">
-                        <div class="loan-return-preview-title">Cek keterlambatan</div>
-                        <div class="loan-return-preview-sub">Jika tanggal pengembalian melewati tanggal kembali, sistem tetap menyimpan pengembalian dan menampilkan bahwa buku terlambat dikembalikan.</div>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="returnNotes">Catatan Pengembalian</label>
-                        <textarea id="returnNotes" name="notes" class="form-textarea px-3 py-3 text-sm" rows="3" placeholder="Catatan pengembalian"></textarea>
-                    </div>
-                    <button class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold w-full">Simpan Pengembalian</button>
-                </form>
-            </div>
-
-            <div class="loan-add">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <div class="loan-add-title">Mengelola Sanksi</div>
-                        <div class="loan-help mt-2">Kalau telat, hilang, atau rusak, petugas bisa memberi sanksi sebagai pengganti denda.</div>
-                    </div>
-                    <div class="member-badge"><i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Sanksi</div>
-                </div>
-
-                <form method="POST" action="{{ route('admin.loans.sanctions.store') }}" class="loan-form-grid mt-5" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                    @csrf
-                    <div class="loan-field">
-                        <label class="loan-label" for="sanctionLoanId">Pilih Transaksi</label>
-                        <select id="sanctionLoanId" name="loan_id" class="form-select px-3 py-3 text-sm" required>
-                            <option value="">Pilih transaksi</option>
-                            @foreach ($sanctionableLoans as $loanOption)
-                                <option value="{{ $loanOption->id }}">
-                                    {{ $loanOption->member?->name ?? 'Member' }} - {{ $loanOption->book?->title ?? 'Buku' }}{{ $loanOption->member?->academicLabel() ? ' | '.$loanOption->member->academicLabel() : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="sanctionType">Jenis Sanksi</label>
-                        <select id="sanctionType" name="type" class="form-select px-3 py-3 text-sm" required>
-                            <option value="">Pilih jenis sanksi</option>
-                            <option value="suspend_borrowing">Tidak boleh pinjam selama beberapa hari</option>
-                            <option value="warning">Peringatan / warning</option>
-                            <option value="replace_book">Harus mengganti buku hilang/rusak</option>
-                        </select>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="sanctionReason">Alasan Sanksi</label>
-                        <textarea id="sanctionReason" name="reason" class="form-textarea px-3 py-3 text-sm" rows="3" placeholder="Contoh: telat 3 hari" required></textarea>
-                    </div>
-                    <div class="member-form-grid">
-                        <div class="loan-field">
-                            <label class="loan-label" for="sanctionDuration">Lama Sanksi (hari)</label>
-                            <input id="sanctionDuration" type="number" min="0" max="365" name="duration_days" class="form-input px-3 py-3 text-sm" placeholder="Contoh 7">
-                        </div>
-                        <div class="loan-field">
-                            <label class="loan-label" for="sanctionStartsAt">Tanggal Mulai</label>
-                            <input id="sanctionStartsAt" type="date" name="starts_at" class="form-input px-3 py-3 text-sm" value="{{ now()->toDateString() }}" required>
-                        </div>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="sanctionNotes">Catatan Tambahan</label>
-                        <textarea id="sanctionNotes" name="notes" class="form-textarea px-3 py-3 text-sm" rows="3" placeholder="Catatan tambahan sanksi"></textarea>
-                    </div>
-                    <button class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold w-full">Simpan Sanksi</button>
-                </form>
-
-                <div class="loan-sanction-list">
-                    @forelse ($sanctions as $sanction)
-                        <div class="loan-sanction-item">
-                            <div class="loan-sanction-type">
-                                {{
-                                    match ($sanction->type) {
-                                        'suspend_borrowing' => 'Larangan Pinjam',
-                                        'warning' => 'Warning',
-                                        'replace_book' => 'Ganti Buku',
-                                        default => $sanction->type,
-                                    }
-                                }}
-                            </div>
-                            <div class="loan-sanction-reason">{{ $sanction->reason }}</div>
-                            <div class="loan-sanction-meta">
-                                {{ $sanction->member?->name ?? 'Member' }}
-                                @if ($sanction->loan?->book?->title)
-                                    | {{ $sanction->loan->book->title }}
-                                @endif
-                                | Mulai {{ optional($sanction->starts_at)->translatedFormat('d M Y') ?? '-' }}
-                                @if ($sanction->ends_at)
-                                    | Sampai {{ optional($sanction->ends_at)->translatedFormat('d M Y') ?? '-' }}
-                                @elseif ($sanction->duration_days !== null)
-                                    | Durasi {{ $sanction->duration_days }} hari
+                                <div class="loan-item-info">
+                                    Pinjam: {{ optional($requestedLoan->borrowed_at)->translatedFormat('d M Y') }}<br>
+                                    Batas: {{ optional($requestedLoan->due_at)->translatedFormat('d M Y') }}
+                                </div>
+                                @if($requestedLoan->notes)
+                                    <div class="p-3 rounded-xl bg-white border border-slate2-100 text-xs italic text-slate2-500">
+                                        "{{ $requestedLoan->notes }}"
+                                    </div>
                                 @endif
                             </div>
-                        </div>
-                    @empty
-                        <div class="loan-return-preview">
-                            <div class="loan-return-preview-title">Belum ada sanksi</div>
-                            <div class="loan-return-preview-sub">Sanksi terbaru akan muncul di sini setelah petugas menyimpannya.</div>
-                        </div>
-                    @endforelse
+                        @empty
+                            <div class="report-empty-state" style="padding: 40px 20px;">
+                                <div class="report-empty-icon"><i data-lucide="inbox"></i></div>
+                                <p class="report-empty-text">Belum ada pengajuan baru.</p>
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
 
-            <div class="loan-add">
-                <div class="flex items-start justify-between gap-4">
+            <!-- Section: Input Peminjaman -->
+            <div class="loan-card">
+                <div class="loan-card-header">
                     <div>
-                        <div class="loan-add-title">Update Status Peminjam</div>
-                        <div class="loan-help mt-2">Tandai peminjam sebagai aktif atau disanksi. Jika disanksi, anggota tidak boleh pinjam sementara.</div>
+                        <h2 class="loan-card-title">Input Pinjam</h2>
+                        <p class="loan-card-subtitle">Catat transaksi peminjaman baru.</p>
                     </div>
-                    <div class="member-badge"><i data-lucide="user-round-cog" class="w-3.5 h-3.5"></i> Status</div>
                 </div>
+                <div class="loan-card-body">
+                    <form method="POST" action="{{ route('admin.loans.store') }}" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                        @csrf
+                        <div class="loan-field">
+                            <label class="loan-label">Buku</label>
+                            <select name="book_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
+                                <option value="">Pilih buku</option>
+                                @foreach ($books as $book)
+                                    <option value="{{ $book->id }}">{{ $book->title }} (stok {{ $book->stock_available }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="loan-field">
+                            <label class="loan-label">Peminjam</label>
+                            <select name="member_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
+                                <option value="">Pilih peminjam</option>
+                                @foreach ($members as $member)
+                                    <option value="{{ $member->id }}">{{ $member->name }} {{ $member->academicLabel() ? ' | '.$member->academicLabel() : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="loan-input-group">
+                            <div class="loan-field">
+                                <label class="loan-label">Tgl Pinjam</label>
+                                <input id="loanBorrowedAt" type="date" name="borrowed_at" class="form-input px-4 py-3 text-sm rounded-xl" value="{{ now()->toDateString() }}" required>
+                            </div>
+                            <div class="loan-field">
+                                <label class="loan-label">Tgl Kembali</label>
+                                <input id="loanDueAt" type="date" name="due_at" class="form-input px-4 py-3 text-sm rounded-xl bg-slate2-50" value="{{ now()->addDay()->toDateString() }}" required readonly>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-loan-submit">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Simpan Peminjaman
+                        </button>
+                    </form>
+                </div>
+            </div>
 
-                <form method="POST" action="{{ route('admin.loans.borrower-status.update') }}" class="loan-form-grid mt-5" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                    @csrf
-                    <div class="loan-field">
-                        <label class="loan-label" for="borrowerMemberId">Peminjam</label>
-                        <select id="borrowerMemberId" name="member_id" class="form-select px-3 py-3 text-sm" required>
-                            <option value="">Pilih peminjam</option>
-                            @foreach ($memberStatuses as $memberStatus)
-                                <option value="{{ $memberStatus->id }}">
-                                    {{ $memberStatus->name }} - {{ $memberStatus->borrower_status === 'sanctioned' ? 'Disanksi' : 'Aktif' }}{{ $memberStatus->academicLabel() ? ' | '.$memberStatus->academicLabel() : '' }}
-                                </option>
-                            @endforeach
-                        </select>
+            <!-- Section: Pengembalian -->
+            <div class="loan-card">
+                <div class="loan-card-header">
+                    <div>
+                        <h2 class="loan-card-title">Pengembalian</h2>
+                        <p class="loan-card-subtitle">Proses buku yang dikembalikan.</p>
                     </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="borrowerStatus">Status Peminjam</label>
-                        <select id="borrowerStatus" name="status" class="form-select px-3 py-3 text-sm" required>
-                            <option value="">Pilih status</option>
-                            <option value="active">Aktif (boleh pinjam)</option>
-                            <option value="sanctioned">Disanksi (tidak boleh pinjam sementara)</option>
-                        </select>
-                    </div>
-                    <div class="member-form-grid">
+                </div>
+                <div class="loan-card-body">
+                    <form method="POST" action="{{ route('admin.loans.return') }}" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                        @csrf
                         <div class="loan-field">
-                            <label class="loan-label" for="borrowerDuration">Lama Sanksi (hari)</label>
-                            <input id="borrowerDuration" type="number" min="0" max="365" name="duration_days" class="form-input px-3 py-3 text-sm" placeholder="Kosongkan jika tidak dibatasi hari">
+                            <label class="loan-label">Transaksi Aktif</label>
+                            <select name="loan_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
+                                <option value="">Pilih transaksi</option>
+                                @foreach ($activeLoans as $activeLoan)
+                                    <option value="{{ $activeLoan->id }}">
+                                        {{ $activeLoan->member?->name }} - {{ $activeLoan->book?->title }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="loan-field">
-                            <label class="loan-label" for="borrowerStartsAt">Tanggal Mulai</label>
-                            <input id="borrowerStartsAt" type="date" name="starts_at" class="form-input px-3 py-3 text-sm" value="{{ now()->toDateString() }}">
+                            <label class="loan-label">Tgl Kembali</label>
+                            <input type="date" name="returned_at" class="form-input px-4 py-3 text-sm rounded-xl" value="{{ now()->toDateString() }}" required>
                         </div>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="borrowerReason">Alasan</label>
-                        <textarea id="borrowerReason" name="reason" class="form-textarea px-3 py-3 text-sm" rows="3" placeholder="Contoh: telat 3 hari"></textarea>
-                    </div>
-                    <div class="loan-field">
-                        <label class="loan-label" for="borrowerStatusNotes">Catatan Tambahan</label>
-                        <textarea id="borrowerStatusNotes" name="notes" class="form-textarea px-3 py-3 text-sm" rows="3" placeholder="Catatan tambahan status peminjam"></textarea>
-                    </div>
-                    <button class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold w-full">Simpan Status Peminjam</button>
-                </form>
+                        <button type="submit" class="btn-loan-submit">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i> Simpan Pengembalian
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
-        <div class="loan-list">
-            <div class="loan-list-head">
-                <div class="loan-list-title">Daftar Peminjaman Buku</div>
-                <div class="member-badge"><i data-lucide="history" class="w-3.5 h-3.5"></i> Semua transaksi</div>
-            </div>
-
-            @if ($loans->count())
+        <div class="loan-stack">
+            <!-- Section: Daftar Transaksi -->
+            <div class="loan-card">
+                <div class="loan-card-header">
+                    <div>
+                        <h2 class="loan-card-title">Daftar Peminjaman Buku</h2>
+                        <p class="loan-card-subtitle">Semua riwayat transaksi perpustakaan.</p>
+                    </div>
+                    <div class="btn-report-action" style="cursor: default; pointer-events: none;">
+                        <i data-lucide="history" class="w-4 h-4"></i> {{ $loans->total() }} Transaksi
+                    </div>
+                </div>
                 <div class="loan-table-wrap">
                     <table class="loan-table">
                         <thead>
                             <tr>
-                                <th>Buku</th>
-                                <th>Peminjam</th>
-                                <th>Tanggal</th>
-                                <th>Keterlambatan</th>
-                                <th>Status</th>
+                                <th style="width: 35%;">Buku</th>
+                                <th style="width: 25%;">Peminjam</th>
+                                <th style="width: 20%;">Waktu</th>
+                                <th style="width: 20%;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($loans as $loan)
-                                @php($daysLate = $loan->status === 'late' ? max((int) optional($loan->due_at)->diffInDays(now(), false) * -1, 0) : 0)
                                 <tr>
                                     <td>
-                                        <div class="loan-book">
-                                            <div class="loan-cover">
-                                                @if ($loan->book?->cover_image)
-                                                    <img src="{{ asset('storage/'.$loan->book->cover_image) }}" alt="{{ $loan->book?->title }}" style="width:100%;height:100%;object-fit:cover;">
-                                                @else
-                                                    {{ strtoupper(substr($loan->book?->title ?? 'B', 0, 1)) }}
-                                                @endif
+                                        <div class="loan-book-box">
+                                            <div class="loan-book-cover-mini">
+                                                {{ strtoupper(substr($loan->book?->title ?? 'B', 0, 1)) }}
                                             </div>
                                             <div>
-                                                <div class="loan-book-title">{{ $loan->book?->title ?? 'Buku tidak ditemukan' }}</div>
-                                                <div class="loan-book-sub">{{ $loan->book?->author ?? 'Penulis tidak tersedia' }}</div>
+                                                <div class="loan-book-title-text">{{ $loan->book?->title ?? 'Buku tidak ditemukan' }}</div>
+                                                <div class="loan-book-author-text">{{ $loan->book?->author ?? '-' }}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="loan-member">
-                                        <div class="loan-member-name">{{ $loan->member?->name ?? 'Peminjam tidak ditemukan' }}</div>
-                                            <div class="loan-member-sub">{{ $loan->member?->role?->label ?? 'Tanpa role' }} | {{ $loan->member?->username ?? '-' }}</div>
-                                            @if ($loan->member?->academicLabel())
-                                                <div class="loan-member-sub">{{ $loan->member->academicLabel() }}</div>
-                                            @endif
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-slate2-900">{{ $loan->member?->name ?? 'Peminjam' }}</span>
+                                            <span class="text-xs text-slate2-500 mt-0.5">{{ $loan->member?->academicLabel() ?? 'Anggota' }}</span>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="loan-date">{{ optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-' }}</div>
-                                        <span class="loan-date-sub">Kembali: {{ optional($loan->returned_at ?? $loan->due_at)->translatedFormat('d M Y') ?? '-' }}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-slate2-800 text-sm">{{ optional($loan->borrowed_at)->translatedFormat('d M Y') }}</span>
+                                            <span class="text-[10px] text-slate2-400 uppercase tracking-wider font-black mt-1">Hingga {{ optional($loan->returned_at ?? $loan->due_at)->translatedFormat('d M Y') }}</span>
+                                        </div>
                                     </td>
                                     <td>
-                                        @if ($loan->status === 'late')
-                                            <span class="loan-late">{{ max(now()->diffInDays($loan->due_at, false) * -1, 0) }} hari</span>
-                                        @else
-                                            <span class="loan-safe">Aman</span>
-                                        @endif
-                                    </td>
-                                    <td style="min-width:170px;">
-                                        <form method="POST" action="{{ route('admin.loans.update', $loan) }}" class="space-y-2" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                                        <form method="POST" action="{{ route('admin.loans.update', $loan) }}" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
                                             @csrf
                                             @method('PUT')
-                                            <select name="status" class="loan-status" onchange="this.form.submit()">
+                                            <select name="status" class="loan-status-select" onchange="this.form.requestSubmit()">
                                                 <option value="requested" @selected($loan->status === 'requested')>Menunggu</option>
                                                 <option value="borrowed" @selected($loan->status === 'borrowed')>Dipinjam</option>
                                                 <option value="late" @selected($loan->status === 'late')>Terlambat</option>
-                                                <option value="returned" @selected($loan->status === 'returned')>Dikembalikan</option>
+                                                <option value="returned" @selected($loan->status === 'returned')>Selesai</option>
                                             </select>
-                                            <input type="hidden" name="returned_at" value="{{ optional($loan->returned_at)->toDateString() }}">
-                                            <input type="hidden" name="notes" value="{{ $loan->notes }}">
                                         </form>
                                     </td>
                                 </tr>
@@ -428,67 +285,62 @@
                         </tbody>
                     </table>
                 </div>
-
-                <div class="mt-4">{{ $loans->links() }}</div>
-            @else
-                <div class="loan-empty">
-                    <div class="text-lg font-semibold text-slate2-900">Belum ada data peminjaman</div>
-                    <div class="mt-2 text-sm">Semua data pinjam, peminjam, tanggal, dan keterlambatan akan muncul di sini.</div>
-                </div>
-            @endif
-
-            <div class="loan-list-head mt-8">
-                <div class="loan-list-title">Monitoring Sanksi Peminjam</div>
-                <div class="member-badge"><i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Status sanksi</div>
+                @if($loans->hasPages())
+                    <div class="p-6 border-t border-slate2-100">
+                        {{ $loans->links() }}
+                    </div>
+                @endif
             </div>
 
-            <div class="loan-monitoring-list">
-                @forelse ($sanctionMonitoring as $monitoring)
-                    <div class="loan-monitoring-item">
-                        <div class="loan-monitoring-head">
-                            <div>
-                                <div class="loan-monitoring-name">{{ $monitoring->member?->name ?? 'Peminjam tidak ditemukan' }}</div>
-                                <div class="loan-monitoring-sub">
-                                    {{ $monitoring->reason }}
-                                    @if ($monitoring->member?->academicLabel())
-                                        | {{ $monitoring->member->academicLabel() }}
-                                    @endif
-                                    @if ($monitoring->loan?->book?->title)
-                                        | Buku: {{ $monitoring->loan->book->title }}
-                                    @endif
-                                    @if ($monitoring->ends_at)
-                                        | Berakhir: {{ optional($monitoring->ends_at)->translatedFormat('d M Y') ?? '-' }}
-                                    @elseif ($monitoring->duration_days !== null)
-                                        | Durasi: {{ $monitoring->duration_days }} hari
+            <!-- Section: Monitoring Sanksi -->
+            <div class="loan-card">
+                <div class="loan-card-header">
+                    <div>
+                        <h2 class="loan-card-title">Monitoring Sanksi</h2>
+                        <p class="loan-card-subtitle">Status peminjam yang sedang dalam masa sanksi.</p>
+                    </div>
+                </div>
+                <div class="loan-card-body">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @forelse ($sanctionMonitoring as $monitoring)
+                            <div class="loan-item-card">
+                                <div class="loan-item-head">
+                                    <div>
+                                        <div class="loan-item-name">{{ $monitoring->member?->name ?? 'Peminjam' }}</div>
+                                        <div class="loan-item-info mt-1 text-red-600 font-bold">
+                                            {{ $monitoring->reason }}
+                                        </div>
+                                    </div>
+                                    <span class="loan-item-badge {{ $monitoring->monitoring_state === 'active' ? 'active' : 'done' }}">
+                                        {{ $monitoring->monitoring_state === 'active' ? 'Disanksi' : 'Selesai' }}
+                                    </span>
+                                </div>
+                                <div class="loan-item-info">
+                                    @if($monitoring->ends_at)
+                                        Berakhir: {{ optional($monitoring->ends_at)->translatedFormat('d M Y') }}
+                                    @else
+                                        Durasi: {{ $monitoring->duration_days }} hari
                                     @endif
                                 </div>
+                                @if ($monitoring->monitoring_state !== 'completed')
+                                    <form method="POST" action="{{ route('admin.loans.sanctions.update', $monitoring) }}" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="status" value="completed">
+                                        <button class="btn-report-action w-full mt-2" type="submit" style="font-size: 11px; height: 36px;">
+                                            Tandai Aktif Kembali
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
-                            <div class="loan-monitoring-status {{ $monitoring->monitoring_state }}">
-                                {{
-                                    match ($monitoring->monitoring_state) {
-                                        'active' => 'Disanksi',
-                                        'expired' => 'Masa selesai',
-                                        default => 'Aktif kembali',
-                                    }
-                                }}
+                        @empty
+                            <div class="col-span-full report-empty-state">
+                                <div class="report-empty-icon"><i data-lucide="shield-check"></i></div>
+                                <p class="report-empty-text">Tidak ada sanksi aktif saat ini.</p>
                             </div>
-                        </div>
-
-                        @if ($monitoring->monitoring_state !== 'completed')
-                            <form method="POST" action="{{ route('admin.loans.sanctions.update', $monitoring) }}" class="mt-3" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="status" value="completed">
-                                <button class="btn-soft rounded-xl px-4 py-2 text-xs font-semibold" type="submit">Tandai Aktif Kembali</button>
-                            </form>
-                        @endif
+                        @endforelse
                     </div>
-                @empty
-                    <div class="loan-empty">
-                        <div class="text-lg font-semibold text-slate2-900">Belum ada sanksi aktif</div>
-                        <div class="mt-2 text-sm">Daftar peminjam yang kena sanksi dan masa berakhirnya akan muncul di sini.</div>
-                    </div>
-                @endforelse
+                </div>
             </div>
         </div>
     </div>

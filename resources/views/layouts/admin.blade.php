@@ -91,11 +91,7 @@
     @if ($appLogo)
         <link rel="icon" type="image/png" href="{{ asset($appLogo) }}">
     @endif
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         :root{
             --bg:#f8f6f1;--bg-raised:#fffdf9;--bg-card:#ffffff;--bg-soft:#f8f6f1;--fg:#1a2e35;--muted:#5a6d73;--dim:#8b989d;
@@ -105,33 +101,38 @@
             --shadow-md:0 12px 32px rgba(87,59,33,.10);--shadow-lg:0 18px 42px rgba(87,59,33,.14);
             --primary:#0f4c5c;--primary-dark:#0a3642
         }
-        *{box-sizing:border-box} html,body{margin:0;padding:0} body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
-        .font-display{font-family:'Playfair Display',serif}
+        *{box-sizing:border-box} html,body{margin:0;padding:0} body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
+        .font-display{font-family:Georgia,'Times New Roman',Times,serif}
         .admin-shell{display:flex;min-height:100vh;position:relative}
         .admin-shell:before{content:'';position:fixed;inset:0;background-image:radial-gradient(ellipse at 20% 20%, rgba(15,76,92,.03) 0%, transparent 50%),radial-gradient(ellipse at 80% 80%, rgba(196,149,106,.05) 0%, transparent 50%),url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230f4c5c' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;z-index:0}
         .side-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.22);z-index:35}
-        .sidebar{width:260px;background:var(--bg-raised);border-right:1px solid var(--border);position:fixed;left:0;top:0;bottom:0;z-index:40;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:transform .35s cubic-bezier(.4,0,.2,1);transform:translateX(-100%);padding:24px 16px}
+        .sidebar{width:280px;background:var(--bg-raised);border-right:1px solid var(--border);position:fixed;left:0;top:0;bottom:0;z-index:40;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:transform .35s cubic-bezier(.4,0,.2,1);transform:translateX(-100%);padding:32px 20px}
         .sidebar.open{transform:translateX(0)}
         .side-mask.show{display:block}
-        .sidebar:before{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:var(--border)}
-        .sidebar-logo{padding:8px 12px 20px}
-        .sidebar-nav{flex:1;padding:0 4px 14px;overflow-y:auto}
-        .nav-section{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:var(--dim);padding:16px 12px 8px;font-weight:700}
-        .nav-link{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;color:#4a5d63;font-size:14px;font-weight:500;text-decoration:none;transition:.2s;position:relative;margin-bottom:4px}
-        .nav-link:hover{background:rgba(196,149,106,.08);color:var(--fg)}
-        .nav-link.active{background:var(--accent);color:#fff;font-weight:700}
-        .nav-link.active:before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:24px;background:var(--gold);border-radius:0 3px 3px 0}
-        .nav-link .nav-icon{width:18px;height:18px}
+        .sidebar-logo{padding:0 12px 32px;border-bottom:1px solid var(--border-light);margin-bottom:24px}
+        .sidebar-nav{flex:1;padding:0;overflow-y:auto}
+        .nav-section{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);padding:24px 12px 12px;font-weight:800}
+        .nav-link{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;transition:.3s cubic-bezier(.4,0,.2,1);position:relative;margin-bottom:6px}
+        .nav-link:hover{background:var(--bg-soft);color:var(--accent);transform:translateX(4px)}
+        .nav-link.active{background:var(--accent);color:#fff;font-weight:700;box-shadow:0 8px 20px var(--accent-glow)}
+        .nav-link.active:before{display:none}
+        .nav-link .nav-icon{width:20px;height:20px}
         .nav-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:999px;padding:2px 7px;font-size:10px;font-weight:700}
         .sidebar-foot{padding:16px 12px 0;margin-top:auto}
-        .sidebar-upgrade{background:var(--bg-card);border:1px solid var(--border-light);border-radius:12px;padding:16px;box-shadow:var(--shadow-sm)}
-        .sidebar-focus-title{font-size:12px;font-weight:700;color:var(--fg);margin-bottom:6px}
-        .sidebar-focus-sub{font-size:11px;color:var(--muted);line-height:1.6}
-        .sidebar-focus-list{display:flex;flex-direction:column;gap:8px;margin:12px 0 0;padding:0;list-style:none}
-        .sidebar-focus-list li{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--fg);line-height:1.5}
-        .sidebar-focus-list i{width:14px;height:14px;color:var(--accent);margin-top:1px;flex-shrink:0}
-        .sidebar-focus-link{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:11px;font-weight:700;color:var(--accent);text-decoration:none}
+        .sidebar-upgrade{background:linear-gradient(135deg, var(--bg-card), var(--bg-soft));border:1px solid var(--border-light);border-radius:20px;padding:20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+        .sidebar-upgrade:after{content:'';position:absolute;right:-20px;bottom:-20px;width:60px;height:60px;border-radius:999px;background:var(--accent-glow);z-index:0}
+        .sidebar-upgrade > *{position:relative;z-index:1}
+        .sidebar-focus-title{font-size:13px;font-weight:800;color:var(--fg);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+        .sidebar-focus-sub{font-size:12px;color:var(--muted);line-height:1.6;margin:0}
+        .sidebar-focus-link{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px;padding:12px 16px;background:var(--accent);color:#fff;border-radius:12px;font-size:12px;font-weight:700;text-decoration:none;transition:.2s ease}
+        .sidebar-focus-link:hover{background:var(--accent-dark);transform:translateY(-2px);box-shadow:0 4px 12px var(--accent-glow)}
         .main-area{margin-left:0;flex:1;min-height:100vh;position:relative;z-index:1}
+        @media (min-width:1024px){
+            .sidebar{z-index:40;border-right:1px solid var(--border-light);background:var(--bg-raised)}
+            .sidebar.open + .main-area{margin-left:280px}
+            .side-mask{display:none!important}
+            .sidebar.open + .main-area .topbar-brand{display:none}
+        }
         .topbar{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm)}
         .topbar-inner{height:64px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
         .topbar-left,.topbar-right{display:flex;align-items:center;gap:12px}
@@ -198,7 +199,7 @@
         .page-wrap .text-slate2-900,.page-wrap .text-slate2-800{color:var(--fg)!important}
         .page-wrap .text-slate2-600{color:var(--muted)!important}
         .page-wrap .text-slate2-400{color:var(--dim)!important}
-        .page-wrap .font-serif{font-family:'Playfair Display',serif}
+        .page-wrap .font-serif{font-family:Georgia,'Times New Roman',Times,serif}
         .page-wrap .text-sage-700{color:var(--accent)!important}
         .page-wrap .bg-sage-50{background:rgba(15,76,92,.08)!important}
         .page-wrap .bg-red-50{background:var(--red-light)!important}
@@ -231,7 +232,7 @@
         .member-add-card:after{content:'';position:absolute;left:-60px;bottom:-90px;width:180px;height:180px;border-radius:999px;background:radial-gradient(circle,rgba(184,134,11,.08),transparent 70%)}
         .member-add-card > *{position:relative;z-index:1}
         .member-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
-        .member-card-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--fg);letter-spacing:-.03em}
+        .member-card-title{font-family:Georgia,'Times New Roman',Times,serif;font-size:24px;font-weight:700;color:var(--fg);letter-spacing:-.03em}
         .member-card-sub{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6}
         .member-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
         .member-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -253,7 +254,7 @@
         .dbx-body{position:relative;z-index:1}
         .dbx-welcome{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;padding:4px 2px}
         .dbx-welcome-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(196,149,106,.12);color:#9a7530;font-size:11px;font-weight:700}
-        .dbx-welcome-title{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;letter-spacing:-.03em;color:#1a2e35;margin-top:12px}
+        .dbx-welcome-title{font-family:Georgia,'Times New Roman',Times,serif;font-size:30px;font-weight:700;letter-spacing:-.03em;color:#1a2e35;margin-top:12px}
         .dbx-welcome-sub{font-size:14px;color:#5a6d73;line-height:1.7;margin-top:8px}
         .dbx-book-grid{display:grid;grid-auto-flow:column;grid-auto-columns:120px;gap:16px;justify-content:start}
         .dbx-borrower-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:24px}
@@ -319,7 +320,7 @@
         .dbx-drawer{position:fixed;top:0;right:0;width:min(460px,100vw);height:100vh;background:#fff;box-shadow:-16px 0 40px rgba(15,76,92,.14);transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);z-index:80;display:flex;flex-direction:column}
         .dbx-drawer.open{transform:translateX(0)}
         .dbx-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 22px 18px;border-bottom:1px solid #e2ddd4}
-        .dbx-drawer-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#1a2e35;line-height:1.1}
+        .dbx-drawer-title{font-family:Georgia,'Times New Roman',Times,serif;font-size:28px;font-weight:700;color:#1a2e35;line-height:1.1}
         .dbx-drawer-sub{font-size:13px;color:#5a6d73;margin-top:8px;line-height:1.6}
         .dbx-drawer-close{width:40px;height:40px;border-radius:12px;border:1px solid #c4956a;background:#c4956a;color:#fff;cursor:pointer;flex-shrink:0}
         .dbx-drawer-close:hover{background:#b78558;border-color:#b78558}
@@ -437,20 +438,17 @@
     <div class="admin-shell">
         <div id="sideMask" class="side-mask" onclick="closeSide()"></div>
 
-        <aside id="lightSide" class="sidebar" aria-hidden="true">
+        <aside id="lightSide" class="sidebar open" aria-hidden="false">
             <div class="sidebar-logo">
-                    <div style="display:flex;align-items:center;gap:12px;">
+                <div class="flex items-center gap-3">
                     <div class="sidebar-brand-mark">
-                            @if ($appLogo)
-                                <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
-                            @else
-                                <i data-lucide="book-open" style="width:18px;height:18px;color:#7A5A28;"></i>
-                            @endif
+                        @if ($appLogo)
+                            <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
+                        @else
+                            <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
+                        @endif
                     </div>
-                    <div>
-                        <div class="font-display" style="font-size:18px;font-weight:700;letter-spacing:-.03em;color:var(--fg);">{{ $appName }}</div>
-                        <div style="font-size:11px;color:var(--muted);margin-top:-1px;">Perpustakaan Digital</div>
-                    </div>
+                    <div class="font-display text-xl font-bold tracking-tight text-slate-800">{{ $appName }}</div>
                 </div>
             </div>
 
@@ -459,26 +457,25 @@
                     <div class="nav-section">{{ $section['title'] }}</div>
                     @foreach ($section['items'] as $item)
                         <a href="{{ route($item['route']) }}" class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}">
-                            <i data-lucide="{{ $item['icon'] }}" class="nav-icon"></i>{{ $item['label'] }}
+                            <i data-lucide="{{ $item['icon'] }}" class="nav-icon"></i>
+                            <span>{{ $item['label'] }}</span>
                         </a>
                     @endforeach
                 @endforeach
             </nav>
 
             <div class="sidebar-foot">
-                    <div class="sidebar-upgrade">
+                <div class="sidebar-upgrade">
                     @if ($isPetugasPanel)
                         <div class="sidebar-focus-title">Fokus Petugas</div>
-                        <div class="sidebar-focus-sub">Peminjaman buku dikerjakan langsung dari menu utama.</div>
-                        <div class="sidebar-focus-list">
-                            <li><i data-lucide="check"></i><span>Input data peminjaman buku.</span></li>
-                            <li><i data-lucide="check"></i><span>Catat nama peminjam.</span></li>
-                            <li><i data-lucide="check"></i><span>Tentukan tanggal pinjam dan kembali.</span></li>
-                        </div>
-                        <a href="{{ route('admin.loans.index') }}" class="sidebar-focus-link"><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>Buka Peminjaman Buku</a>
+                        <p class="sidebar-focus-sub">Kelola peminjaman buku dengan cepat.</p>
+                        <a href="{{ route('admin.loans.index') }}" class="sidebar-focus-link">
+                            <span>Buka Peminjaman</span>
+                            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                        </a>
                     @else
-                        <div style="font-size:12px;font-weight:600;color:var(--fg);margin-bottom:4px;">Panel {{ $appName }}</div>
-                        <div style="font-size:11px;color:var(--muted);line-height:1.5;">Semua halaman admin sekarang mengikuti gaya dashboard utama.</div>
+                        <div class="sidebar-focus-title">Admin Panel</div>
+                        <p class="sidebar-focus-sub">Gaya modern LibraVault diaktifkan.</p>
                     @endif
                 </div>
             </div>
@@ -507,7 +504,6 @@
                             </div>
                             <div class="topbar-brand-text">
                                 <div class="topbar-brand-title font-display">{{ $appName }}</div>
-                                <div class="topbar-brand-sub">Perpustakaan Digital</div>
                             </div>
                         </div>
                     </div>
@@ -1004,6 +1000,10 @@
         const chatbotForm = document.getElementById('chatbotForm');
         const chatbotInput = document.getElementById('chatbotInput');
 
+        function defaultChatbotGreeting() {
+            return 'Halo! Saya AI assistant di aplikasi ini. Kamu bisa tanya apa saja, misalnya pelajaran, ide, coding, ringkasan, atau hal terkait perpustakaan.';
+        }
+
         function chatbotStorageKey() {
             const userId = chatbotRoot?.dataset?.userId || 'guest';
             return 'chatbot_history_' + userId;
@@ -1039,8 +1039,7 @@
             chatbotMessages.innerHTML = '';
             const history = loadChatbotHistory();
             if (history.length === 0) {
-                appendChatbotBubble('bot', 'Halo! Tulis: "cara pinjam", "cara kembali", "batas pinjam", atau "cari buku matematika".');
-                saveChatbotHistory([{ role: 'bot', text: 'Halo! Tulis: "cara pinjam", "cara kembali", "batas pinjam", atau "cari buku matematika".' }]);
+                appendChatbotBubble('bot', defaultChatbotGreeting());
                 return;
             }
             history.forEach(item => appendChatbotBubble(item.role, item.text));
@@ -1111,9 +1110,12 @@
             });
         }
 
-        document.addEventListener('click', function () {
+        document.addEventListener('click', function (event) {
             if (chatbotMenuPop?.classList.contains('open')) {
-                setChatbotMenuOpen(false);
+                const clickedInsideMenu = event.target.closest('.chatbot-menu');
+                if (!clickedInsideMenu) {
+                    setChatbotMenuOpen(false);
+                }
             }
         });
 
@@ -1134,6 +1136,7 @@
 
                 try {
                     const endpoint = chatbotRoot?.dataset?.endpoint;
+                    const requestHistory = history.slice(-12);
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
@@ -1142,7 +1145,10 @@
                             'X-Requested-With': 'XMLHttpRequest',
                             'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]')?.content
                         },
-                        body: JSON.stringify({ message })
+                        body: JSON.stringify({
+                            message,
+                            history: requestHistory
+                        })
                     });
 
                     const data = await response.json().catch(() => ({}));
@@ -1156,7 +1162,10 @@
                     appendChatbotBubble('bot', reply);
                 } catch (error) {
                     if (typingNode) typingNode.remove();
-                    appendChatbotBubble('bot', 'Maaf, tidak bisa terhubung ke server.');
+                    const updated = loadChatbotHistory();
+                    updated.push({ role: 'bot', text: 'Maaf, AI sedang tidak bisa dihubungi. Cek API key, model Gemini, quota, atau koneksi server lalu coba lagi.' });
+                    saveChatbotHistory(updated);
+                    appendChatbotBubble('bot', 'Maaf, AI sedang tidak bisa dihubungi. Cek API key, model Gemini, quota, atau koneksi server lalu coba lagi.');
                 }
             });
         }

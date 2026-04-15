@@ -132,7 +132,6 @@
                     </div>
                     <div>
                         <div id="settingPreviewName" class="setting-brand-name">{{ old('app_name', $appName) }}</div>
-                        <div class="setting-brand-sub">Perpustakaan Digital</div>
                     </div>
                 </div>
                 <div class="setting-color-chip">
