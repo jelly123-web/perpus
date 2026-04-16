@@ -864,7 +864,11 @@
                 return;
             }
 
-            const response = await fetch(window.location.href, {
+            const url = new URL(window.location.href);
+            url.searchParams.set('_t', Date.now());
+
+            const response = await fetch(url.toString(), {
+                cache: 'no-store',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'text/html'
@@ -924,8 +928,10 @@
                 };
 
                 if (isGet) {
-                    const params = new URLSearchParams(formData).toString();
-                    url += (url.includes('?') ? '&' : '?') + params;
+                    const params = new URLSearchParams(formData);
+                    params.set('_t', Date.now());
+                    url += (url.includes('?') ? '&' : '?') + params.toString();
+                    fetchOptions.cache = 'no-store';
                 } else {
                     fetchOptions.body = formData;
                 }
@@ -980,8 +986,10 @@
                     window.history.pushState({}, '', url);
                 }
 
+                document.dispatchEvent(new CustomEvent('async:form-success', { detail: { form, data } }));
                 showAsyncToast(data.message || 'Berhasil disimpan.', 'success');
             } catch (error) {
+                document.dispatchEvent(new CustomEvent('async:form-error', { detail: { form, error } }));
                 showAsyncToast(error.message || 'Terjadi kesalahan.', 'error');
             } finally {
                 if (submitButton) {
@@ -1205,7 +1213,11 @@
                 .filter(Boolean);
 
             try {
-                const response = await fetch(link.href, {
+                const url = new URL(link.href);
+                url.searchParams.set('_t', Date.now());
+
+                const response = await fetch(url.toString(), {
+                    cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'text/html'

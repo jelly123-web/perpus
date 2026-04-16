@@ -55,6 +55,14 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    if (request.headers.has('X-Requested-With')) {
+        event.respondWith(
+            fetch(request)
+                .catch(() => caches.match(request))
+        );
+        return;
+    }
+
     event.respondWith(
         caches.match(request).then((cachedResponse) => {
             const networkFetch = fetch(request)

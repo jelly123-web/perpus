@@ -79,7 +79,7 @@
     </div>
 
     <div class="setting-shell" style="--preview-color: {{ old('app_color', $appColor) }}">
-        <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data" class="setting-card setting-card-main" data-async="true" data-refresh-targets=".setting-card-main, .setting-preview, .topbar-brand-mark, .sidebar-brand-mark">
+        <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data" class="setting-card setting-card-main js-setting-form" data-async="true" data-refresh-targets=".setting-card-main, .setting-preview, .topbar-brand-mark, .sidebar-brand-mark">
             @csrf
             @method('PUT')
 
@@ -121,7 +121,8 @@
             </div>
 
             <div class="setting-actions">
-                <button class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold" type="submit">Simpan Perubahan</button>
+                <div class="setting-help js-setting-save-state">Perubahan akan tersimpan otomatis saat data diganti.</div>
+                <button class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold" type="submit">Simpan Sekarang</button>
             </div>
         </form>
 
@@ -203,7 +204,10 @@
     </div>
 </div>
 
-<script>
+@include('admin.settings._autosave-script')
+
+{{-- Legacy inline script removed in favor of reusable autosave initializer. --}}
+{{-- <script>
     const appNameInput = document.getElementById('app_name');
     const appColorInput = document.getElementById('app_color');
     const appLogoInput = document.getElementById('app_logo');
@@ -552,5 +556,5 @@
     if (window.lucide) {
         window.lucide.createIcons();
     }
-</script>
+</script> --}}
 @endsection
