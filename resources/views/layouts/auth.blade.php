@@ -3,7 +3,7 @@
 <head>
     @php
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
-        $appLogo = \App\Models\Setting::valueOr('app_logo');
+        $appLogo = \App\Models\Setting::appLogoPath();
         $appColor = \App\Models\Setting::valueOr('app_color', '#FFFFFF');
     @endphp
     <meta charset="UTF-8">
@@ -105,6 +105,19 @@
             border: 1px solid rgba(201,168,76,0.35);
             box-shadow: 0 12px 30px rgba(201,168,76,0.15);
         }
+        .logo-slot.has-image {
+            width: auto;
+            max-width: 240px;
+            height: auto;
+            max-height: 120px;
+            padding: 12px 18px;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .logo-slot.has-image img {
+            padding: 0 !important;
+        }
         .input-lib {
             border: 1.5px solid #E8D5A8;
             background: #FEFCF9;
@@ -183,9 +196,9 @@
 
         <div class="w-full max-w-md relative z-10">
             <div class="lg:hidden flex items-center justify-center gap-3 mb-10">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lib-300 text-sm font-bold overflow-hidden" style="background: var(--brand-logo-bg);">
+                <div class="{{ $appLogo && file_exists(public_path($appLogo)) ? 'w-auto max-w-[12rem] h-auto max-h-[4.5rem] px-3' : 'w-11 h-11' }} rounded-xl flex items-center justify-center text-lib-300 text-sm font-bold overflow-hidden" style="background: var(--brand-logo-bg);">
                     @if ($appLogo && file_exists(public_path($appLogo)))
-                        <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain p-2">
+                        <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain">
                     @else
                         {{ strtoupper(substr($appName, 0, 2)) }}
                     @endif
@@ -209,9 +222,9 @@
                 @endif
 
                 <div class="text-center mb-8">
-                    <div class="logo-slot inline-flex items-center justify-center w-24 h-24 rounded-[1.75rem] mb-4 overflow-hidden">
+                    <div class="logo-slot {{ $appLogo && file_exists(public_path($appLogo)) ? 'has-image' : 'w-24 h-24' }} inline-flex items-center justify-center rounded-[1.75rem] mb-4 overflow-hidden" style="background: var(--brand-logo-bg);">
                         @if ($appLogo && file_exists(public_path($appLogo)))
-                            <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain p-3">
+                            <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain">
                         @else
                             <div class="text-center leading-tight">
                                 <div class="text-lib-900 text-xs font-semibold tracking-[0.3em] uppercase">Logo</div>

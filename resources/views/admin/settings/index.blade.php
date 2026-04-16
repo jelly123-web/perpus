@@ -19,8 +19,10 @@
     .setting-preview > *{position:relative;z-index:1}
     .setting-preview-shell{border-radius:26px;padding:22px;background:linear-gradient(135deg,#fffdf9,#f7f1e8);border:1px solid var(--border)}
     .setting-brand{display:flex;align-items:center;gap:14px}
-    .setting-brand-logo{width:86px;height:86px;border-radius:24px;display:flex;align-items:center;justify-content:center;background:var(--preview-color);border:1px solid rgba(255,255,255,.92);box-shadow:0 14px 30px rgba(0,0,0,.08);overflow:hidden}
-    .setting-brand-logo img{width:100%;height:100%;object-fit:contain;padding:16px}
+    .setting-brand-logo{height:86px;min-width:86px;border-radius:24px;display:flex;align-items:center;justify-content:center;background:var(--preview-color);border:1px solid rgba(255,255,255,.92);box-shadow:0 14px 30px rgba(0,0,0,.08);overflow:hidden}
+    .setting-brand-logo.has-image{width:auto;max-width:240px;height:86px;padding:10px 16px;background:transparent;border:none;box-shadow:none}
+    .setting-brand-logo img{height:100%;width:auto;object-fit:contain;padding:16px}
+    .setting-brand-logo.has-image img{padding:0}
     .setting-brand-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#203746;line-height:1}
     .setting-brand-sub{font-size:12px;color:#70828c;margin-top:10px;letter-spacing:.18em;text-transform:uppercase}
     .setting-color-chip{display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:14px 20px;border-radius:18px;background:#fff;border:1px solid var(--border);font-size:13px;color:#394b53;font-weight:700;box-shadow:0 10px 24px rgba(196,149,106,.10)}
@@ -32,12 +34,14 @@
     .setting-logo-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--fg);font-size:12px;font-weight:700;cursor:pointer}
     .setting-logo-btn:hover{border-color:var(--accent);background:#fffaf4}
     .setting-logo-name{font-size:13px;color:var(--muted)}
-    .setting-current-logo{margin-top:14px;width:120px;height:120px;border-radius:24px;border:1px solid rgba(255,255,255,.92);background:var(--preview-color);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 14px 28px rgba(0,0,0,.08)}
-    .setting-current-logo img{width:100%;height:100%;object-fit:contain;padding:12px}
+    .setting-current-logo{margin-top:14px;height:120px;min-width:120px;border-radius:24px;border:1px solid rgba(255,255,255,.92);background:var(--preview-color);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 14px 28px rgba(0,0,0,.08)}
+    .setting-current-logo.has-image{width:auto;max-width:100%;height:110px;padding:12px 16px;background:transparent;border:none;box-shadow:none}
+    .setting-current-logo img{height:100%;width:auto;object-fit:contain;padding:12px}
+    .setting-current-logo.has-image img{padding:0}
     .setting-current-logo.empty{color:var(--muted);font-size:12px;text-align:center;padding:10px;background:var(--bg-soft)}
-    .setting-logo-preview{display:none;position:relative;margin-top:14px;width:120px}
+    .setting-logo-preview{display:none;position:relative;margin-top:14px;width:min(100%,240px)}
     .setting-logo-preview.show{display:block}
-    .setting-logo-preview img{width:120px;height:120px;border-radius:24px;border:1px solid var(--border);background:#fff;object-fit:contain;padding:12px}
+    .setting-logo-preview img{width:100%;height:110px;border-radius:24px;border:1px solid var(--border);background:#fff;object-fit:contain;padding:12px}
     .setting-logo-remove{position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;border-radius:999px;background:rgba(0,0,0,.68);color:#fff;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
     .setting-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
     .setting-help{font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px}
@@ -50,18 +54,19 @@
     .setting-modal-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-top:4px}
     .setting-crop-layout{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:18px}
     .setting-crop-stage{display:flex;align-items:center;justify-content:center;min-height:420px;background:var(--bg-soft);border:1px solid var(--border);border-radius:20px;padding:16px}
-    .setting-crop-frame{position:relative;width:320px;height:320px;border-radius:26px;overflow:hidden;background:#efe8de;box-shadow:0 0 0 1px rgba(0,0,0,.04);touch-action:none;cursor:grab}
+    .setting-crop-frame{position:relative;width:var(--setting-crop-frame-width,320px);height:var(--setting-crop-frame-height,180px);max-width:100%;border-radius:26px;overflow:hidden;background:#efe8de;box-shadow:0 0 0 1px rgba(0,0,0,.04);touch-action:none;cursor:grab}
     .setting-crop-frame.dragging{cursor:grabbing}
     .setting-crop-frame img{position:absolute;left:50%;top:50%;max-width:none;user-select:none;pointer-events:none}
     .setting-crop-side{display:flex;flex-direction:column;gap:14px}
     .setting-crop-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-    .setting-crop-preview{width:150px;height:150px;border-radius:20px;overflow:hidden;border:1px solid var(--border);background:#fff}
+    .setting-crop-preview{width:100%;max-width:180px;aspect-ratio:var(--setting-crop-preview-ratio,16 / 9);border-radius:20px;overflow:hidden;border:1px solid var(--border);background:#fff}
     .setting-crop-preview canvas{width:100%;height:100%;display:block}
     .setting-camera-preview{position:relative;overflow:hidden;border-radius:20px;background:#111;aspect-ratio:1/1;border:1px solid var(--border)}
     .setting-camera-preview video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
     .setting-modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
     @media (max-width:1040px){.setting-shell{grid-template-columns:1fr}}
     @media (max-width:820px){.setting-crop-layout{grid-template-columns:1fr}.setting-crop-side{order:-1}}
+    @media (max-width:640px){.setting-brand{align-items:flex-start}.setting-brand-logo.has-image{width:min(100%,170px);height:74px}.setting-current-logo.has-image,.setting-logo-preview{width:min(100%,210px)}}
 </style>
 
 <div class="setting-page">
@@ -74,7 +79,7 @@
     </div>
 
     <div class="setting-shell" style="--preview-color: {{ old('app_color', $appColor) }}">
-        <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data" class="setting-card setting-card-main" data-async="true">
+        <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data" class="setting-card setting-card-main" data-async="true" data-refresh-targets=".setting-card-main, .setting-preview, .topbar-brand-mark, .sidebar-brand-mark">
             @csrf
             @method('PUT')
 
@@ -93,6 +98,7 @@
                 <label class="setting-label">Logo Aplikasi</label>
                 <div class="setting-logo-input" id="settingLogoUploadRoot">
                     <input id="app_logo" type="file" name="app_logo" accept="image/*" class="js-setting-file-input">
+                    <input type="hidden" name="remove_logo" id="remove_logo" value="0">
                     <input type="file" accept="image/*" capture="environment" class="js-setting-camera-input">
                     <input type="file" accept="image/*" class="js-setting-gallery-input">
                     <button type="button" class="setting-logo-btn js-setting-open-camera"><i data-lucide="camera" class="w-4 h-4"></i> Foto Langsung</button>
@@ -106,7 +112,7 @@
                 </div>
 
                 @if ($appLogo)
-                    <div class="setting-current-logo">
+                    <div class="setting-current-logo has-image">
                         <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
                     </div>
                 @else
@@ -122,7 +128,7 @@
         <div class="setting-card setting-preview">
             <div class="setting-preview-shell">
                 <div class="setting-brand">
-                    <div class="setting-brand-logo">
+                    <div class="setting-brand-logo{{ $appLogo ? ' has-image' : '' }}" id="settingBrandLogo">
                         @if ($appLogo)
                             <img id="settingPreviewLogo" src="{{ asset($appLogo) }}" alt="{{ $appName }}">
                         @else
@@ -186,7 +192,7 @@
             <div>
                 <div class="setting-crop-label">Preview</div>
                 <div class="setting-crop-preview">
-                    <canvas id="settingCropCanvas" width="320" height="320"></canvas>
+                    <canvas id="settingCropCanvas" width="320" height="180"></canvas>
                 </div>
             </div>
         </div>
@@ -222,6 +228,7 @@
     const settingCropCanvas = document.getElementById('settingCropCanvas');
     const settingCropZoom = document.getElementById('settingCropZoom');
     const settingCropZoomValue = document.getElementById('settingCropZoomValue');
+    const settingBrandLogo = document.getElementById('settingBrandLogo');
     let settingCropSourceUrl = '';
     let settingCropSourceImage = null;
     let settingCropScale = 1;
@@ -234,6 +241,8 @@
     let settingDragOriginY = 0;
     let settingActiveSourceInput = null;
     let settingCameraStream = null;
+    let settingCropFrameWidth = 320;
+    let settingCropFrameHeight = 180;
 
     appNameInput.addEventListener('input', function () {
         settingPreviewName.textContent = appNameInput.value.trim() || 'LibraVault';
@@ -245,11 +254,13 @@
     });
 
     function syncSettingPreview(previewUrl, fileName) {
+        document.getElementById('remove_logo').value = '0';
         settingLogoName.textContent = fileName;
         settingLogoPreviewImage.src = previewUrl;
         settingLogoPreviewWrap.classList.add('show');
         settingPreviewLogo.src = previewUrl;
         settingPreviewLogo.style.display = 'block';
+        settingBrandLogo.classList.add('has-image');
         if (settingPreviewIcon) {
             settingPreviewIcon.style.display = 'none';
         }
@@ -259,9 +270,16 @@
         appLogoInput.value = '';
         settingCameraInput.value = '';
         settingGalleryInput.value = '';
+        document.getElementById('remove_logo').value = '1';
         settingLogoName.textContent = 'Tidak ada file baru dipilih';
         settingLogoPreviewWrap.classList.remove('show');
         settingLogoPreviewImage.removeAttribute('src');
+        settingPreviewLogo.style.display = 'none';
+        settingPreviewLogo.removeAttribute('src');
+        settingBrandLogo.classList.remove('has-image');
+        if (settingPreviewIcon) {
+            settingPreviewIcon.style.display = 'block';
+        }
     }
 
     function openSettingCropModal(sourceInput, file) {
@@ -274,6 +292,7 @@
         settingCropSourceUrl = URL.createObjectURL(file);
         settingCropSourceImage = new Image();
         settingCropSourceImage.onload = function () {
+            updateSettingCropFrameSize(settingCropSourceImage.width, settingCropSourceImage.height);
             settingCropScale = 1;
             settingCropOffsetX = 0;
             settingCropOffsetY = 0;
@@ -286,6 +305,28 @@
             settingCropModal.setAttribute('aria-hidden', 'false');
         };
         settingCropSourceImage.src = settingCropSourceUrl;
+    }
+
+    function updateSettingCropFrameSize(imageWidth, imageHeight) {
+        const maxWidth = window.innerWidth < 640 ? 260 : 420;
+        const minWidth = window.innerWidth < 640 ? 180 : 220;
+        const maxHeight = window.innerWidth < 640 ? 180 : 240;
+        const minHeight = 120;
+        const safeRatio = imageWidth > 0 && imageHeight > 0 ? (imageWidth / imageHeight) : (16 / 9);
+
+        settingCropFrameWidth = Math.max(minWidth, Math.min(maxWidth, Math.round(maxHeight * safeRatio)));
+        settingCropFrameHeight = Math.max(minHeight, Math.min(maxHeight, Math.round(settingCropFrameWidth / safeRatio)));
+
+        if (settingCropFrameHeight > maxHeight) {
+            settingCropFrameHeight = maxHeight;
+            settingCropFrameWidth = Math.max(minWidth, Math.min(maxWidth, Math.round(settingCropFrameHeight * safeRatio)));
+        }
+
+        settingCropFrame.style.setProperty('--setting-crop-frame-width', settingCropFrameWidth + 'px');
+        settingCropFrame.style.setProperty('--setting-crop-frame-height', settingCropFrameHeight + 'px');
+        document.documentElement.style.setProperty('--setting-crop-preview-ratio', settingCropFrameWidth + ' / ' + settingCropFrameHeight);
+        settingCropCanvas.width = settingCropFrameWidth;
+        settingCropCanvas.height = settingCropFrameHeight;
     }
 
     function closeSettingCropModal(resetInput = true) {
@@ -343,8 +384,8 @@
             return;
         }
 
-        const frameWidth = 320;
-        const frameHeight = 320;
+        const frameWidth = settingCropFrame.clientWidth || settingCropFrameWidth;
+        const frameHeight = settingCropFrame.clientHeight || settingCropFrameHeight;
         const baseScale = Math.max(frameWidth / settingCropSourceImage.width, frameHeight / settingCropSourceImage.height);
         const scale = baseScale * settingCropScale;
         const drawWidth = settingCropSourceImage.width * scale;
@@ -486,6 +527,14 @@
 
     settingCropFrame.addEventListener('pointerup', stopSettingDrag);
     settingCropFrame.addEventListener('pointercancel', stopSettingDrag);
+    window.addEventListener('resize', function () {
+        if (!settingCropSourceImage) {
+            return;
+        }
+
+        updateSettingCropFrameSize(settingCropSourceImage.width, settingCropSourceImage.height);
+        renderSettingCrop();
+    });
     document.getElementById('settingCameraClose').addEventListener('click', closeSettingCameraModal);
     document.getElementById('settingCameraCancel').addEventListener('click', closeSettingCameraModal);
     document.getElementById('settingCameraCapture').addEventListener('click', captureSettingCameraPhoto);

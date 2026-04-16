@@ -13,6 +13,17 @@ class Setting extends Model
 
     protected static array $resolvedValues = [];
 
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            static::$resolvedValues = [];
+        });
+
+        static::deleted(function () {
+            static::$resolvedValues = [];
+        });
+    }
+
     public static function valueOr(string $key, mixed $default = null): mixed
     {
         if (array_key_exists($key, static::$resolvedValues)) {

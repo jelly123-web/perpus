@@ -140,9 +140,12 @@
         .hamburger:hover{color:var(--accent);border-color:var(--accent);background:var(--bg-soft)}
         .topbar-brand{display:flex;align-items:center;gap:12px}
         .topbar-brand-mark,.sidebar-brand-mark{display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--brand-logo-bg, linear-gradient(135deg, var(--accent), var(--accent-light)));border:1px solid rgba(255,255,255,.92);box-shadow:0 14px 30px rgba(196,149,106,.2)}
-        .topbar-brand-mark{width:44px;height:44px;border-radius:14px}
-        .sidebar-brand-mark{width:44px;height:44px;border-radius:12px}
-        .topbar-brand-mark img,.sidebar-brand-mark img{width:100%;height:100%;object-fit:contain;padding:8px}
+        .topbar-brand-mark{height:44px;min-width:44px;border-radius:14px}
+        .sidebar-brand-mark{height:44px;min-width:44px;border-radius:12px}
+        .topbar-brand-mark.has-image{width:auto;max-width:180px;padding:4px 8px;background:transparent;border:none;box-shadow:none}
+        .sidebar-brand-mark.has-image{width:auto;max-width:180px;padding:4px 8px;background:transparent;border:none;box-shadow:none}
+        .topbar-brand-mark img,.sidebar-brand-mark img{height:100%;width:auto;object-fit:contain;padding:8px}
+        .topbar-brand-mark.has-image img,.sidebar-brand-mark.has-image img{padding:0}
         .topbar-brand-text{display:flex;flex-direction:column;justify-content:center}
         .topbar-brand-title{font-size:18px;font-weight:700;letter-spacing:-.03em;color:var(--fg);line-height:1.1}
         .topbar-brand-sub{font-size:11px;color:var(--muted);line-height:1.1;margin-top:3px}
@@ -438,10 +441,10 @@
     <div class="admin-shell">
         <div id="sideMask" class="side-mask" onclick="closeSide()"></div>
 
-        <aside id="lightSide" class="sidebar open" aria-hidden="false">
+        <aside id="lightSide" class="sidebar" aria-hidden="true">
             <div class="sidebar-logo">
                 <div class="flex items-center gap-3">
-                    <div class="sidebar-brand-mark">
+                    <div class="sidebar-brand-mark{{ $appLogo ? ' has-image' : '' }}">
                         @if ($appLogo)
                             <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
                         @else
@@ -495,7 +498,7 @@
                             onclick="toggleSide()"
                         >=</button>
                         <div class="topbar-brand">
-                            <div class="topbar-brand-mark">
+                            <div class="topbar-brand-mark{{ $appLogo ? ' has-image' : '' }}">
                                 @if ($appLogo)
                                     <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
                                 @else

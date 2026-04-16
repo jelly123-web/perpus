@@ -69,27 +69,37 @@ class SettingController extends Controller
             ['label' => 'Warna Utama', 'type' => 'color', 'value' => strtoupper($data['app_color'])]
         );
 
-        $logoSetting = Setting::query()->updateOrCreate(
-            ['key' => 'app_logo'],
-            ['label' => 'Logo Aplikasi', 'type' => 'file', 'value' => Setting::query()->where('key', 'app_logo')->value('value')]
-        );
-
         if ($request->hasFile('app_logo')) {
+            $logoSetting = Setting::query()->where('key', 'app_logo')->first();
+            $oldLogoPath = $logoSetting?->value ? public_path($logoSetting->value) : null;
+
             $file = $request->file('app_logo');
             $fileName = 'app-logo-'.Str::random(8).'.'.$file->getClientOriginalExtension();
             $targetDirectory = public_path('branding');
-            $oldLogoPath = $logoSetting->value ? public_path($logoSetting->value) : null;
 
             if (! is_dir($targetDirectory)) {
                 mkdir($targetDirectory, 0755, true);
             }
 
             $file->move($targetDirectory, $fileName);
-            $logoSetting->update(['value' => 'branding/'.$fileName]);
+            
+            Setting::query()->updateOrCreate(
+                ['key' => 'app_logo'],
+                ['label' => 'Logo Aplikasi', 'type' => 'file', 'value' => 'branding/'.$fileName]
+            );
 
-            if ($oldLogoPath && $oldLogoPath !== public_path('branding/'.$fileName) && is_file($oldLogoPath)) {
+            if ($oldLogoPath && is_file($oldLogoPath)) {
                 @unlink($oldLogoPath);
             }
+        } elseif ($request->input('remove_logo') === '1') {
+            $logoSetting = Setting::query()->where('key', 'app_logo')->first();
+            $oldLogoPath = $logoSetting?->value ? public_path($logoSetting->value) : null;
+
+            if ($oldLogoPath && is_file($oldLogoPath)) {
+                @unlink($oldLogoPath);
+            }
+
+            $logoSetting?->update(['value' => null]);
         }
 
         ActivityLogger::log('settings', 'update', 'Memperbarui konfigurasi aplikasi');
