@@ -218,6 +218,52 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Section: Kunci Akun Peminjam -->
+            <div class="loan-card">
+                <div class="loan-card-header">
+                    <div>
+                        <h2 class="loan-card-title">Status Akun Peminjam</h2>
+                        <p class="loan-card-subtitle">Kunci akun peminjam secara manual sebagai sanksi.</p>
+                    </div>
+                </div>
+                <div class="loan-card-body">
+                    <form method="POST" action="{{ route('admin.loans.borrower-status.update') }}" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                        @csrf
+                        <div class="loan-field">
+                            <label class="loan-label">Pilih Peminjam</label>
+                            <select name="member_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
+                                <option value="">Pilih peminjam</option>
+                                @foreach ($memberStatuses as $member)
+                                    <option value="{{ $member->id }}">
+                                        {{ $member->name }} - {{ $member->borrower_status === 'sanctioned' ? '(Terkunci)' : 'Aktif' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="loan-input-group">
+                            <div class="loan-field">
+                                <label class="loan-label">Tindakan</label>
+                                <select name="status" class="form-select px-4 py-3 text-sm rounded-xl" required>
+                                    <option value="sanctioned">Kunci Akun (Beri Sanksi)</option>
+                                    <option value="active">Buka Kunci (Aktifkan)</option>
+                                </select>
+                            </div>
+                            <div class="loan-field">
+                                <label class="loan-label">Durasi (Hari)</label>
+                                <input type="number" name="duration_days" class="form-input px-4 py-3 text-sm rounded-xl" placeholder="Kosongkan jika permanen" min="1" max="365">
+                            </div>
+                        </div>
+                        <div class="loan-field">
+                            <label class="loan-label">Alasan Sanksi</label>
+                            <input type="text" name="reason" class="form-input px-4 py-3 text-sm rounded-xl" placeholder="Contoh: Terlambat mengembalikan buku lebih dari 1 bulan">
+                        </div>
+                        <button type="submit" class="btn-loan-submit">
+                            <i data-lucide="shield-alert" class="w-4 h-4"></i> Terapkan Status
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <div class="loan-stack">
