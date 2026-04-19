@@ -24,7 +24,6 @@ class LoginController extends Controller
             'admin.roles.index' => 'manage_roles',
             'admin.categories.index' => 'manage_categories',
             'admin.books.index' => 'manage_books',
-            'admin.books.scan' => 'scan_books',
             'admin.backups.index' => 'manage_backups',
             'admin.settings.index' => 'manage_settings',
         ];
@@ -103,6 +102,11 @@ class LoginController extends Controller
 
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
+
+        if (! $user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice')
+                ->with('status', 'Email Anda belum diverifikasi. Cek inbox lalu klik link verifikasi.');
+        }
 
         return redirect()->intended($this->resolveHomeRouteFor($user))
             ->with('status', 'Selamat datang, '.$user->name.'!');

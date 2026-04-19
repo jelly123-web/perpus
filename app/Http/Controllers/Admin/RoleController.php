@@ -41,10 +41,9 @@ class RoleController extends Controller
                 WHEN 'manage_roles' THEN 6
                 WHEN 'manage_categories' THEN 7
                 WHEN 'manage_books' THEN 8
-                WHEN 'scan_books' THEN 9
-                WHEN 'manage_backups' THEN 10
-                WHEN 'manage_settings' THEN 11
-                ELSE 12
+                WHEN 'manage_backups' THEN 9
+                WHEN 'manage_settings' THEN 10
+                ELSE 11
             END")
             ->orderBy('label')
             ->get();

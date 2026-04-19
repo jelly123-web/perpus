@@ -25,7 +25,6 @@
                     ['label' => 'Table Access', 'icon' => 'shield-check', 'route' => 'admin.roles.index', 'match' => 'admin.roles.*', 'permission' => 'manage_roles'],
                     ['label' => 'Kategori Buku', 'icon' => 'tags', 'route' => 'admin.categories.index', 'match' => 'admin.categories.*', 'permission' => 'manage_categories'],
                     ['label' => 'Kelola Data Buku', 'icon' => 'book-copy', 'route' => 'admin.books.index', 'match' => 'admin.books.index', 'permission' => 'manage_books'],
-                    ['label' => 'Scan Barcode', 'icon' => 'scan-line', 'route' => 'admin.books.scan', 'match' => 'admin.books.scan', 'permission' => 'scan_books'],
                     ['label' => 'Backup Data', 'icon' => 'database-backup', 'route' => 'admin.backups.index', 'match' => 'admin.backups.*', 'permission' => 'manage_backups'],
                     ['label' => 'Setting', 'icon' => 'settings-2', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'permission' => 'manage_settings'],
                 ],
@@ -435,6 +434,9 @@
         @media (max-width:1200px){.dbx-stats{grid-template-columns:repeat(2,1fr)}.dbx-content{grid-template-columns:1fr}.dbx-book-filters{grid-template-columns:1fr 1fr}}
         @media (max-width:900px){.dbx-book-filters,.dbx-book-form-grid,.dbx-borrower-stats,.dbx-drawer-book-meta,.dbx-borrower-profile{grid-template-columns:1fr}.dbx-book-section-head{display:flex;flex-direction:column;align-items:flex-start}}
         @media (max-width:640px){.dbx-stats,.dbx-quick,.dbx-book-grid{grid-template-columns:1fr}.dbx-welcome-title{font-size:24px}.dbx-card-body{padding:16px}.dbx-table td{padding:12px 8px}.dbx-drawer{width:100vw}}
+        @media print {
+            #chatbotRoot, .chatbot-fab, .chatbot-panel, .async-toast, .notif-panel { display: none !important; }
+        }
     </style>
 </head>
 <body style="--brand-logo-bg: {{ $appColor }};">

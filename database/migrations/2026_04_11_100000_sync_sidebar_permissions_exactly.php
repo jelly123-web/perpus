@@ -18,7 +18,6 @@ return new class extends Migration
             'manage_roles' => 'Table Access',
             'manage_categories' => 'Kategori Buku',
             'manage_books' => 'Kelola Data Buku',
-            'scan_books' => 'Scan Barcode',
             'manage_backups' => 'Backup Data',
             'manage_settings' => 'Setting',
         ];
@@ -33,7 +32,7 @@ return new class extends Migration
         $rolePermissionMap = [
             'super_admin' => array_keys($permissions),
             'admin' => ['access_dashboard', 'view_reports', 'manage_loans', 'manage_users', 'manage_roles', 'manage_categories', 'manage_books'],
-            'petugas' => ['access_dashboard', 'view_reports', 'manage_loans', 'manage_categories', 'manage_books', 'scan_books'],
+            'petugas' => ['access_dashboard', 'view_reports', 'manage_loans', 'manage_categories', 'manage_books'],
             'kepsek' => ['access_dashboard', 'view_reports'],
             'guru' => ['access_dashboard', 'view_borrower_history'],
             'siswa' => ['access_dashboard', 'view_borrower_history'],
@@ -68,7 +67,7 @@ return new class extends Migration
     public function down(): void
     {
         $permissionIds = DB::table('permissions')
-            ->whereIn('name', ['manage_categories', 'scan_books'])
+            ->whereIn('name', ['manage_categories'])
             ->pluck('id');
 
         if ($permissionIds->isNotEmpty()) {

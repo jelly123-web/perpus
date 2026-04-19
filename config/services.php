@@ -40,4 +40,9 @@ return [
         'model' => env('GEMINI_MODEL', 'gemma-3-1b-it'),
     ],
 
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+    ],
+
 ];

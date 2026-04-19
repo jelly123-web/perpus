@@ -8,10 +8,8 @@ use App\Models\Book;
 use App\Models\BookProcurement;
 use App\Models\Category;
 use App\Support\ActivityLogger;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -38,62 +36,6 @@ class BookController extends Controller
         ];
 
         return view('admin.books.index', compact('books', 'categories', 'bookStats', 'procurementSuggestions'));
-    }
-
-    public function scan(): View
-    {
-        return view('admin.books.scan');
-    }
-
-    public function lookup(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:255'],
-        ]);
-
-        $normalizedCode = preg_replace('/[^0-9Xx-]/', '', $validated['code']) ?: trim($validated['code']);
-
-        $book = Book::query()
-            ->with('category')
-            ->where(function ($query) use ($normalizedCode, $validated): void {
-                $query
-                    ->where('isbn', $normalizedCode)
-                    ->orWhere('isbn', trim($validated['code']));
-            })
-            ->first();
-
-        if (! $book) {
-            $googleBook = $this->lookupGoogleBook(trim($validated['code']));
-
-            if (! $googleBook) {
-                return response()->json([
-                    'found' => false,
-                    'message' => 'Buku dengan ISBN itu belum ada di data lokal dan tidak ditemukan di Google Books.',
-                ], 404);
-            }
-
-            return response()->json([
-                'found' => true,
-                'book' => $googleBook,
-            ]);
-        }
-
-        return response()->json([
-            'found' => true,
-            'book' => [
-                'source' => 'local',
-                'title' => $book->title,
-                'author' => $book->author,
-                'publisher' => $book->publisher,
-                'isbn' => $book->isbn,
-                'category' => $book->category?->name,
-                'published_year' => $book->published_year,
-                'stock_total' => $book->stock_total,
-                'stock_available' => $book->stock_available,
-                'description' => $book->description,
-                'cover_url' => $book->cover_image ? asset('storage/'.$book->cover_image) : null,
-            ],
-        ]);
     }
 
     public function store(Request $request): JsonResponse|RedirectResponse
@@ -281,58 +223,5 @@ class BookController extends Controller
         $trimmed = trim((string) $value);
 
         return $trimmed === '' ? null : $trimmed;
-    }
-
-    private function lookupGoogleBook(string $code): ?array
-    {
-        try {
-            $response = Http::timeout(10)
-                ->acceptJson()
-                ->get('https://www.googleapis.com/books/v1/volumes', [
-                    'q' => 'isbn:'.$code,
-                    'maxResults' => 1,
-                ]);
-
-            if (! $response->successful()) {
-                return null;
-            }
-
-            $items = $response->json('items');
-
-            if (! is_array($items) || count($items) === 0) {
-                return null;
-            }
-
-            $volumeInfo = $items[0]['volumeInfo'] ?? [];
-            $identifiers = collect($volumeInfo['industryIdentifiers'] ?? []);
-            $isbn = $identifiers->firstWhere('type', 'ISBN_13')['identifier']
-                ?? $identifiers->firstWhere('type', 'ISBN_10')['identifier']
-                ?? $code;
-
-            return [
-                'source' => 'google',
-                'title' => $volumeInfo['title'] ?? 'Judul tidak tersedia',
-                'author' => isset($volumeInfo['authors']) && is_array($volumeInfo['authors'])
-                    ? implode(', ', $volumeInfo['authors'])
-                    : '-',
-                'publisher' => $volumeInfo['publisher'] ?? '-',
-                'isbn' => $isbn,
-                'barcode' => $code,
-                'category' => isset($volumeInfo['categories']) && is_array($volumeInfo['categories'])
-                    ? implode(', ', $volumeInfo['categories'])
-                    : '-',
-                'published_year' => isset($volumeInfo['publishedDate'])
-                    ? substr((string) $volumeInfo['publishedDate'], 0, 4)
-                    : '-',
-                'stock_total' => 0,
-                'stock_available' => 0,
-                'description' => $volumeInfo['description'] ?? null,
-                'cover_url' => $volumeInfo['imageLinks']['thumbnail']
-                    ?? $volumeInfo['imageLinks']['smallThumbnail']
-                    ?? null,
-            ];
-        } catch (\Throwable) {
-            return null;
-        }
     }
 }

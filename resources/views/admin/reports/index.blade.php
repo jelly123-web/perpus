@@ -69,34 +69,89 @@
     
     .report-print-head{display:none;padding:30px 0;border-bottom:3px double #333;margin-bottom:20px;text-align:center}
     .report-print-header-content{display:flex;align-items:center;justify-content:center;gap:20px}
-    .report-print-logo{width:60px;height:60px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800}
-    .report-print-info h1{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#000;margin:0}
-    .report-print-info p{font-size:12px;color:#666;margin:4px 0 0 0}
+    .report-print-logo{width:80px;height:80px;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .report-print-logo img{width:100%;height:100%;object-fit:contain}
+    .report-print-logo-fallback{width:100%;height:100%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800}
+    .report-print-info{text-align:left}
+    .report-print-info h1{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#000;margin:0}
+    .report-print-info p{font-size:14px;color:#444;margin:4px 0 0 0}
+    .report-print-stats-table{display:none;width:100%;border-collapse:collapse;margin:20px 0;border:1px solid #000}
+    .report-print-stats-table th{background:#f0f0f0;padding:12px;border:1px solid #000;text-align:left;font-weight:800;font-size:14px}
+    .report-print-stats-table td{padding:10px 12px;border:1px solid #000;font-size:13px}
 
     @media print {
         body{background:#fff!important;color:#000!important}
-        .topbar,.sidebar,.report-actions,.report-filter-card,.report-tabs{display:none!important}
+        .topbar,.sidebar,.report-actions,.report-filter-card,.report-tabs,.report-toolbar,#chatbotRoot{display:none!important}
         .main-content{padding:0!important;margin:0!important}
-        .report-page{gap:20px}
+        .report-page{gap:20px;padding:0!important}
         .report-print-head{display:block}
-        .report-section-card{border:1px solid #eee;box-shadow:none;break-inside:avoid}
-        .report-table th{background:#f9f9f9!important;color:#333!important;border-bottom:1px solid #000!important}
-        .report-stat-card, .report-usage-widget{border:1px solid #eee;box-shadow:none}
-        .report-pill-badge{border:1px solid #eee;background:transparent!important}
+        .report-print-stats-table{display:table}
+        .report-stats-container, .report-usage-row{display:none!important}
+        .report-section-card{border:1px solid #000;box-shadow:none;break-inside:avoid;border-radius:0;margin-top:20px}
+        .report-section-header{background:#f9f9f9;border-bottom:1px solid #000;padding:15px 20px}
+        .report-section-title-text{font-size:20px}
+        .report-section-count{border:1px solid #000;color:#000}
+        .report-table{border:1px solid #000}
+        .report-table th{background:#f0f0f0!important;color:#000!important;border:1px solid #000!important;padding:10px}
+        .report-table td{border:1px solid #000!important;padding:10px;color:#000!important}
+        .report-stat-card, .report-usage-widget{display:none!important}
+        .report-pill-badge{border:1px solid #000;background:transparent!important;color:#000!important}
+        .report-pill-badge i{display:none}
     }
 </style>
 
 <div class="report-page">
     <div class="report-print-head">
         <div class="report-print-header-content">
-            <div class="report-print-logo">{{ substr($appName, 0, 1) }}</div>
+            <div class="report-print-logo">
+                @php($appLogo = \App\Models\Setting::appLogoPath())
+                @if ($appLogo)
+                    <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
+                @else
+                    <div class="report-print-logo-fallback">{{ substr($appName, 0, 1) }}</div>
+                @endif
+            </div>
             <div class="report-print-info">
                 <h1>{{ $appName }}</h1>
                 <p>Laporan Operasional Perpustakaan</p>
-                <p class="text-[10px]">{{ $reportMeta['range_label'] }}</p>
+                <p style="font-weight: bold; margin-top: 8px;">Periode: {{ $reportMeta['range_label'] }}</p>
             </div>
         </div>
     </div>
+
+    <table class="report-print-stats-table">
+        <thead>
+            <tr>
+                <th colspan="4">Ringkasan Statistik Perpustakaan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="font-weight: bold; background: #f9f9f9; width: 25%;">Total Data Buku</td>
+                <td style="width: 25%;">{{ number_format($reportStats['books']) }} Judul</td>
+                <td style="font-weight: bold; background: #f9f9f9; width: 25%;">Peminjam Aktif</td>
+                <td style="width: 25%;">{{ number_format($usageStats['unique_borrowers']) }} Anggota</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; background: #f9f9f9;">Total Peminjaman</td>
+                <td>{{ number_format($reportStats['loans']) }} Transaksi</td>
+                <td style="font-weight: bold; background: #f9f9f9;">Buku Sedang Beredar</td>
+                <td>{{ number_format($usageStats['books_in_circulation']) }} Buku</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; background: #f9f9f9;">Total Pengembalian</td>
+                <td>{{ number_format($reportStats['returns']) }} Transaksi</td>
+                <td style="font-weight: bold; background: #f9f9f9;">Favorit (Kategori)</td>
+                <td>{{ $usageStats['top_category'] }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; background: #f9f9f9;">Peminjaman Aktif</td>
+                <td>{{ $reportStats['active_loans'] }} Masih dipinjam</td>
+                <td style="font-weight: bold; background: #f9f9f9;">Buku Terpopuler</td>
+                <td>{{ $usageStats['top_book'] }}</td>
+            </tr>
+        </tbody>
+    </table>
 
     <div class="report-toolbar">
         <div>

@@ -12,7 +12,6 @@ class Book extends Model
         'title',
         'author',
         'isbn',
-        'barcode',
         'cover_image',
         'category_id',
         'publisher',

@@ -120,6 +120,22 @@
             >
         </div>
 
+        <div class="space-y-2">
+            @if ($googleRecaptchaEnabled)
+                <div class="overflow-x-auto">
+                    <div class="g-recaptcha" data-sitekey="{{ $googleRecaptchaSiteKey }}"></div>
+                </div>
+            @else
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+                    Google reCAPTCHA belum aktif karena key belum diisi di file environment.
+                </div>
+            @endif
+
+            @error('g-recaptcha-response')
+                <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
+            @enderror
+        </div>
+
         <button type="submit" class="auth-button w-full py-3.5 rounded-xl font-semibold text-sm tracking-wide">
             Daftar
         </button>
@@ -129,4 +145,8 @@
         Sudah punya akun?
         <a href="{{ route('login') }}" class="auth-link">Masuk sekarang</a>
     </p>
+
+    @if ($googleRecaptchaEnabled)
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    @endif
 @endsection
