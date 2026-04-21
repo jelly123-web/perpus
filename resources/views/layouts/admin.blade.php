@@ -554,7 +554,7 @@
                                 </div>
                             </div>
                         </div>
-                        <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
+                        <form method="POST" action="{{ route('logout') }}" data-async="true">@csrf<button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
                         <a href="{{ route('profile.show') }}" class="user-chip" style="text-decoration:none;">
                             <div class="avatar" style="overflow:hidden;">
                                 @if (auth()->user()?->profile_photo_url)
@@ -972,6 +972,11 @@
 
                 if (form.dataset.successCall && typeof window[form.dataset.successCall] === 'function') {
                     window[form.dataset.successCall](data, form);
+                }
+
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
                 }
 
                 const refreshTargets = (form.dataset.refreshTargets || '')

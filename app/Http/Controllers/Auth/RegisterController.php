@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,11 +23,11 @@ class RegisterController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:3', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
             'jurusan' => ['nullable', 'string', 'max:100'],
@@ -39,6 +40,7 @@ class RegisterController extends Controller
             'name.min' => 'Nama minimal 3 karakter.',
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah dipakai akun lain.',
             'kelas.max' => 'Kelas maksimal 100 karakter.',
             'jurusan.max' => 'Jurusan maksimal 100 karakter.',
             'password.required' => 'Kata sandi wajib diisi.',
@@ -50,6 +52,13 @@ class RegisterController extends Controller
         $recaptchaError = $this->verifyGoogleRecaptcha($request, $validated['g-recaptcha-response'] ?? null);
 
         if ($recaptchaError !== null) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'message' => $recaptchaError,
+                    'errors' => ['g-recaptcha-response' => [$recaptchaError]],
+                ], 422);
+            }
+
             return back()
                 ->withInput($request->except(['password', 'password_confirmation']))
                 ->withErrors([
@@ -73,6 +82,14 @@ class RegisterController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
         $user->sendEmailVerificationNotification();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Akun berhasil dibuat. Kami sudah mengirim link verifikasi ke email Anda.',
+                'redirect' => route('verification.notice'),
+            ]);
+        }
 
         return redirect()->route('verification.notice')
             ->with('status', 'Akun berhasil dibuat. Kami sudah mengirim link verifikasi ke email Anda.');

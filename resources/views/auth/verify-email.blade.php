@@ -16,14 +16,14 @@
             </p>
         </div>
 
-        <form method="POST" action="{{ route('verification.send') }}">
+        <form method="POST" action="{{ route('verification.send') }}" data-async-auth="true" data-loading-label="Mengirim ulang...">
             @csrf
             <button type="submit" class="auth-button w-full py-3.5 rounded-xl font-semibold text-sm tracking-wide">
                 Kirim Ulang Link Verifikasi
             </button>
         </form>
 
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('logout') }}" data-async-auth="true" data-loading-label="Logout...">
             @csrf
             <button type="submit" class="w-full rounded-xl border border-lib-200 bg-white px-4 py-3 text-sm font-semibold text-lib-900 transition hover:border-lib-300 hover:bg-lib-50">
                 Logout

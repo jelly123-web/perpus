@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,19 +17,20 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request): RedirectResponse|JsonResponse
     {
         $user = $request->user();
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
             'jurusan' => ['nullable', 'string', 'max:100'],
             'profile_photo' => ['nullable', 'image', 'max:2048'],
-            'password' => ['nullable', 'string', 'min:5', 'confirmed'],
+        ], [
+            'email.unique' => 'Email sudah dipakai akun lain.',
         ]);
 
         if ($request->hasFile('profile_photo')) {
@@ -39,11 +41,14 @@ class ProfileController extends Controller
             $data['profile_photo'] = $request->file('profile_photo')->store('profile-photos', 'public');
         }
 
-        if (! filled($data['password'] ?? null)) {
-            unset($data['password']);
-        }
-
         $user->update($data);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Profil berhasil diperbarui.',
+            ]);
+        }
 
         return back()->with('status', 'Profil berhasil diperbarui.');
     }

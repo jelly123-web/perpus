@@ -103,9 +103,9 @@
 
         <section class="profile-form">
             <div class="profile-title">Edit Profil</div>
-            <div class="profile-sub">Ubah data yang ingin diperbarui. Password boleh dikosongkan kalau tidak ingin diganti.</div>
+            <div class="profile-sub">Ubah nama, email, foto, dan data akun lain. Password tidak ikut berubah dari form ini.</div>
 
-            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-3 mt-6">
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-3 mt-6" data-async="true">
                 @csrf
                 @method('PUT')
 
@@ -147,11 +147,6 @@
                         <button type="button" class="profile-upload-remove" id="profilePhotoRemove">X</button>
                     </div>
                     <div class="profile-hint">Tips: pakai foto wajah atau logo pribadi agar mudah dikenali di semua halaman akun.</div>
-                </div>
-
-                <div class="profile-form-grid">
-                    <input type="password" name="password" class="form-input px-3 py-3 text-sm" placeholder="Password baru">
-                    <input type="password" name="password_confirmation" class="form-input px-3 py-3 text-sm" placeholder="Konfirmasi password baru">
                 </div>
 
                 <button type="submit" class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold">Simpan Perubahan</button>

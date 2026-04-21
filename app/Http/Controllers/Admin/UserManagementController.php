@@ -50,13 +50,15 @@ class UserManagementController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
             'jurusan' => ['nullable', 'string', 'max:100'],
             'role_id' => ['required', 'exists:roles,id'],
             'password' => ['required', 'string', 'min:5'],
             'is_active' => ['nullable', 'boolean'],
+        ], [
+            'email.unique' => 'Email sudah dipakai akun lain.',
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
@@ -74,13 +76,15 @@ class UserManagementController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
             'jurusan' => ['nullable', 'string', 'max:100'],
             'role_id' => ['required', 'exists:roles,id'],
             'password' => ['nullable', 'string', 'min:5'],
             'is_active' => ['nullable', 'boolean'],
+        ], [
+            'email.unique' => 'Email sudah dipakai akun lain.',
         ]);
 
         $data['is_active'] = $request->boolean('is_active');

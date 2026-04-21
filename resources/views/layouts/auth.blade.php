@@ -8,6 +8,7 @@
     @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Auth' }} - {{ $appName }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -236,10 +237,125 @@
                     <p class="text-sm text-lib-700/60 font-light">@yield('subheading')</p>
                 </div>
 
+                <div id="authAsyncMessage" class="hidden rounded-2xl px-4 py-3 text-sm mb-5"></div>
+
                 @yield('content')
             </div>
         </div>
     </main>
 
+    <script>
+        (function () {
+            const asyncMessage = document.getElementById('authAsyncMessage');
+
+            function showAsyncMessage(message, tone = 'success') {
+                if (!asyncMessage || !message) {
+                    return;
+                }
+
+                asyncMessage.textContent = message;
+                asyncMessage.className = tone === 'error'
+                    ? 'rounded-2xl px-4 py-3 text-sm mb-5 error-box'
+                    : 'rounded-2xl px-4 py-3 text-sm mb-5 status-box';
+            }
+
+            function clearAsyncMessage() {
+                if (!asyncMessage) {
+                    return;
+                }
+
+                asyncMessage.textContent = '';
+                asyncMessage.className = 'hidden rounded-2xl px-4 py-3 text-sm mb-5';
+            }
+
+            function clearFormErrors(form) {
+                form.querySelectorAll('[data-error-for]').forEach((node) => {
+                    node.textContent = '';
+                    node.classList.add('hidden');
+                });
+            }
+
+            function applyFormErrors(form, errors = {}) {
+                Object.entries(errors).forEach(([field, messages]) => {
+                    const target = form.querySelector(`[data-error-for="${field}"]`);
+                    if (!target || !messages?.length) {
+                        return;
+                    }
+
+                    target.textContent = messages[0];
+                    target.classList.remove('hidden');
+                });
+            }
+
+            function setButtonLoading(button, loadingLabel) {
+                if (!button) {
+                    return;
+                }
+
+                button.disabled = true;
+                button.dataset.originalLabel = button.innerHTML;
+                button.innerHTML = loadingLabel || 'Memproses...';
+            }
+
+            function resetButtonLoading(button) {
+                if (!button) {
+                    return;
+                }
+
+                button.disabled = false;
+                if (button.dataset.originalLabel) {
+                    button.innerHTML = button.dataset.originalLabel;
+                }
+            }
+
+            document.addEventListener('submit', async function (event) {
+                const form = event.target.closest('form[data-async-auth="true"]');
+                if (!form) {
+                    return;
+                }
+
+                event.preventDefault();
+                clearAsyncMessage();
+                clearFormErrors(form);
+
+                const submitButton = form.querySelector('button[type="submit"]');
+                setButtonLoading(submitButton, form.dataset.loadingLabel);
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: form.method || 'POST',
+                        body: new FormData(form),
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        },
+                    });
+
+                    const result = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        applyFormErrors(form, result.errors || {});
+                        showAsyncMessage(result.message || Object.values(result.errors || {}).flat()[0] || 'Terjadi kesalahan.', 'error');
+                        return;
+                    }
+
+                    showAsyncMessage(result.message || 'Berhasil diproses.', 'success');
+
+                    if (form.dataset.resetOnSuccess === 'true') {
+                        form.reset();
+                    }
+
+                    if (result.redirect) {
+                        window.location.href = result.redirect;
+                    }
+                } catch (error) {
+                    showAsyncMessage('Gagal menghubungi server.', 'error');
+                } finally {
+                    resetButtonLoading(submitButton);
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

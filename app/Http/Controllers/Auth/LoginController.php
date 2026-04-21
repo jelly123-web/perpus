@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,7 +43,7 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function authenticate(Request $request): RedirectResponse
+    public function authenticate(Request $request): RedirectResponse|JsonResponse
     {
         $credentials = $request->validate([
             'username' => ['required', 'string', 'min:3'],
@@ -67,6 +68,13 @@ class LoginController extends Controller
                 $emailMatches = User::query()->where('email', $loginValue)->get();
 
                 if ($emailMatches->count() > 1) {
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'message' => 'Email ini dipakai beberapa akun. Silakan login memakai username/NIS.',
+                            'errors' => ['username' => ['Email ini dipakai beberapa akun. Silakan login memakai username/NIS.']],
+                        ], 422);
+                    }
+
                     return back()
                         ->withInput($request->only('username', 'remember'))
                         ->withErrors([
@@ -77,6 +85,13 @@ class LoginController extends Controller
                 $user = $emailMatches->first();
             }
         } catch (QueryException $exception) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'message' => 'Koneksi database belum tersedia. Nyalakan MySQL lalu coba lagi.',
+                    'errors' => ['username' => ['Koneksi database belum tersedia. Nyalakan MySQL lalu coba lagi.']],
+                ], 500);
+            }
+
             return back()
                 ->withInput($request->only('username', 'remember'))
                 ->withErrors([
@@ -85,6 +100,13 @@ class LoginController extends Controller
         }
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'message' => 'Username/NIS atau kata sandi tidak cocok.',
+                    'errors' => ['username' => ['Username/NIS atau kata sandi tidak cocok.']],
+                ], 422);
+            }
+
             return back()
                 ->withInput($request->only('username', 'remember'))
                 ->withErrors([
@@ -93,6 +115,13 @@ class LoginController extends Controller
         }
 
         if (! $user->is_active) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'message' => 'Akun ini sedang dinonaktifkan.',
+                    'errors' => ['username' => ['Akun ini sedang dinonaktifkan.']],
+                ], 422);
+            }
+
             return back()
                 ->withInput($request->only('username'))
                 ->withErrors([
@@ -103,20 +132,31 @@ class LoginController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        if (! $user->hasVerifiedEmail()) {
-            return redirect()->route('verification.notice')
-                ->with('status', 'Email Anda belum diverifikasi. Cek inbox lalu klik link verifikasi.');
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Selamat datang, '.$user->name.'!',
+                'redirect' => $this->resolveHomeRouteFor($user),
+            ]);
         }
 
         return redirect()->intended($this->resolveHomeRouteFor($user))
             ->with('status', 'Selamat datang, '.$user->name.'!');
     }
 
-    public function logout(Request $request): RedirectResponse
+    public function logout(Request $request): RedirectResponse|JsonResponse
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Anda berhasil logout.',
+                'redirect' => route('login'),
+            ]);
+        }
 
         return redirect()->route('login')->with('status', 'Anda berhasil logout.');
     }

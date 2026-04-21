@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Member\LoanRequestController;
 use App\Http\Controllers\Admin\BackupController;
@@ -23,6 +24,12 @@ Route::redirect('/', '/login');
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.authenticate');
+    Route::get('/forgot-password', [PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/verify-code', [PasswordResetController::class, 'showVerifyCodeForm'])->name('password.verify_code');
+    Route::post('/verify-code', [PasswordResetController::class, 'verifyCode'])->name('password.verify_code.post');
+    Route::get('/reset-password', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
 });
@@ -34,67 +41,80 @@ Route::middleware('auth')->group(function (): void {
 
         return redirect()->route('dashboard')->with('status', 'Email berhasil diverifikasi.');
     })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
-    Route::post('/email/verification-notification', function (Request $request): RedirectResponse {
+    Route::post('/email/verification-notification', function (Request $request): RedirectResponse|\Illuminate\Http\JsonResponse {
         if ($request->user()?->hasVerifiedEmail()) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Email sudah terverifikasi.',
+                    'redirect' => route('dashboard'),
+                ]);
+            }
+
             return redirect()->route('dashboard');
         }
 
         $request->user()?->sendEmailVerificationNotification();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Link verifikasi baru sudah dikirim ke email Anda.',
+            ]);
+        }
 
         return back()->with('status', 'Link verifikasi baru sudah dikirim ke email Anda.');
     })->middleware('throttle:6,1')->name('verification.send');
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-    Route::middleware('verified')->group(function (): void {
-        Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:access_dashboard')->name('dashboard');
-        Route::get('/riwayat-peminjaman', [DashboardController::class, 'history'])->middleware('permission:view_borrower_history')->name('borrower.history');
-        Route::get('/borrower/books', [DashboardController::class, 'borrowerBooks'])->middleware('permission:view_borrower_history')->name('borrower.books');
-        Route::get('/borrower/notifications', [DashboardController::class, 'notifications'])->middleware('permission:view_borrower_history,manage_loans')->name('borrower.notifications');
-        Route::post('/chatbot/respond', [DashboardController::class, 'chatbotRespond'])->name('chatbot.respond');
-        Route::get('/profil-saya', [ProfileController::class, 'show'])->name('profile.show');
-        Route::put('/profil-saya', [ProfileController::class, 'update'])->name('profile.update');
-        Route::post('/loan-requests', [LoanRequestController::class, 'store'])->name('loan-requests.store');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:access_dashboard')->name('dashboard');
+    Route::get('/riwayat-peminjaman', [DashboardController::class, 'history'])->middleware('permission:view_borrower_history')->name('borrower.history');
+    Route::get('/borrower/books', [DashboardController::class, 'borrowerBooks'])->middleware('permission:view_borrower_history')->name('borrower.books');
+    Route::get('/borrower/notifications', [DashboardController::class, 'notifications'])->middleware('permission:view_borrower_history,manage_loans')->name('borrower.notifications');
+    Route::post('/chatbot/respond', [DashboardController::class, 'chatbotRespond'])->name('chatbot.respond');
+    Route::get('/profil-saya', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profil-saya', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/loan-requests', [LoanRequestController::class, 'store'])->name('loan-requests.store');
 
-        Route::prefix('admin')->name('admin.')->group(function (): void {
-            Route::get('/users', [UserManagementController::class, 'index'])->middleware('permission:manage_users')->name('users.index');
-            Route::post('/users', [UserManagementController::class, 'store'])->middleware('permission:manage_users')->name('users.store');
-            Route::put('/users/{user}', [UserManagementController::class, 'update'])->middleware('permission:manage_users')->name('users.update');
-            Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->middleware('permission:manage_users')->name('users.destroy');
+    Route::prefix('admin')->name('admin.')->group(function (): void {
+        Route::get('/users', [UserManagementController::class, 'index'])->middleware('permission:manage_users')->name('users.index');
+        Route::post('/users', [UserManagementController::class, 'store'])->middleware('permission:manage_users')->name('users.store');
+        Route::put('/users/{user}', [UserManagementController::class, 'update'])->middleware('permission:manage_users')->name('users.update');
+        Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->middleware('permission:manage_users')->name('users.destroy');
 
-            Route::get('/roles', [RoleController::class, 'index'])->middleware('permission:manage_roles')->name('roles.index');
-            Route::put('/roles/matrix', [RoleController::class, 'updateMatrix'])->middleware('permission:manage_roles')->name('roles.matrix.update');
-            Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:manage_roles')->name('roles.store');
-            Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('permission:manage_roles')->name('roles.update');
+        Route::get('/roles', [RoleController::class, 'index'])->middleware('permission:manage_roles')->name('roles.index');
+        Route::put('/roles/matrix', [RoleController::class, 'updateMatrix'])->middleware('permission:manage_roles')->name('roles.matrix.update');
+        Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:manage_roles')->name('roles.store');
+        Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('permission:manage_roles')->name('roles.update');
 
-            Route::get('/categories', [CategoryController::class, 'index'])->middleware('permission:manage_categories')->name('categories.index');
-            Route::post('/categories', [CategoryController::class, 'store'])->middleware('permission:manage_categories')->name('categories.store');
-            Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware('permission:manage_categories')->name('categories.update');
-            Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('permission:manage_categories')->name('categories.destroy');
+        Route::get('/categories', [CategoryController::class, 'index'])->middleware('permission:manage_categories')->name('categories.index');
+        Route::post('/categories', [CategoryController::class, 'store'])->middleware('permission:manage_categories')->name('categories.store');
+        Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware('permission:manage_categories')->name('categories.update');
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('permission:manage_categories')->name('categories.destroy');
 
-            Route::get('/books', [BookController::class, 'index'])->middleware('permission:manage_books')->name('books.index');
-            Route::post('/books', [BookController::class, 'store'])->middleware('permission:manage_books')->name('books.store');
-            Route::post('/books/procurements', [BookController::class, 'storeProcurement'])->middleware('permission:manage_books')->name('books.procurements.store');
-            Route::put('/books/procurements/{procurement}/approve', [BookController::class, 'approveProcurement'])->middleware('permission:view_reports')->name('books.procurements.approve');
-            Route::put('/books/{book}', [BookController::class, 'update'])->middleware('permission:manage_books')->name('books.update');
-            Route::delete('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
+        Route::get('/books', [BookController::class, 'index'])->middleware('permission:manage_books')->name('books.index');
+        Route::post('/books', [BookController::class, 'store'])->middleware('permission:manage_books')->name('books.store');
+        Route::post('/books/procurements', [BookController::class, 'storeProcurement'])->middleware('permission:manage_books')->name('books.procurements.store');
+        Route::put('/books/procurements/{procurement}/approve', [BookController::class, 'approveProcurement'])->middleware('permission:view_reports')->name('books.procurements.approve');
+        Route::put('/books/{book}', [BookController::class, 'update'])->middleware('permission:manage_books')->name('books.update');
+        Route::delete('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
 
-            Route::get('/loans', [LoanController::class, 'index'])->middleware('permission:manage_loans')->name('loans.index');
-            Route::post('/loans', [LoanController::class, 'store'])->middleware('permission:manage_loans')->name('loans.store');
-            Route::post('/loans/return', [LoanController::class, 'returnBook'])->middleware('permission:manage_loans')->name('loans.return');
-            Route::post('/loans/sanctions', [LoanController::class, 'storeSanction'])->middleware('permission:manage_loans')->name('loans.sanctions.store');
-            Route::post('/loans/borrower-status', [LoanController::class, 'updateBorrowerStatus'])->middleware('permission:manage_loans')->name('loans.borrower-status.update');
-            Route::put('/loans/sanctions/{sanction}', [LoanController::class, 'updateSanctionStatus'])->middleware('permission:manage_loans')->name('loans.sanctions.update');
-            Route::put('/loans/{loan}', [LoanController::class, 'update'])->middleware('permission:manage_loans')->name('loans.update');
+        Route::get('/loans', [LoanController::class, 'index'])->middleware('permission:manage_loans')->name('loans.index');
+        Route::post('/loans', [LoanController::class, 'store'])->middleware('permission:manage_loans')->name('loans.store');
+        Route::post('/loans/return', [LoanController::class, 'returnBook'])->middleware('permission:manage_loans')->name('loans.return');
+        Route::post('/loans/sanctions', [LoanController::class, 'storeSanction'])->middleware('permission:manage_loans')->name('loans.sanctions.store');
+        Route::post('/loans/borrower-status', [LoanController::class, 'updateBorrowerStatus'])->middleware('permission:manage_loans')->name('loans.borrower-status.update');
+        Route::put('/loans/sanctions/{sanction}', [LoanController::class, 'updateSanctionStatus'])->middleware('permission:manage_loans')->name('loans.sanctions.update');
+        Route::put('/loans/{loan}', [LoanController::class, 'update'])->middleware('permission:manage_loans')->name('loans.update');
 
-            Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:manage_settings')->name('settings.index');
-            Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:manage_settings')->name('settings.update');
+        Route::get('/settings', [SettingController::class, 'index'])->middleware('permission:manage_settings')->name('settings.index');
+        Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:manage_settings')->name('settings.update');
 
-            Route::get('/backups', [BackupController::class, 'index'])->middleware('permission:manage_backups')->name('backups.index');
-            Route::post('/backups', [BackupController::class, 'store'])->middleware('permission:manage_backups')->name('backups.store');
+        Route::get('/backups', [BackupController::class, 'index'])->middleware('permission:manage_backups')->name('backups.index');
+        Route::post('/backups', [BackupController::class, 'store'])->middleware('permission:manage_backups')->name('backups.store');
 
-            Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:view_reports')->name('reports.index');
-            Route::get('/reports/export', [ReportController::class, 'export'])->middleware('permission:view_reports')->name('reports.export');
-        });
+        Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:view_reports')->name('reports.index');
+        Route::get('/reports/export', [ReportController::class, 'export'])->middleware('permission:view_reports')->name('reports.export');
     });
 });
