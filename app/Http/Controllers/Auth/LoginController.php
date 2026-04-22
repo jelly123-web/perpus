@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\ActivityLogger;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -132,6 +133,8 @@ class LoginController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
+        ActivityLogger::log('auth', 'login', 'Berhasil login ke sistem');
+
         if ($request->ajax()) {
             return response()->json([
                 'status' => 'success',
@@ -146,6 +149,8 @@ class LoginController extends Controller
 
     public function logout(Request $request): RedirectResponse|JsonResponse
     {
+        ActivityLogger::log('auth', 'logout', 'Berhasil logout dari sistem');
+        
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

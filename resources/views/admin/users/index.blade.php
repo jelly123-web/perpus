@@ -104,6 +104,16 @@
         <div class="account-add">
             <h2 class="account-add-title">Tambah Akun</h2>
             <p class="text-sm text-slate-500 mt-2 mb-8">Daftarkan petugas atau anggota perpustakaan baru.</p>
+
+            <div style="border:1px solid var(--border-light);border-radius:18px;padding:16px;background:var(--bg-soft);margin-bottom:20px;">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider" style="margin-bottom:10px;">Import & Backup Pengguna</div>
+                <form method="POST" action="{{ route('admin.users.import') }}" enctype="multipart/form-data" class="space-y-3" data-async="true" data-reset-on-success="true" data-refresh-targets="#usersStats,#accountList">
+                    @csrf
+                    <input type="file" name="import_file" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" accept=".csv,text/csv" required>
+                    <button type="submit" class="btn-account-glow w-full">Import CSV Pengguna</button>
+                </form>
+                <a href="{{ route('admin.users.export') }}" class="btn-account-glow w-full" style="display:flex;margin-top:12px;">Backup CSV Pengguna</a>
+            </div>
             
             <form method="POST" action="{{ route('admin.users.store') }}" class="space-y-5" data-async="true" data-reset-on-success="true" data-refresh-targets="#usersStats,#accountList">
                 @csrf

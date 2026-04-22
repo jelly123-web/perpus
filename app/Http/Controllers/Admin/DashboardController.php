@@ -280,16 +280,10 @@ class DashboardController extends Controller
         $user = auth()->user();
         $isBorrowerDashboard = in_array($user?->role?->name, ['siswa', 'guru'], true);
         $isPrincipalDashboard = $user?->role?->name === 'kepsek';
+        $isSuperAdminDashboard = (bool) $user?->isSuperAdmin();
         $canViewActivityLog = (bool) ($user?->isSuperAdmin() || $user?->hasPermission('manage_roles') || $user?->hasPermission('manage_users'));
         $canManageLoans = (bool) $user?->hasPermission('manage_loans');
         $bookFilters = $this->getBorrowerBookFilters($request);
-
-        if ($request->ajax()) {
-            return response()->json([
-                'message' => 'Daftar buku diperbarui.',
-                'status' => 'success'
-            ]);
-        }
 
         $stats = [
             'books' => Book::query()->count(),
@@ -400,6 +394,15 @@ class DashboardController extends Controller
                 ->get()
             : collect();
 
+        $superAdminProcurementUpdates = $isSuperAdminDashboard
+            ? BookProcurement::query()
+                ->with(['category', 'proposer.role', 'approver', 'rejector'])
+                ->whereIn('status', ['approved', 'rejected'])
+                ->orderByRaw('COALESCE(rejected_at, approved_at, updated_at) DESC')
+                ->take(6)
+                ->get()
+            : collect();
+
         $categoryPercentages = Category::query()
             ->withCount('books')
             ->get()
@@ -488,6 +491,8 @@ class DashboardController extends Controller
             'principalActivityLogs',
             'principalMetrics',
             'principalProcurements',
+            'isSuperAdminDashboard',
+            'superAdminProcurementUpdates',
             'isBorrowerDashboard',
             'canViewActivityLog',
             'canManageLoans',
@@ -531,8 +536,9 @@ class DashboardController extends Controller
         $user = $request->user();
         $isBorrower = (bool) $user?->hasPermission('view_borrower_history');
         $isAdminOrOfficer = (bool) $user?->hasPermission('manage_loans');
+        $isPrincipal = (bool) ($user?->role?->name === 'kepsek' || $user?->isSuperAdmin());
 
-        abort_unless($isBorrower || $isAdminOrOfficer, 403);
+        abort_unless($isBorrower || $isAdminOrOfficer || $isPrincipal, 403);
 
         $today = now();
 
@@ -561,6 +567,65 @@ class DashboardController extends Controller
             ]);
         }
 
+        if ($user?->role?->name === 'kepsek') {
+            $pendingProcurements = BookProcurement::query()
+                ->with(['category', 'proposer'])
+                ->where('status', 'pending')
+                ->latest('created_at')
+                ->take(10)
+                ->get();
+
+            $notifications = $pendingProcurements
+                ->map(fn (BookProcurement $procurement) => [
+                    'tone' => 'info',
+                    'icon' => 'clipboard-plus',
+                    'title' => 'Usulan pengadaan baru',
+                    'body' => ($procurement->proposer?->name ?? 'Petugas').' mengusulkan buku "'.($procurement->title ?? 'Buku').'"'
+                        .($procurement->category?->name ? ' kategori '.$procurement->category->name : '')
+                        .' sebanyak '.((int) $procurement->quantity).' buku.',
+                    'signature' => 'principal-procurement-'.$procurement->id.'-'.$procurement->status,
+                    'href' => route('dashboard'),
+                ])
+                ->values();
+
+            return response()->json([
+                'notifications' => $notifications,
+            ]);
+        }
+
+        if ($user?->isSuperAdmin()) {
+            $procurementUpdates = BookProcurement::query()
+                ->with(['category', 'proposer', 'approver', 'rejector'])
+                ->whereIn('status', ['approved', 'rejected'])
+                ->orderByRaw('COALESCE(rejected_at, approved_at, updated_at) DESC')
+                ->take(10)
+                ->get();
+
+            $notifications = $procurementUpdates
+                ->map(function (BookProcurement $procurement): array {
+                    $isRejected = $procurement->status === 'rejected';
+                    $decisionMaker = $isRejected
+                        ? ($procurement->rejector?->name ?? 'Pemeriksa')
+                        : ($procurement->approver?->name ?? 'Pemeriksa');
+
+                    return [
+                        'tone' => $isRejected ? 'danger' : 'success',
+                        'icon' => $isRejected ? 'circle-x' : 'badge-check',
+                        'title' => $isRejected ? 'Usulan pengadaan ditolak' : 'Usulan pengadaan disetujui',
+                        'body' => 'Usulan buku "'.($procurement->title ?? 'Buku').'" dari '.($procurement->proposer?->name ?? 'Petugas')
+                            .' telah '.($isRejected ? 'ditolak' : 'disetujui')
+                            .' oleh '.$decisionMaker.'.',
+                        'signature' => 'superadmin-procurement-'.$procurement->id.'-'.$procurement->status.'-'.optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->timestamp,
+                        'href' => route('admin.books.index'),
+                    ];
+                })
+                ->values();
+
+            return response()->json([
+                'notifications' => $notifications,
+            ]);
+        }
+
         // Admin or Officer Notifications
         $lateLoans = Loan::query()
             ->with(['book', 'member'])
@@ -579,15 +644,19 @@ class DashboardController extends Controller
         $notifications = collect()
             ->merge($lateLoans->map(fn (Loan $loan) => [
                 'tone' => 'danger',
+                'icon' => 'triangle-alert',
                 'title' => 'Buku terlambat dikembalikan',
                 'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
                 'signature' => 'admin-late-'.$loan->id.'-'.$loan->status,
+                'href' => route('admin.loans.index'),
             ]))
             ->merge($requestedLoans->map(fn (Loan $loan) => [
                 'tone' => 'info',
+                'icon' => 'info',
                 'title' => 'Permintaan pinjam baru',
                 'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
                 'signature' => 'admin-requested-'.$loan->id,
+                'href' => route('admin.loans.index'),
             ]))
             ->take(10)
             ->values();

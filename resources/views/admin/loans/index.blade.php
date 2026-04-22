@@ -37,6 +37,7 @@
     
     .loan-book-box{display:flex;align-items:center;gap:16px}
     .loan-book-cover-mini{width:48px;height:64px;border-radius:12px;overflow:hidden;background:var(--accent-glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;flex-shrink:0;box-shadow:var(--shadow-sm)}
+    .loan-book-cover-mini img{width:100%;height:100%;object-fit:cover}
     .loan-book-title-text{font-weight:800;color:var(--fg);font-size:15px;line-clamp:1;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
     .loan-book-author-text{font-size:13px;color:var(--muted);margin-top:2px}
     
@@ -62,9 +63,6 @@
         <div>
             <h1 class="font-display member-title" style="font-size: 36px; font-weight: 800;">Peminjaman Buku</h1>
             <p class="member-subtitle" style="font-size: 16px; color: var(--muted); margin-top: 8px;">Input data peminjaman, catat nama peminjam, lalu tentukan tanggal pinjam dan tanggal kembali.</p>
-        </div>
-        <div class="btn-report-action" style="cursor: default; pointer-events: none;">
-            <i data-lucide="book-up-2" class="w-4 h-4"></i> Akses petugas
         </div>
     </div>
 
@@ -294,7 +292,11 @@
                                     <td>
                                         <div class="loan-book-box">
                                             <div class="loan-book-cover-mini">
-                                                {{ strtoupper(substr($loan->book?->title ?? 'B', 0, 1)) }}
+                                                @if($loan->book?->cover_image)
+                                                    <img src="{{ asset('storage/' . $loan->book->cover_image) }}" alt="{{ $loan->book?->title }}">
+                                                @else
+                                                    <i data-lucide="book-image" class="w-5 h-5"></i>
+                                                @endif
                                             </div>
                                             <div>
                                                 <div class="loan-book-title-text">{{ $loan->book?->title ?? 'Buku tidak ditemukan' }}</div>

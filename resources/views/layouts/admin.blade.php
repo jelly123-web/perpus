@@ -23,15 +23,15 @@
                 'items' => [
                     ['label' => 'Kelola Akun Pengguna', 'icon' => 'users-round', 'route' => 'admin.users.index', 'match' => 'admin.users.*', 'permission' => 'manage_users'],
                     ['label' => 'Table Access', 'icon' => 'shield-check', 'route' => 'admin.roles.index', 'match' => 'admin.roles.*', 'permission' => 'manage_roles'],
-                    ['label' => 'Kategori Buku', 'icon' => 'tags', 'route' => 'admin.categories.index', 'match' => 'admin.categories.*', 'permission' => 'manage_categories'],
                     ['label' => 'Kelola Data Buku', 'icon' => 'book-copy', 'route' => 'admin.books.index', 'match' => 'admin.books.index', 'permission' => 'manage_books'],
-                    ['label' => 'Backup Data', 'icon' => 'database-backup', 'route' => 'admin.backups.index', 'match' => 'admin.backups.*', 'permission' => 'manage_backups'],
+                    ['label' => 'Backup & Restore Database', 'icon' => 'database-backup', 'route' => 'admin.backups.index', 'match' => 'admin.backups.*', 'permission' => 'manage_backups'],
+                    ['label' => 'Restore Data', 'icon' => 'archive-restore', 'route' => 'admin.restore.index', 'match' => 'admin.restore.*', 'permission' => 'manage_users', 'super_admin_only' => true],
                     ['label' => 'Setting', 'icon' => 'settings-2', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'permission' => 'manage_settings'],
                 ],
             ],
         ])->map(function (array $section) use ($user): array {
             $items = collect($section['items'])
-                ->filter(fn (array $item) => $user?->hasPermission($item['permission']))
+                ->filter(fn (array $item) => $user?->hasPermission($item['permission']) && (! ($item['super_admin_only'] ?? false) || $user?->isSuperAdmin()))
                 ->values();
 
             return [
@@ -46,35 +46,86 @@
                     \App\Models\Loan::query()
                         ->with(['book', 'member'])
                         ->where('status', 'late')
-                        ->latest('due_at')
-                        ->take(3)
+                        ->latest('updated_at')
+                        ->take(5)
                         ->get()
                         ->map(fn ($loan) => [
                             'icon' => 'triangle-alert',
                             'tone' => 'danger',
-                            'title' => 'Peminjaman terlambat',
-                            'body' => ($loan->member?->name ?? 'Member').' belum mengembalikan '.($loan->book?->title ?? 'buku'),
-                            'time' => optional($loan->due_at)->diffForHumans(),
-                            'timestamp' => optional($loan->due_at)->timestamp ?? 0,
+                            'title' => 'Buku terlambat dikembalikan',
+                            'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
+                            'time' => optional($loan->updated_at)->diffForHumans(),
+                            'timestamp' => optional($loan->updated_at)->timestamp ?? 0,
                             'href' => route('admin.loans.index'),
                         ])
                 )
                 ->merge(
                     \App\Models\Loan::query()
                         ->with(['book', 'member'])
-                        ->latest()
-                        ->take(6)
+                        ->where('status', 'requested')
+                        ->latest('created_at')
+                        ->take(5)
                         ->get()
                         ->map(fn ($loan) => [
-                            'icon' => $loan->status === 'returned' ? 'badge-check' : 'book-up-2',
-                            'tone' => $loan->status === 'returned' ? 'success' : 'info',
-                            'title' => $loan->status === 'returned' ? 'Buku dikembalikan' : 'Peminjaman baru',
-                            'body' => ($loan->member?->name ?? 'Member').' '.($loan->status === 'returned' ? 'mengembalikan' : 'meminjam').' '.($loan->book?->title ?? 'buku'),
+                            'icon' => 'info',
+                            'tone' => 'info',
+                            'title' => 'Permintaan pinjam baru',
+                            'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
                             'time' => optional($loan->created_at)->diffForHumans(),
                             'timestamp' => optional($loan->created_at)->timestamp ?? 0,
                             'href' => route('admin.loans.index'),
                         ])
                 );
+        }
+
+        if ($user?->role?->name === 'kepsek') {
+            $headerNotifications = $headerNotifications->merge(
+                \App\Models\BookProcurement::query()
+                    ->with(['category', 'proposer'])
+                    ->where('status', 'pending')
+                    ->latest('created_at')
+                    ->take(5)
+                    ->get()
+                    ->map(fn ($procurement) => [
+                        'icon' => 'clipboard-plus',
+                        'tone' => 'info',
+                        'title' => 'Usulan pengadaan baru',
+                        'body' => ($procurement->proposer?->name ?? 'Petugas').' mengusulkan buku "'.($procurement->title ?? 'Buku').'"'
+                            .($procurement->category?->name ? ' kategori '.$procurement->category->name : '')
+                            .' sebanyak '.((int) $procurement->quantity).' buku.',
+                        'time' => optional($procurement->created_at)->diffForHumans(),
+                        'timestamp' => optional($procurement->created_at)->timestamp ?? 0,
+                        'href' => route('dashboard'),
+                    ])
+            );
+        }
+
+        if ($user?->isSuperAdmin()) {
+            $headerNotifications = $headerNotifications->merge(
+                \App\Models\BookProcurement::query()
+                    ->with(['proposer', 'approver', 'rejector'])
+                    ->whereIn('status', ['approved', 'rejected'])
+                    ->orderByRaw('COALESCE(rejected_at, approved_at, updated_at) DESC')
+                    ->take(5)
+                    ->get()
+                    ->map(function ($procurement) {
+                        $isRejected = $procurement->status === 'rejected';
+                        $decisionMaker = $isRejected
+                            ? ($procurement->rejector?->name ?? 'Pemeriksa')
+                            : ($procurement->approver?->name ?? 'Pemeriksa');
+
+                        return [
+                            'icon' => $isRejected ? 'circle-x' : 'badge-check',
+                            'tone' => $isRejected ? 'danger' : 'success',
+                            'title' => $isRejected ? 'Usulan pengadaan ditolak' : 'Usulan pengadaan disetujui',
+                            'body' => 'Usulan buku "'.($procurement->title ?? 'Buku').'" dari '.($procurement->proposer?->name ?? 'Petugas')
+                                .' telah '.($isRejected ? 'ditolak' : 'disetujui').' oleh '.$decisionMaker.'.',
+                            'time' => optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->diffForHumans(),
+                            'timestamp' => optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->timestamp ?? (optional($procurement->updated_at)->timestamp ?? 0),
+                            'href' => route('admin.books.index'),
+                        ];
+                    })
+            );
         }
 
         $headerNotifications = $headerNotifications
@@ -437,9 +488,13 @@
         @media print {
             #chatbotRoot, .chatbot-fab, .chatbot-panel, .async-toast, .notif-panel { display: none !important; }
         }
+        .spa-progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:2000;width:0;transition:width .3s ease,opacity .3s ease;pointer-events:none;box-shadow:0 0 10px var(--accent-glow)}
+        .spa-progress.loading{width:70%;opacity:1}
+        .spa-progress.finish{width:100%;opacity:0}
     </style>
 </head>
 <body style="--brand-logo-bg: {{ $appColor }};">
+    <div id="spaProgress" class="spa-progress"></div>
     <div class="admin-shell">
         <div id="sideMask" class="side-mask" onclick="closeSide()"></div>
 
@@ -461,29 +516,13 @@
                 @foreach ($sidebarSections as $section)
                     <div class="nav-section">{{ $section['title'] }}</div>
                     @foreach ($section['items'] as $item)
-                        <a href="{{ route($item['route']) }}" class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}">
+                        <a href="{{ route($item['route']) }}" class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" data-async="true">
                             <i data-lucide="{{ $item['icon'] }}" class="nav-icon"></i>
                             <span>{{ $item['label'] }}</span>
                         </a>
                     @endforeach
                 @endforeach
             </nav>
-
-            <div class="sidebar-foot">
-                <div class="sidebar-upgrade">
-                    @if ($isPetugasPanel)
-                        <div class="sidebar-focus-title">Fokus Petugas</div>
-                        <p class="sidebar-focus-sub">Kelola peminjaman buku dengan cepat.</p>
-                        <a href="{{ route('admin.loans.index') }}" class="sidebar-focus-link">
-                            <span>Buka Peminjaman</span>
-                            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                        </a>
-                    @else
-                        <div class="sidebar-focus-title">Admin Panel</div>
-                        <p class="sidebar-focus-sub">Gaya modern LibraVault diaktifkan.</p>
-                    @endif
-                </div>
-            </div>
         </aside>
 
         <div class="main-area">
@@ -538,7 +577,7 @@
                                 </div>
                                 <div id="headerNotifList" class="notif-list">
                                     @forelse ($headerNotifications as $notification)
-                                        <a href="{{ $notification['href'] ?? '#' }}" class="notif-item">
+                                        <a href="{{ $notification['href'] ?? '#' }}" class="notif-item" data-async="true">
                                             <div class="notif-icon {{ $notification['tone'] }}">
                                                 <i data-lucide="{{ $notification['icon'] ?? 'info' }}" class="w-4 h-4"></i>
                                             </div>
@@ -555,7 +594,7 @@
                             </div>
                         </div>
                         <form method="POST" action="{{ route('logout') }}" data-async="true">@csrf<button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
-                        <a href="{{ route('profile.show') }}" class="user-chip" style="text-decoration:none;">
+                        <a href="{{ route('profile.show') }}" class="user-chip" style="text-decoration:none;" data-async="true">
                             <div class="avatar" style="overflow:hidden;">
                                 @if (auth()->user()?->profile_photo_url)
                                     <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" style="width:100%;height:100%;object-fit:cover;">
@@ -676,7 +715,7 @@
 
         async function refreshGlobalNotifications(isInitialLoad) {
             @php
-                $canPoll = $user?->hasAnyPermission(['view_borrower_history', 'manage_loans']);
+                $canPoll = $user?->hasAnyPermission(['view_borrower_history', 'manage_loans', 'view_reports']) || $user?->role?->name === 'kepsek' || $user?->isSuperAdmin();
             @endphp
             const canPoll = @json($canPoll);
             if (!canPoll) return;
@@ -715,8 +754,8 @@
                         headerNotifList.innerHTML = '<div class="notif-empty">Belum ada notifikasi terbaru.</div>';
                     } else {
                         headerNotifList.innerHTML = notifications.map(function (n) {
-                            const icon = n.tone === 'danger' ? 'triangle-alert' : (n.tone === 'success' ? 'check-circle' : 'info');
-                            return '<a href="#" class="notif-item">'
+                            const icon = n.icon || (n.tone === 'danger' ? 'triangle-alert' : (n.tone === 'success' ? 'check-circle' : 'info'));
+                            return '<a href="' + escapeHtml(n.href || '#') + '" class="notif-item">'
                                 + '<div class="notif-icon ' + escapeHtml(n.tone || 'info') + '">'
                                 + '<i data-lucide="' + icon + '" class="w-4 h-4"></i>'
                                 + '</div>'
@@ -1198,72 +1237,14 @@
             handleAsyncFormSubmit(form);
         });
 
-        // Keep main navigation on normal page loads for reliability across devices/browsers.
-        document.addEventListener('click', async function (event) {
-            const link = event.target.closest('a[data-async="true"]');
-            if (!link || !link.href || link.href.startsWith('#') || link.href.includes('javascript:void(0)')) {
-                return;
-            }
-
-            const isSameOrigin = link.origin === window.location.origin;
-            const isDownload = link.hasAttribute('download') || link.href.includes('export') || link.href.includes('download');
-
-            if (!isSameOrigin || isDownload) {
-                return;
-            }
-
-            event.preventDefault();
-            
-            const targetSelectors = (link.dataset.refreshTargets || '#lightMain, .member-page, .dbx')
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean);
-
-            try {
-                const url = new URL(link.href);
-                url.searchParams.set('_t', Date.now());
-
-                const response = await fetch(url.toString(), {
-                    cache: 'no-store',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'text/html'
-                    }
-                });
-
-                if (!response.ok) throw new Error('Gagal memuat data.');
-
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-
-                targetSelectors.forEach(selector => {
-                    const currentNode = document.querySelector(selector);
-                    const freshNode = doc.querySelector(selector);
-                    if (currentNode && freshNode) {
-                        currentNode.replaceWith(freshNode);
-                    }
-                });
-
-                window.history.pushState({}, '', link.href);
-                if (window.lucide) window.lucide.createIcons();
-                
-                // Scroll to top of the refreshed area or page
-                const firstTarget = document.querySelector(targetSelectors[0]);
-                if (firstTarget) {
-                    firstTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            } catch (error) {
-                console.error('AJAX Navigation Error:', error);
-                window.location.href = link.href; // Fallback to normal load
-            }
-        });
-
         // Initialize Global Notifications
+        @php
+            $notificationPollInterval = ($user?->role?->name === 'kepsek' || $user?->isSuperAdmin()) ? 1000 : 15000;
+        @endphp
         refreshGlobalNotifications(true);
         window.setInterval(function () {
             refreshGlobalNotifications(false);
-        }, 15000);
+        }, @json($notificationPollInterval));
     </script>
 </body>
 </html>

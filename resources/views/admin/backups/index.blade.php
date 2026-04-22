@@ -1,14 +1,14 @@
 @extends('layouts.admin')
 
 @section('content')
-@php($title = 'Backup Data')
+@php($title = 'Backup & Restore Data')
 @php($eyebrow = 'Keamanan Sistem')
 
 <div class="member-page">
     <div class="member-toolbar">
         <div>
-            <h1 class="font-display member-title">Backup Data</h1>
-            <p class="member-subtitle">Buat snapshot data perpustakaan lalu pantau riwayat file backup yang pernah dibuat dari panel super admin.</p>
+            <h1 class="font-display member-title">Backup & Restore Data</h1>
+            <p class="member-subtitle">Buat snapshot data perpustakaan dan restore database dari riwayat backup dalam satu halaman.</p>
         </div>
         <div class="member-badge"><i data-lucide="database-backup" class="w-3.5 h-3.5"></i> {{ $backups->total() }} backup tersimpan</div>
     </div>
@@ -33,7 +33,7 @@
             <div class="member-card-head">
                 <div>
                     <h3 class="member-card-title">Buat Backup Baru</h3>
-                    <p class="member-card-sub">Sistem akan menyimpan snapshot tabel utama ke file JSON di `storage/app/backups`.</p>
+                    <p class="member-card-sub">Sistem menyimpan snapshot tabel utama ke file JSON di `storage/app/backups`, lalu bisa diunduh sebagai dump SQL database.</p>
                 </div>
                 <div class="member-badge"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Snapshot</div>
             </div>
@@ -44,6 +44,10 @@
                     <i data-lucide="database-backup" class="w-4 h-4"></i>Buat Backup Sekarang
                 </button>
             </form>
+
+            <div class="mt-4 rounded-2xl border border-slate2-100 bg-slate2-50 p-4 text-xs text-slate2-500 leading-6">
+                Restore database tersedia di daftar riwayat backup. Saat restore, sistem memakai mode <strong>update/merge</strong>, jadi data lama tidak dihapus total seperti replace.
+            </div>
         </div>
 
         <div id="backupList" class="xl:col-span-2 crd member-list-card">
@@ -63,6 +67,17 @@
                             <div class="member-badge">
                                 {{ number_format(((int) $backup->size_bytes) / 1024, 1) }} KB
                             </div>
+                        </div>
+                        <div class="mt-4 flex justify-end gap-2">
+                            <a href="{{ route('admin.backups.download', $backup) }}" class="btn-logout rounded-xl px-4 py-2 text-xs font-semibold" style="height: auto;">
+                                <i data-lucide="download" class="w-4 h-4"></i> Unduh Database SQL
+                            </a>
+                            <form method="POST" action="{{ route('admin.backups.restore', $backup) }}" data-async="true" data-confirm="Restore backup ini ke database? Sistem akan update/merge data, bukan replace total." data-refresh-targets="#backupStats,#backupList">
+                                @csrf
+                                <button type="submit" class="btn-primary rounded-xl px-4 py-2 text-xs font-semibold">
+                                    <i data-lucide="database-zap" class="w-4 h-4"></i> Restore Database
+                                </button>
+                            </form>
                         </div>
                     </div>
                 @empty

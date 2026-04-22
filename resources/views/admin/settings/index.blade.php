@@ -95,6 +95,12 @@
             </div>
 
             <div class="setting-field">
+                <label class="setting-label" for="discord_webhook_url">Discord Webhook URL</label>
+                <input id="discord_webhook_url" name="discord_webhook_url" class="form-input px-3 py-3 text-sm" value="{{ old('discord_webhook_url', $settings['discord_webhook_url']->value ?? '') }}" placeholder="https://discord.com/api/webhooks/...">
+                <div class="setting-help">URL Webhook Discord untuk notifikasi transaksi (edit/hapus data). Kosongkan untuk menonaktifkan.</div>
+            </div>
+
+            <div class="setting-field">
                 <label class="setting-label">Logo Aplikasi</label>
                 <div class="setting-logo-input" id="settingLogoUploadRoot">
                     <input id="app_logo" type="file" name="app_logo" accept="image/*" class="js-setting-file-input">

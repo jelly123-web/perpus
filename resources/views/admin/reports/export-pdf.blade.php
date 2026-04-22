@@ -8,7 +8,8 @@
         .header { border-bottom: 3px double #333; padding-bottom: 15px; margin-bottom: 20px; }
         .header-table { width: 100%; border: none; }
         .header-table td { border: none; padding: 0; vertical-align: middle; }
-        .logo { width: 80px; height: 80px; }
+        .logo-wrap { width: 130px; }
+        .logo { display: block; width: auto; height: 72px; max-width: 120px; object-fit: contain; object-position: left center; }
         .app-name { font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 0; }
         .report-info { font-size: 14px; font-weight: bold; margin-top: 5px; }
         .meta-info { font-size: 11px; color: #555; margin-top: 3px; }
@@ -32,7 +33,7 @@
         <table class="header-table">
             <tr>
                 @if($reportMeta['app_logo'])
-                    <td style="width: 90px;">
+                    <td class="logo-wrap">
                         <img src="{{ $reportMeta['app_logo'] }}" class="logo">
                     </td>
                 @endif

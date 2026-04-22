@@ -4,7 +4,12 @@
 @php($title = 'Dashboard')
 @php($eyebrow = 'Ringkasan Sistem')
 
-<div id="asyncDashboardWrap" class="dbx">
+<div
+    id="asyncDashboardWrap"
+    class="dbx"
+    data-dashboard-role="{{ $isPrincipalDashboard ? 'principal' : ($isBorrowerDashboard ? 'borrower' : 'other') }}"
+    data-principal-signatures="{{ $isPrincipalDashboard ? $principalProcurements->map(fn ($procurement) => 'principal-procurement-'.$procurement->id.'-'.$procurement->status)->implode('|') : '' }}"
+>
     <div class="dbx-pattern"></div>
     <div class="dbx-body">
         <section class="dbx-welcome">
@@ -88,7 +93,7 @@
                         <div class="dbx-borrower-alert" style="margin-bottom:18px;">{{ $message }}</div>
                     @enderror
 
-                    <form method="GET" action="{{ route('dashboard') }}" class="dbx-book-filters" id="borrowerBookFilterForm">
+                    <form method="GET" action="{{ route('dashboard') }}" class="dbx-book-filters" id="borrowerBookFilterForm" data-async="true" data-refresh-targets="#asyncDashboardWrap">
                         <input
                             type="text"
                             name="q"
@@ -285,7 +290,7 @@
 
                         <div class="space-y-4">
                             @forelse ($principalProcurements as $procurement)
-                                <div class="rounded-2xl border border-slate2-100 bg-white p-4">
+                                <div class="rounded-2xl border border-slate2-100 bg-white p-4 js-principal-procurement-card">
                                     <div class="text-sm font-semibold text-slate2-900">{{ $procurement->title }}</div>
                                     <div class="mt-1 text-sm text-slate2-600">{{ $procurement->author }} | Jumlah {{ $procurement->quantity }}</div>
                                     <div class="mt-2 text-sm text-slate2-600">
@@ -297,11 +302,18 @@
                                             | {{ $procurement->notes }}
                                         @endif
                                     </div>
-                                    <form method="POST" action="{{ route('admin.books.procurements.approve', $procurement) }}" class="mt-3" data-async="true" data-refresh-targets="#asyncDashboardWrap">
-                                        @csrf
-                                        @method('PUT')
-                                        <button class="btn-primary rounded-xl px-4 py-2 text-sm font-semibold" type="submit">Setujui Pengadaan</button>
-                                    </form>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        <form method="POST" action="{{ route('admin.books.procurements.approve', $procurement) }}" data-async="true" data-remove-closest=".js-principal-procurement-card" data-refresh-targets="#asyncDashboardWrap">
+                                            @csrf
+                                            @method('PUT')
+                                            <button class="btn-primary rounded-xl px-4 py-2 text-sm font-semibold" type="submit">Setujui Pengadaan</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.books.procurements.reject', $procurement) }}" data-async="true" data-remove-closest=".js-principal-procurement-card" data-refresh-targets="#asyncDashboardWrap">
+                                            @csrf
+                                            @method('PUT')
+                                            <button class="btn-soft rounded-xl px-4 py-2 text-sm font-semibold" type="submit">Tolak</button>
+                                        </form>
+                                    </div>
                                 </div>
                             @empty
                                 <p class="text-sm text-slate2-400">Belum ada usulan buku baru yang menunggu persetujuan.</p>
@@ -459,6 +471,39 @@
                         </div>
                     </article>
                 @endif
+
+                @if ($isSuperAdminDashboard)
+                    <article class="dbx-card">
+                        <div class="dbx-card-header">
+                            <h3 class="dbx-card-title">Hasil Pengadaan Buku</h3>
+                        </div>
+                        <div class="dbx-card-body">
+                            @forelse ($superAdminProcurementUpdates as $procurement)
+                                @php($isRejected = $procurement->status === 'rejected')
+                                <div class="dbx-activity-item">
+                                    <div class="dbx-activity-icon">
+                                        <i data-lucide="{{ $isRejected ? 'circle-x' : 'badge-check' }}"></i>
+                                    </div>
+                                    <div class="dbx-activity-content">
+                                        <h4>{{ $procurement->title }}</h4>
+                                        <p>
+                                            Usulan dari {{ $procurement->proposer?->name ?? 'Petugas' }}
+                                            {{ $isRejected ? 'ditolak' : 'disetujui' }}
+                                            oleh {{ $isRejected ? ($procurement->rejector?->name ?? 'Pemeriksa') : ($procurement->approver?->name ?? 'Pemeriksa') }}.
+                                        </p>
+                                        <div class="dbx-activity-meta">
+                                            <span class="dbx-activity-badge {{ $isRejected ? 'delete' : 'create' }}">{{ $isRejected ? 'Ditolak' : 'Disetujui' }}</span>
+                                            <span class="dbx-activity-module">{{ $procurement->category?->name ?? 'Tanpa kategori' }}</span>
+                                        </div>
+                                        <span>{{ optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->diffForHumans() ?? $procurement->updated_at->diffForHumans() }}</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-sm text-slate2-400">Belum ada hasil pengadaan buku yang diproses.</p>
+                            @endforelse
+                        </div>
+                    </article>
+                @endif
             </div>
         </section>
         @endif
@@ -509,7 +554,7 @@
                     <span>PENTING: Batas waktu peminjaman buku ini adalah <strong>1 hari</strong> saja.</span>
                 </div>
 
-                <form method="POST" action="{{ route('loan-requests.store') }}" class="dbx-book-form" id="borrowerLoanForm">
+                <form method="POST" action="{{ route('loan-requests.store') }}" class="dbx-book-form" id="borrowerLoanForm" data-async="true" data-success-call="closeBorrowDrawer" data-refresh-targets="#asyncDashboardWrap">
                     @csrf
                     <input type="hidden" name="book_id" id="borrowDrawerBookId">
                     <div class="dbx-book-form-grid">
@@ -713,6 +758,25 @@
         document.addEventListener('notificationsUpdated', function (event) {
             const data = event.detail;
             const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+            const dashboardWrap = document.getElementById('asyncDashboardWrap');
+
+            if (dashboardWrap?.dataset.dashboardRole === 'principal') {
+                const nextSignatures = notifications
+                    .map(function (notification) {
+                        return notification.signature || '';
+                    })
+                    .filter(Boolean)
+                    .join('|');
+
+                if (dashboardWrap.dataset.principalSignatures !== nextSignatures) {
+                    dashboardWrap.dataset.principalSignatures = nextSignatures;
+                    refreshAsyncTargets(['#asyncDashboardWrap']).catch(function (error) {
+                        console.error('Error refreshing principal dashboard:', error);
+                    });
+                }
+
+                return;
+            }
 
             // Update dashboard notif list
             if (borrowerNotifList) {

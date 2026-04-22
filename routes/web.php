@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LoanController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\RestoreController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -71,7 +72,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:access_dashboard')->name('dashboard');
     Route::get('/riwayat-peminjaman', [DashboardController::class, 'history'])->middleware('permission:view_borrower_history')->name('borrower.history');
     Route::get('/borrower/books', [DashboardController::class, 'borrowerBooks'])->middleware('permission:view_borrower_history')->name('borrower.books');
-    Route::get('/borrower/notifications', [DashboardController::class, 'notifications'])->middleware('permission:view_borrower_history,manage_loans')->name('borrower.notifications');
+    Route::get('/borrower/notifications', [DashboardController::class, 'notifications'])->middleware('permission:view_borrower_history,manage_loans,view_reports')->name('borrower.notifications');
     Route::post('/chatbot/respond', [DashboardController::class, 'chatbotRespond'])->name('chatbot.respond');
     Route::get('/profil-saya', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profil-saya', [ProfileController::class, 'update'])->name('profile.update');
@@ -80,6 +81,8 @@ Route::middleware('auth')->group(function (): void {
     Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/users', [UserManagementController::class, 'index'])->middleware('permission:manage_users')->name('users.index');
         Route::post('/users', [UserManagementController::class, 'store'])->middleware('permission:manage_users')->name('users.store');
+        Route::post('/users/import', [UserManagementController::class, 'import'])->middleware('permission:manage_users')->name('users.import');
+        Route::get('/users/export', [UserManagementController::class, 'export'])->middleware('permission:manage_users')->name('users.export');
         Route::put('/users/{user}', [UserManagementController::class, 'update'])->middleware('permission:manage_users')->name('users.update');
         Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->middleware('permission:manage_users')->name('users.destroy');
 
@@ -95,8 +98,11 @@ Route::middleware('auth')->group(function (): void {
 
         Route::get('/books', [BookController::class, 'index'])->middleware('permission:manage_books')->name('books.index');
         Route::post('/books', [BookController::class, 'store'])->middleware('permission:manage_books')->name('books.store');
+        Route::post('/books/import', [BookController::class, 'import'])->middleware('permission:manage_books')->name('books.import');
+        Route::get('/books/export', [BookController::class, 'export'])->middleware('permission:manage_books')->name('books.export');
         Route::post('/books/procurements', [BookController::class, 'storeProcurement'])->middleware('permission:manage_books')->name('books.procurements.store');
         Route::put('/books/procurements/{procurement}/approve', [BookController::class, 'approveProcurement'])->middleware('permission:view_reports')->name('books.procurements.approve');
+        Route::put('/books/procurements/{procurement}/reject', [BookController::class, 'rejectProcurement'])->middleware('permission:view_reports')->name('books.procurements.reject');
         Route::put('/books/{book}', [BookController::class, 'update'])->middleware('permission:manage_books')->name('books.update');
         Route::delete('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
 
@@ -113,6 +119,12 @@ Route::middleware('auth')->group(function (): void {
 
         Route::get('/backups', [BackupController::class, 'index'])->middleware('permission:manage_backups')->name('backups.index');
         Route::post('/backups', [BackupController::class, 'store'])->middleware('permission:manage_backups')->name('backups.store');
+        Route::post('/backups/{backup}/restore', [BackupController::class, 'restore'])->middleware('permission:manage_backups')->name('backups.restore');
+        Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->middleware('permission:manage_backups')->name('backups.download');
+
+        Route::get('/restore', [RestoreController::class, 'index'])->middleware('permission:manage_users')->name('restore.index');
+        Route::patch('/restore/{table}/{id}', [RestoreController::class, 'restore'])->middleware('permission:manage_users')->name('restore.restore');
+        Route::delete('/restore/{table}/{id}', [RestoreController::class, 'forceDelete'])->middleware('permission:manage_users')->name('restore.force-delete');
 
         Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:view_reports')->name('reports.index');
         Route::get('/reports/export', [ReportController::class, 'export'])->middleware('permission:view_reports')->name('reports.export');

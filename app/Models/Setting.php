@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksSoftDeletes;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
@@ -9,7 +10,17 @@ use Throwable;
 
 class Setting extends Model
 {
-    protected $fillable = ['key', 'label', 'type', 'value'];
+    use TracksSoftDeletes;
+
+    protected $fillable = ['key', 'label', 'type', 'value', 'delete', 'deleted_by', 'deleted_ip'];
+
+    protected function casts(): array
+    {
+        return [
+            'delete' => 'boolean',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     protected static array $resolvedValues = [];
 

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksSoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Sanction extends Model
 {
+    use TracksSoftDeletes;
+
     protected $fillable = [
         'loan_id',
         'member_id',
@@ -18,6 +21,9 @@ class Sanction extends Model
         'starts_at',
         'ends_at',
         'notes',
+        'delete',
+        'deleted_by',
+        'deleted_ip',
     ];
 
     protected function casts(): array
@@ -25,6 +31,8 @@ class Sanction extends Model
         return [
             'starts_at' => 'date',
             'ends_at' => 'date',
+            'delete' => 'boolean',
+            'deleted_at' => 'datetime',
         ];
     }
 

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksSoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Loan extends Model
 {
+    use TracksSoftDeletes;
+
     protected $fillable = [
         'book_id',
         'member_id',
@@ -18,6 +21,9 @@ class Loan extends Model
         'status',
         'fine_amount',
         'notes',
+        'delete',
+        'deleted_by',
+        'deleted_ip',
     ];
 
     protected function casts(): array
@@ -27,6 +33,8 @@ class Loan extends Model
             'due_at' => 'date',
             'returned_at' => 'date',
             'fine_amount' => 'decimal:2',
+            'delete' => 'boolean',
+            'deleted_at' => 'datetime',
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksSoftDeletes;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ class User extends Authenticatable
     implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, TracksSoftDeletes;
 
     /**
      * Send the password reset notification.
@@ -43,8 +44,11 @@ class User extends Authenticatable
         'jurusan',
         'profile_photo',
         'role_id',
-        'is_active',
-        'password',
+            'is_active',
+            'password',
+            'delete',
+            'deleted_by',
+            'deleted_ip',
     ];
 
     /**
@@ -68,6 +72,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'delete' => 'boolean',
+            'deleted_at' => 'datetime',
         ];
     }
 

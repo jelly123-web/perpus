@@ -98,7 +98,11 @@
     @media (max-width:768px){.book-grid,.book-grid-3,.upload-source-actions{grid-template-columns:1fr}.book-row{flex-direction:column;align-items:flex-start}.book-actions{justify-content:flex-start}}
 </style>
 
-<div class="member-page">
+<div
+    class="member-page"
+    id="asyncBooksPage"
+    data-books-notification-signatures="{{ $procurementSuggestions->whereIn('status', ['approved', 'rejected'])->map(fn ($procurement) => 'superadmin-procurement-'.$procurement->id.'-'.$procurement->status.'-'.(optional($procurement->rejected_at ?? $procurement->approved_at)?->timestamp ?? optional($procurement->updated_at)->timestamp ?? 0))->implode('|') }}"
+>
     <div class="member-toolbar">
         <div>
             <h1 class="font-display member-title">Kelola Data Buku</h1>
@@ -133,6 +137,16 @@
                     <div class="book-add-title">Tambah Buku</div>
                 </div>
                 <div class="member-badge"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Buku Baru</div>
+            </div>
+
+            <div class="book-category-box" style="margin-top:18px;margin-bottom:18px;">
+                <div class="book-category-title">Import & Backup Buku</div>
+                <form method="POST" action="{{ route('admin.books.import') }}" enctype="multipart/form-data" class="space-y-3" data-async="true" data-reset-on-success="true" data-refresh-targets="#bookStatsWrap,#bookListWrap">
+                    @csrf
+                    <input type="file" name="import_file" accept=".csv,text/csv" class="form-input px-3 py-3 text-sm" required>
+                    <button class="btn-soft rounded-xl px-4 py-3 text-sm font-semibold w-full" type="submit">Import Buku</button>
+                </form>
+                <a href="{{ route('admin.books.export') }}" class="btn-book-glow w-full py-3 rounded-xl font-bold mt-3" style="display:flex;">Backup Buku</a>
             </div>
 
             <form id="createBookForm" method="POST" action="{{ route('admin.books.store') }}" enctype="multipart/form-data" class="space-y-3 mt-5" data-async="true" data-reset-on-success="true" data-success-call="resetCreateBookFormState" data-refresh-targets="#bookStatsWrap,#bookListWrap">
@@ -200,12 +214,7 @@
                         <input name="published_year" type="number" min="1901" max="{{ now()->addYear()->format('Y') }}" class="form-input px-3 py-3 text-sm" placeholder="Tahun terbit">
                         <input name="quantity" type="number" min="1" class="form-input px-3 py-3 text-sm" placeholder="Jumlah usulan" required>
                     </div>
-                    <select name="category_id" class="form-select px-3 py-3 text-sm">
-                        <option value="">Pilih kategori</option>
-                        @foreach ($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
+                    <input name="category_name" class="form-input px-3 py-3 text-sm" placeholder="Kategori buku">
                     <textarea name="notes" class="form-textarea px-3 py-3 text-sm" rows="3" placeholder="Catatan usulan pengadaan"></textarea>
                     <button class="btn-soft rounded-xl px-4 py-3 text-sm font-semibold w-full" type="submit">Kirim Usulan ke Kepsek</button>
                 </form>
@@ -276,7 +285,7 @@
     <div id="procurementListWrap" class="book-card" style="margin-top:20px;">
         <div class="book-list-head">
             <div class="book-list-title">Riwayat Usulan Pengadaan</div>
-            <div class="member-badge"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Menunggu persetujuan kepsek</div>
+            <div class="member-badge"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Riwayat status usulan</div>
         </div>
 
         @if ($procurementSuggestions->count())
@@ -288,10 +297,16 @@
                             <div class="book-row-title">{{ $procurement->title }}</div>
                             <div class="book-row-sub">{{ $procurement->author }} | Jumlah usulan {{ $procurement->quantity }}</div>
                             <div class="book-row-sub2">
-                                Status {{ ucfirst($procurement->status) }}
+                                Status
+                                {{ $procurement->status === 'approved' ? 'Disetujui' : ($procurement->status === 'rejected' ? 'Ditolak' : 'Menunggu') }}
                                 | Pengusul {{ $procurement->proposer?->name ?? 'Petugas' }}
                                 @if ($procurement->category?->name)
                                     | {{ $procurement->category->name }}
+                                @endif
+                                @if ($procurement->status === 'approved' && $procurement->approver?->name)
+                                    | Disetujui oleh {{ $procurement->approver->name }}
+                                @elseif ($procurement->status === 'rejected' && $procurement->rejector?->name)
+                                    | Ditolak oleh {{ $procurement->rejector->name }}
                                 @endif
                             </div>
                         </div>
@@ -867,6 +882,33 @@
 
     document.getElementById('drawerInlineCategoryButton')?.addEventListener('click', function () {
         createInlineCategory('drawerInlineCategoryName');
+    });
+
+    document.addEventListener('notificationsUpdated', function (event) {
+        const page = document.getElementById('asyncBooksPage');
+        if (!page) {
+            return;
+        }
+
+        const notifications = Array.isArray(event.detail?.notifications) ? event.detail.notifications : [];
+        const nextSignatures = notifications
+            .map(function (notification) {
+                return notification.signature || '';
+            })
+            .filter(function (signature) {
+                return signature.startsWith('superadmin-procurement-');
+            })
+            .join('|');
+
+        if (!nextSignatures || page.dataset.booksNotificationSignatures === nextSignatures) {
+            return;
+        }
+
+        page.dataset.booksNotificationSignatures = nextSignatures;
+
+        refreshAsyncTargets(['#bookStatsWrap', '#bookListWrap', '#procurementListWrap']).catch(function (error) {
+            console.error('Error refreshing books page:', error);
+        });
     });
 </script>
 @endsection

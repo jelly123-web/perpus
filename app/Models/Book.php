@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksSoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Book extends Model
 {
+    use TracksSoftDeletes;
+
     protected $fillable = [
         'title',
         'author',
@@ -22,7 +25,18 @@ class Book extends Model
         'stock_total',
         'stock_available',
         'description',
+        'delete',
+        'deleted_by',
+        'deleted_ip',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'delete' => 'boolean',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     public function category(): BelongsTo
     {

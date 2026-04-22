@@ -16,5 +16,10 @@ class ActivityLogger
             'description' => $description,
             'properties' => $properties,
         ]);
+
+        // Kirim notifikasi ke Discord untuk aksi penting
+        if (in_array($action, ['create', 'update', 'delete', 'restore', 'login', 'logout', 'import', 'export', 'backup'])) {
+            DiscordNotifier::notifyAction($module, $action, $description);
+        }
     }
 }

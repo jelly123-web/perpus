@@ -31,7 +31,7 @@ return new class extends Migration
 
         $rolePermissionMap = [
             'super_admin' => array_keys($permissions),
-            'admin' => ['access_dashboard', 'view_reports', 'manage_loans', 'manage_users', 'manage_roles', 'manage_categories', 'manage_books'],
+            'admin' => ['access_dashboard', 'view_reports', 'manage_loans', 'manage_users', 'manage_roles', 'manage_categories', 'manage_books', 'manage_backups'],
             'petugas' => ['access_dashboard', 'view_reports', 'manage_loans', 'manage_categories', 'manage_books'],
             'kepsek' => ['access_dashboard', 'view_reports'],
             'guru' => ['access_dashboard', 'view_borrower_history'],
