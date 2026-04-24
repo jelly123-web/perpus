@@ -12,6 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use App\Notifications\CustomResetPasswordNotification;
+use App\Notifications\LoginOtpNotification;
 
 class User extends Authenticatable
     implements MustVerifyEmail
@@ -28,6 +29,11 @@ class User extends Authenticatable
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new CustomResetPasswordNotification($token));
+    }
+
+    public function sendLoginOtpNotification(string $token): void
+    {
+        $this->notify(new LoginOtpNotification($token));
     }
 
     /**
@@ -120,6 +126,13 @@ class User extends Authenticatable
 
     public function getProfilePhotoUrlAttribute(): ?string
     {
-        return $this->profile_photo ? Storage::disk('public')->url($this->profile_photo) : null;
+        if (! $this->profile_photo || ! Storage::disk('public')->exists($this->profile_photo)) {
+            return null;
+        }
+
+        $url = Storage::disk('public')->url($this->profile_photo);
+        $version = Storage::disk('public')->lastModified($this->profile_photo);
+
+        return $url.'?v='.$version;
     }
 }

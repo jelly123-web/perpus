@@ -4,7 +4,7 @@
     @php
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
         $appLogo = \App\Models\Setting::appLogoPath();
-        $appColor = \App\Models\Setting::valueOr('app_color', '#FFFFFF');
+        $showAppName = \App\Models\Setting::valueOr('show_app_name', '1') === '1';
     @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -102,9 +102,9 @@
             box-shadow: 0 0 24px rgba(201, 168, 76, 0.22);
         }
         .logo-slot {
-            background: var(--brand-logo-bg, #FFFFFF);
-            border: 1px solid rgba(201,168,76,0.35);
-            box-shadow: 0 12px 30px rgba(201,168,76,0.15);
+            background: transparent;
+            border: none;
+            box-shadow: none;
         }
         .logo-slot.has-image {
             width: auto;
@@ -190,23 +190,25 @@
         }
     </style>
 </head>
-<body class="min-h-screen" style="--brand-logo-bg: {{ $appColor }};">
+<body class="min-h-screen">
     <main class="auth-shell min-h-screen flex items-center justify-center px-6 py-12 relative">
         <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-30" style="background: radial-gradient(circle, rgba(201,168,76,0.15), transparent 70%);"></div>
         <div class="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20" style="background: radial-gradient(circle, rgba(27,69,50,0.1), transparent 70%);"></div>
 
         <div class="w-full max-w-md relative z-10">
             <div class="lg:hidden flex items-center justify-center gap-3 mb-10">
-                <div class="{{ $appLogo && file_exists(public_path($appLogo)) ? 'w-auto max-w-[12rem] h-auto max-h-[4.5rem] px-3' : 'w-11 h-11' }} rounded-xl flex items-center justify-center text-lib-300 text-sm font-bold overflow-hidden" style="background: var(--brand-logo-bg);">
+                <div class="{{ $appLogo && file_exists(public_path($appLogo)) ? 'w-auto max-w-[12rem] h-auto max-h-[4.5rem] px-3' : 'w-11 h-11' }} rounded-xl flex items-center justify-center text-lib-300 text-sm font-bold overflow-hidden">
                     @if ($appLogo && file_exists(public_path($appLogo)))
                         <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain">
                     @else
                         {{ strtoupper(substr($appName, 0, 2)) }}
                     @endif
                 </div>
-                <div class="flex flex-col items-center gap-1.5">
-                    <h1 class="text-lib-800 text-xl font-bold tracking-tight">{{ $appName }}</h1>
-                </div>
+                @if ($showAppName)
+                    <div class="flex flex-col items-center gap-1.5">
+                        <h1 class="text-lib-800 text-xl font-bold tracking-tight">{{ $appName }}</h1>
+                    </div>
+                @endif
             </div>
 
             <div class="login-card rounded-3xl p-8 sm:p-10 brand-glow">
@@ -223,7 +225,7 @@
                 @endif
 
                 <div class="text-center mb-8">
-                    <div class="logo-slot {{ $appLogo && file_exists(public_path($appLogo)) ? 'has-image' : 'w-24 h-24' }} inline-flex items-center justify-center rounded-[1.75rem] mb-4 overflow-hidden" style="background: var(--brand-logo-bg);">
+                    <div class="logo-slot {{ $appLogo && file_exists(public_path($appLogo)) ? 'has-image' : 'w-24 h-24' }} inline-flex items-center justify-center rounded-[1.75rem] mb-4 overflow-hidden">
                         @if ($appLogo && file_exists(public_path($appLogo)))
                             <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain">
                         @else
@@ -331,6 +333,12 @@
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                         },
                     });
+
+                    if (response.status === 419) {
+                        showAsyncMessage('Sesi form sudah kedaluwarsa. Halaman akan dimuat ulang.', 'error');
+                        window.setTimeout(() => window.location.reload(), 800);
+                        return;
+                    }
 
                     const result = await response.json().catch(() => ({}));
 

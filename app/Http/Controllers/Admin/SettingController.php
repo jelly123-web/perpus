@@ -31,11 +31,17 @@ class SettingController extends Controller
                 'type' => 'file',
                 'value' => null,
             ],
-            'app_color' => [
-                'key' => 'app_color',
-                'label' => 'Warna Utama',
-                'type' => 'color',
-                'value' => '#c4956a',
+            'show_app_name' => [
+                'key' => 'show_app_name',
+                'label' => 'Tampilkan Nama Aplikasi',
+                'type' => 'boolean',
+                'value' => '1',
+            ],
+            'discord_webhook_url' => [
+                'key' => 'discord_webhook_url',
+                'label' => 'Discord Webhook URL',
+                'type' => 'text',
+                'value' => null,
             ],
         ])->map(function (array $setting): Setting {
             return Setting::query()->firstOrCreate(
@@ -55,8 +61,9 @@ class SettingController extends Controller
     {
         $data = $request->validate([
             'app_name' => ['required', 'string', 'max:255'],
-            'app_color' => ['required', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'app_logo' => ['nullable', 'image', 'max:2048'],
+            'show_app_name' => ['nullable', 'boolean'],
+            'discord_webhook_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
         Setting::query()->updateOrCreate(
@@ -65,8 +72,13 @@ class SettingController extends Controller
         );
 
         Setting::query()->updateOrCreate(
-            ['key' => 'app_color'],
-            ['label' => 'Warna Utama', 'type' => 'color', 'value' => strtoupper($data['app_color'])]
+            ['key' => 'show_app_name'],
+            ['label' => 'Tampilkan Nama Aplikasi', 'type' => 'boolean', 'value' => $request->boolean('show_app_name') ? '1' : '0']
+        );
+
+        Setting::query()->updateOrCreate(
+            ['key' => 'discord_webhook_url'],
+            ['label' => 'Discord Webhook URL', 'type' => 'text', 'value' => blank($data['discord_webhook_url'] ?? null) ? null : trim($data['discord_webhook_url'])]
         );
 
         if ($request->hasFile('app_logo')) {

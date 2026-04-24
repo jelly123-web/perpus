@@ -32,7 +32,7 @@ class ProfileController extends Controller
             'profile_photo' => ['nullable', 'image', 'max:2048'],
         ], [
             'email.unique' => 'Email sudah dipakai akun lain.',
-            'nik.unique' => 'NIK/KTP sudah dipakai akun lain.',
+            'nik.unique' => 'NIK sudah dipakai akun lain.',
         ]);
 
         if ($request->hasFile('profile_photo')) {
@@ -49,6 +49,7 @@ class ProfileController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Profil berhasil diperbarui.',
+                'photo_url' => $user->fresh()->profile_photo_url,
             ]);
         }
 

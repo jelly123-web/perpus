@@ -21,7 +21,9 @@ class DiscordNotifier
         $appName = Setting::valueOr('app_name', 'Perpus Digital');
 
         try {
-            Http::post($webhookUrl, [
+            Http::timeout(3)
+                ->connectTimeout(2)
+                ->post($webhookUrl, [
                 'embeds' => [
                     [
                         'title' => '🔔 ' . $title,

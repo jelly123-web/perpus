@@ -12,6 +12,8 @@
     .profile-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-top:8px}
     .profile-photo{width:120px;height:120px;border-radius:28px;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;font-weight:700;box-shadow:var(--shadow-md)}
     .profile-photo img{width:100%;height:100%;object-fit:cover}
+    .profile-photo.is-editable{cursor:pointer;position:relative}
+    .profile-photo.is-editable::after{content:'Atur';position:absolute;inset:auto 10px 10px auto;padding:4px 8px;border-radius:999px;background:rgba(8,15,12,.72);color:#fff;font-size:10px;font-weight:700;letter-spacing:.04em}
     .profile-meta{display:grid;gap:12px;margin-top:22px}
     .profile-box{padding:14px 16px;border-radius:16px;background:var(--bg-soft);border:1px solid var(--border)}
     .profile-box-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
@@ -28,9 +30,12 @@
     .profile-upload-btn:hover{border-color:var(--accent);background:#fffaf4}
     .profile-upload-name{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}
     .profile-upload-name.is-empty{display:none}
+    .profile-upload-status{display:none;margin-top:12px;padding:10px 12px;border-radius:12px;background:#eef8f1;border:1px solid rgba(39,108,75,.18);font-size:12px;color:#1f573d}
+    .profile-upload-status.show{display:block}
     .profile-upload-preview{display:none;position:relative;margin-top:14px;width:132px}
     .profile-upload-preview.show{display:block}
     .profile-upload-preview img{width:132px;height:132px;border-radius:20px;object-fit:cover;border:1px solid var(--border);background:#fff}
+    .profile-upload-preview.is-editable img{cursor:pointer}
     .profile-upload-remove{position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;border-radius:999px;background:rgba(0,0,0,.68);color:#fff;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
     .profile-hint{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}
     .profile-modal-mask{position:fixed;inset:0;background:rgba(8,15,12,.55);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:120}
@@ -71,12 +76,12 @@
             <div class="profile-title">Akun Aktif</div>
             <div class="profile-sub">Foto dan nama di panel ini akan ikut berubah setelah profil disimpan.</div>
 
-            <div style="margin-top:20px;display:flex;justify-content:center;">
-                <div class="profile-photo">
+                <div style="margin-top:20px;display:flex;justify-content:center;">
+                <div class="profile-photo is-editable" id="profileActivePhoto" title="Klik untuk atur ukuran foto">
                     @if ($user->profile_photo_url)
-                        <img src="{{ $user->profile_photo_url }}" alt="{{ $user->name }}">
+                        <img src="{{ $user->profile_photo_url }}" alt="{{ $user->name }}" id="profileActivePhotoImage">
                     @else
-                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                        <span id="profileActivePhotoFallback">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
                     @endif
                 </div>
             </div>
@@ -95,7 +100,7 @@
                     <div class="profile-box-value">{{ $user->username }}</div>
                 </div>
                 <div class="profile-box">
-                    <div class="profile-box-label">NIK / KTP</div>
+                    <div class="profile-box-label">NIK</div>
                     <div class="profile-box-value">{{ $user->nik ?: 'Belum diisi' }}</div>
                 </div>
                 <div class="profile-box">
@@ -109,7 +114,7 @@
             <div class="profile-title">Edit Profil</div>
             <div class="profile-sub">Ubah nama, email, foto, dan data akun lain. Password tidak ikut berubah dari form ini.</div>
 
-            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-3 mt-6" data-async="true">
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-3 mt-6" data-async="true" data-loading-label="Menyimpan foto..." data-success-call="handleProfileUpdateSuccess">
                 @csrf
                 @method('PUT')
 
@@ -119,7 +124,7 @@
                 </div>
 
                 <div class="profile-form-grid">
-                    <input name="nik" value="{{ old('nik', $user->nik) }}" class="form-input px-3 py-3 text-sm" placeholder="NIK / No KTP">
+                    <input name="nik" value="{{ old('nik', $user->nik) }}" class="form-input px-3 py-3 text-sm" placeholder="NIK">
                     <input type="email" name="email" value="{{ old('email', $user->email) }}" class="form-input px-3 py-3 text-sm" placeholder="Email" required>
                 </div>
 
@@ -150,7 +155,8 @@
                         <button type="button" class="profile-upload-btn js-profile-open-gallery"><i data-lucide="image" class="w-4 h-4"></i> Pilih dari Galeri</button>
                     </div>
                     <div class="profile-upload-name is-empty" id="profilePhotoName">Belum ada file dipilih.</div>
-                    <div class="profile-upload-preview" id="profilePhotoPreview">
+                    <div class="profile-upload-status" id="profilePhotoStatus">Foto sedang dioptimalkan supaya upload lebih cepat.</div>
+                    <div class="profile-upload-preview is-editable" id="profilePhotoPreview" title="Klik foto untuk atur ukuran lagi">
                         <img id="profilePhotoPreviewImage" alt="Preview foto profil">
                         <button type="button" class="profile-upload-remove" id="profilePhotoRemove">X</button>
                     </div>
@@ -223,7 +229,11 @@
         const profilePhotoName = document.getElementById('profilePhotoName');
         const profilePreview = document.getElementById('profilePhotoPreview');
         const profilePreviewImage = document.getElementById('profilePhotoPreviewImage');
+        const profilePhotoStatus = document.getElementById('profilePhotoStatus');
         const profileRemove = document.getElementById('profilePhotoRemove');
+        const activePhoto = document.getElementById('profileActivePhoto');
+        const activePhotoImage = document.getElementById('profileActivePhotoImage');
+        const activePhotoFallback = document.getElementById('profileActivePhotoFallback');
         const realInput = profileUploadRoot.querySelector('.js-profile-file-input');
         const cameraInput = profileUploadRoot.querySelector('.js-profile-camera-input');
         const galleryInput = profileUploadRoot.querySelector('.js-profile-gallery-input');
@@ -250,6 +260,66 @@
         let dragOriginY = 0;
         let activeSourceInput = null;
         let cameraStream = null;
+        let currentPreviewUrl = '';
+        let latestOriginalFile = null;
+
+        function setUploadStatus(message = '') {
+            if (!message) {
+                profilePhotoStatus.textContent = '';
+                profilePhotoStatus.classList.remove('show');
+                return;
+            }
+
+            profilePhotoStatus.textContent = message;
+            profilePhotoStatus.classList.add('show');
+        }
+
+        function syncActivePhoto(previewUrl) {
+            if (!previewUrl) {
+                return;
+            }
+
+            if (activePhotoFallback) {
+                activePhotoFallback.remove();
+            }
+
+            let image = document.getElementById('profileActivePhotoImage');
+
+            if (!image) {
+                image = document.createElement('img');
+                image.id = 'profileActivePhotoImage';
+                image.alt = '{{ $user->name }}';
+                activePhoto.appendChild(image);
+            }
+
+            image.src = previewUrl;
+        }
+
+        function syncGlobalProfilePhoto(previewUrl) {
+            if (!previewUrl) {
+                return;
+            }
+
+            document.querySelectorAll('.js-global-profile-fallback').forEach(function (fallback) {
+                fallback.remove();
+            });
+
+            document.querySelectorAll('.js-global-profile-avatar').forEach(function (avatar) {
+                let image = avatar.querySelector('.js-global-profile-photo');
+
+                if (!image) {
+                    image = document.createElement('img');
+                    image.className = 'js-global-profile-photo';
+                    image.alt = '{{ $user->name }}';
+                    image.style.width = '100%';
+                    image.style.height = '100%';
+                    image.style.objectFit = 'cover';
+                    avatar.appendChild(image);
+                }
+
+                image.src = previewUrl;
+            });
+        }
 
         function resetPreview() {
             realInput.value = '';
@@ -259,10 +329,13 @@
             profilePreviewImage.removeAttribute('src');
             profilePhotoName.textContent = 'Belum ada file dipilih.';
             profilePhotoName.classList.add('is-empty');
+            setUploadStatus('');
+            latestOriginalFile = null;
         }
 
         function openCropModal(sourceInput, file) {
             activeSourceInput = sourceInput;
+            latestOriginalFile = file;
 
             if (cropSourceUrl) {
                 URL.revokeObjectURL(cropSourceUrl);
@@ -283,6 +356,29 @@
                 cropModal.setAttribute('aria-hidden', 'false');
             };
             cropSourceImage.src = cropSourceUrl;
+        }
+
+        async function reopenCropFromPreview() {
+            if (latestOriginalFile) {
+                openCropModal(realInput, latestOriginalFile);
+                return;
+            }
+
+            const previewSource = profilePreviewImage.getAttribute('src') || document.getElementById('profileActivePhotoImage')?.getAttribute('src');
+
+            if (!previewSource) {
+                return;
+            }
+
+            try {
+                setUploadStatus('Foto lama yang tersimpan dibuka dari versi yang ada sekarang.');
+                const response = await fetch(previewSource, { cache: 'no-store' });
+                const blob = await response.blob();
+                const file = new File([blob], 'profile-photo-edit.jpg', { type: blob.type || 'image/jpeg' });
+                openCropModal(null, file);
+            } catch (error) {
+                setUploadStatus('Foto tidak bisa dibuka ulang. Pilih foto lagi dari galeri.');
+            }
         }
 
         function closeCropModal(resetInput = true) {
@@ -364,29 +460,74 @@
             ctx.drawImage(cropSourceImage, left, top, drawWidth, drawHeight);
         }
 
-        function applyCrop() {
+        function optimizeImageBlob(blob, fileName) {
+            return new Promise(function (resolve) {
+                const image = new Image();
+                const sourceUrl = URL.createObjectURL(blob);
+
+                image.onload = function () {
+                    const maxSize = 960;
+                    const longestSide = Math.max(image.width, image.height);
+                    const ratio = longestSide > maxSize ? maxSize / longestSide : 1;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(image.width * ratio);
+                    canvas.height = Math.round(image.height * ratio);
+                    const context = canvas.getContext('2d', { alpha: false });
+                    context.imageSmoothingEnabled = true;
+                    context.imageSmoothingQuality = 'high';
+                    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                    canvas.toBlob(function (optimizedBlob) {
+                        URL.revokeObjectURL(sourceUrl);
+
+                        if (!optimizedBlob) {
+                            resolve(new File([blob], fileName, { type: 'image/jpeg' }));
+                            return;
+                        }
+
+                        const safeName = fileName.replace(/\.[^.]+$/, '') + '.jpg';
+                        resolve(new File([optimizedBlob], safeName, { type: 'image/jpeg' }));
+                    }, 'image/jpeg', 0.82);
+                };
+
+                image.src = sourceUrl;
+            });
+        }
+
+        async function applyCrop() {
             if (!cropSourceImage) {
                 return;
             }
 
-            cropCanvas.toBlob(function (blob) {
+            setUploadStatus('Foto sedang dioptimalkan supaya upload lebih cepat...');
+
+            cropCanvas.toBlob(async function (blob) {
                 if (!blob) {
+                    setUploadStatus('');
                     return;
                 }
 
                 const originalName = activeSourceInput && activeSourceInput.files && activeSourceInput.files[0]
                     ? activeSourceInput.files[0].name
                     : 'profile-photo.png';
-                const croppedFile = new File([blob], originalName, { type: 'image/png' });
+                const croppedFile = await optimizeImageBlob(blob, originalName);
                 const transfer = new DataTransfer();
                 transfer.items.add(croppedFile);
                 realInput.files = transfer.files;
 
-                const previewUrl = URL.createObjectURL(blob);
+                if (currentPreviewUrl) {
+                    URL.revokeObjectURL(currentPreviewUrl);
+                }
+
+                const previewUrl = URL.createObjectURL(croppedFile);
+                currentPreviewUrl = previewUrl;
                 profilePreviewImage.src = previewUrl;
                 profilePreview.classList.add('show');
                 profilePhotoName.textContent = croppedFile.name;
                 profilePhotoName.classList.remove('is-empty');
+                syncActivePhoto(previewUrl);
+                syncGlobalProfilePhoto(previewUrl);
+                setUploadStatus('Preview siap. File sudah diperkecil agar upload lebih cepat.');
                 if (activeSourceInput) {
                     activeSourceInput.value = '';
                 }
@@ -434,12 +575,15 @@
         [cameraInput, galleryInput].forEach(function (input) {
             input.addEventListener('change', function () {
                 if (input.files && input.files.length) {
+                    latestOriginalFile = input.files[0];
                     openCropModal(input, input.files[0]);
                 }
             });
         });
 
         profileRemove.addEventListener('click', resetPreview);
+        profilePreviewImage.addEventListener('click', reopenCropFromPreview);
+        activePhoto.addEventListener('click', reopenCropFromPreview);
 
         modalMask.addEventListener('click', function () {
             closeCameraModal();
@@ -497,6 +641,16 @@
         document.getElementById('profileCropClose').addEventListener('click', function () { closeCropModal(); });
         document.getElementById('profileCropCancel').addEventListener('click', function () { closeCropModal(); });
         document.getElementById('profileCropApply').addEventListener('click', applyCrop);
+
+        window.handleProfileUpdateSuccess = function (data) {
+            if (data.photo_url) {
+                syncActivePhoto(data.photo_url);
+                profilePreviewImage.src = data.photo_url;
+                syncGlobalProfilePhoto(data.photo_url);
+            }
+
+            setUploadStatus(data.message || 'Foto profil berhasil disimpan.');
+        };
 
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {

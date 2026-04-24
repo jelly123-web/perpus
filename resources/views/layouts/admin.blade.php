@@ -5,7 +5,7 @@
         $user = auth()->user();
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
         $appLogo = \App\Models\Setting::appLogoPath();
-        $appColor = \App\Models\Setting::valueOr('app_color', '#FAFAFA');
+        $showAppName = \App\Models\Setting::valueOr('show_app_name', '1') === '1';
         $isPetugasPanel = $user?->role?->name === 'petugas';
         $headerNotifications = collect();
         $sidebarSections = collect([
@@ -189,7 +189,7 @@
         .hamburger{display:flex;width:40px;height:40px;border:1px solid var(--border-light);border-radius:10px;background:#fff;color:var(--fg);align-items:center;justify-content:center;cursor:pointer;font-size:24px;font-weight:700;line-height:1;letter-spacing:.04em}
         .hamburger:hover{color:var(--accent);border-color:var(--accent);background:var(--bg-soft)}
         .topbar-brand{display:flex;align-items:center;gap:12px}
-        .topbar-brand-mark,.sidebar-brand-mark{display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--brand-logo-bg, linear-gradient(135deg, var(--accent), var(--accent-light)));border:1px solid rgba(255,255,255,.92);box-shadow:0 14px 30px rgba(196,149,106,.2)}
+        .topbar-brand-mark,.sidebar-brand-mark{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;box-shadow:none}
         .topbar-brand-mark{height:44px;min-width:44px;border-radius:14px}
         .sidebar-brand-mark{height:44px;min-width:44px;border-radius:12px}
         .topbar-brand-mark.has-image{width:auto;max-width:180px;padding:4px 8px;background:transparent;border:none;box-shadow:none}
@@ -493,7 +493,7 @@
         .spa-progress.finish{width:100%;opacity:0}
     </style>
 </head>
-<body style="--brand-logo-bg: {{ $appColor }};">
+<body>
     <div id="spaProgress" class="spa-progress"></div>
     <div class="admin-shell">
         <div id="sideMask" class="side-mask" onclick="closeSide()"></div>
@@ -508,7 +508,9 @@
                             <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
                         @endif
                     </div>
-                    <div class="font-display text-xl font-bold tracking-tight text-slate-800">{{ $appName }}</div>
+                    @if ($showAppName)
+                        <div class="font-display text-xl font-bold tracking-tight text-slate-800">{{ $appName }}</div>
+                    @endif
                 </div>
             </div>
 
@@ -546,9 +548,11 @@
                                     <i data-lucide="book-open" style="width:18px;height:18px;color:#7A5A28;"></i>
                                 @endif
                             </div>
-                            <div class="topbar-brand-text">
-                                <div class="topbar-brand-title font-display">{{ $appName }}</div>
-                            </div>
+                            @if ($showAppName)
+                                <div class="topbar-brand-text">
+                                    <div class="topbar-brand-title font-display">{{ $appName }}</div>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
@@ -595,11 +599,11 @@
                         </div>
                         <form method="POST" action="{{ route('logout') }}" data-async="true">@csrf<button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
                         <a href="{{ route('profile.show') }}" class="user-chip" style="text-decoration:none;" data-async="true">
-                            <div class="avatar" style="overflow:hidden;">
+                            <div class="avatar js-global-profile-avatar" style="overflow:hidden;">
                                 @if (auth()->user()?->profile_photo_url)
-                                    <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" style="width:100%;height:100%;object-fit:cover;">
+                                    <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" class="js-global-profile-photo" style="width:100%;height:100%;object-fit:cover;">
                                 @else
-                                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                    <span class="js-global-profile-fallback">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
                                 @endif
                             </div>
                             <div>
@@ -948,11 +952,18 @@
 
             const submitButton = form.querySelector('button[type="submit"]');
             const originalLabel = submitButton ? submitButton.innerHTML : null;
+            const shouldDisableSubmit = form.dataset.disableSubmit !== 'false';
+            const shouldPreserveSubmitLabel = form.dataset.preserveSubmitLabel === 'true';
 
             if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.dataset.originalDisabled = submitButton.disabled ? '1' : '0';
-                submitButton.innerHTML = form.dataset.loadingLabel || 'Memproses...';
+                if (shouldDisableSubmit) {
+                    submitButton.disabled = true;
+                    submitButton.dataset.originalDisabled = submitButton.disabled ? '1' : '0';
+                }
+
+                if (!shouldPreserveSubmitLabel) {
+                    submitButton.innerHTML = form.dataset.loadingLabel || 'Memproses...';
+                }
             }
 
             try {
@@ -1039,8 +1050,11 @@
                 showAsyncToast(error.message || 'Terjadi kesalahan.', 'error');
             } finally {
                 if (submitButton) {
-                    submitButton.disabled = false;
-                    if (originalLabel !== null) {
+                    if (shouldDisableSubmit) {
+                        submitButton.disabled = false;
+                    }
+
+                    if (!shouldPreserveSubmitLabel && originalLabel !== null) {
                         submitButton.innerHTML = originalLabel;
                     }
                 }
@@ -1193,7 +1207,7 @@
 
                 try {
                     const endpoint = chatbotRoot?.dataset?.endpoint;
-                    const requestHistory = history.slice(-12);
+                    const requestHistory = history.slice(-6);
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {

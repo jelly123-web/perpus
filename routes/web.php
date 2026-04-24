@@ -25,6 +25,9 @@ Route::redirect('/', '/login');
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.authenticate');
+    Route::get('/login/otp', [LoginController::class, 'showOtpForm'])->name('login.otp');
+    Route::post('/login/otp/send', [LoginController::class, 'sendOtp'])->middleware('throttle:6,1')->name('login.otp.send');
+    Route::post('/login/otp/verify', [LoginController::class, 'verifyOtp'])->middleware('throttle:10,1')->name('login.otp.verify');
     Route::get('/auth/google/redirect', [LoginController::class, 'redirectToGoogle'])->name('auth.google.redirect');
     Route::get('/auth/google/callback', [LoginController::class, 'handleGoogleCallback'])->name('auth.google.callback');
     Route::get('/forgot-password', [PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');

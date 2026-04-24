@@ -26,9 +26,9 @@ class AuthGoogleLoginTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertOk();
-        $response->assertSee('Masuk dengan Google');
         $response->assertSee(route('auth.google.redirect'), false);
-        $response->assertSee('username / email / ktp');
+        $response->assertSee('aria-label="Masuk dengan Google"', false);
+        $response->assertSee('username');
     }
 
     public function test_google_callback_creates_user_and_logs_in(): void
@@ -65,10 +65,10 @@ class AuthGoogleLoginTest extends TestCase
         $this->assertNotNull($user->email_verified_at);
     }
 
-    public function test_login_can_use_nik(): void
+    public function test_login_cannot_use_nik(): void
     {
         $user = User::query()->create([
-            'name' => 'User KTP',
+            'name' => 'User NIK',
             'username' => 'userktp',
             'nik' => '3173012301010001',
             'email' => 'userktp@example.com',
@@ -81,8 +81,8 @@ class AuthGoogleLoginTest extends TestCase
             'password' => 'secret123',
         ]);
 
-        $response->assertRedirect(route('profile.show'));
-        $this->assertAuthenticatedAs($user->fresh());
+        $response->assertSessionHasErrors('username');
+        $this->assertGuest();
     }
 
     public function test_google_callback_links_existing_user_by_email(): void

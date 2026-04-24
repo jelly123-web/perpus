@@ -14,7 +14,6 @@
         let settingCameraStream = null;
         let settingCropFrameWidth = 320;
         let settingCropFrameHeight = 180;
-        let settingAutoSaveTimer = null;
         let settingCurrentBindings = null;
 
         function buildSettingBindings() {
@@ -33,12 +32,11 @@
             return {
                 form,
                 appNameInput: document.getElementById('app_name'),
-                appColorInput: document.getElementById('app_color'),
+                showAppNameInput: document.getElementById('show_app_name'),
                 appLogoInput: document.getElementById('app_logo'),
                 removeLogoInput: document.getElementById('remove_logo'),
                 settingPreviewName: document.getElementById('settingPreviewName'),
-                settingShell: document.querySelector('.setting-shell'),
-                settingColorText: document.getElementById('settingColorText'),
+                settingPreviewNameWrap: document.getElementById('settingPreviewNameWrap'),
                 settingLogoName: document.getElementById('settingLogoName'),
                 settingPreviewLogo: document.getElementById('settingPreviewLogo'),
                 settingPreviewIcon: document.getElementById('settingPreviewIcon'),
@@ -79,16 +77,8 @@
             settingCurrentBindings.settingSaveState.style.color = tones[tone] || tones.muted;
         }
 
-        function requestSettingAutoSave(delay = 500) {
-            if (!settingCurrentBindings?.form) {
-                return;
-            }
-
-            window.clearTimeout(settingAutoSaveTimer);
-            setSettingSaveState('Menyimpan perubahan...', 'muted');
-            settingAutoSaveTimer = window.setTimeout(function () {
-                settingCurrentBindings.form.requestSubmit();
-            }, delay);
+        function markSettingAsDirty() {
+            setSettingSaveState('Perubahan belum disimpan.', 'muted');
         }
 
         function syncSettingPreview(previewUrl, fileName) {
@@ -130,7 +120,7 @@
             }
 
             if (autoSubmit) {
-                requestSettingAutoSave(0);
+                markSettingAsDirty();
             }
         }
 
@@ -312,7 +302,7 @@
                 }
 
                 closeSettingCropModal(false);
-                requestSettingAutoSave(0);
+                markSettingAsDirty();
             }, 'image/png');
         }
 
@@ -363,16 +353,15 @@
 
             bindings.appNameInput.addEventListener('input', function () {
                 bindings.settingPreviewName.textContent = bindings.appNameInput.value.trim() || 'LibraVault';
-                requestSettingAutoSave();
+                markSettingAsDirty();
             });
 
-            bindings.appColorInput.addEventListener('input', function () {
-                bindings.settingShell.style.setProperty('--preview-color', bindings.appColorInput.value);
-                bindings.settingColorText.textContent = bindings.appColorInput.value.toUpperCase();
-            });
+            bindings.showAppNameInput.checked = bindings.showAppNameInput.checked;
+            bindings.settingPreviewNameWrap.style.display = bindings.showAppNameInput.checked ? '' : 'none';
 
-            bindings.appColorInput.addEventListener('change', function () {
-                requestSettingAutoSave(0);
+            bindings.showAppNameInput.addEventListener('change', function () {
+                bindings.settingPreviewNameWrap.style.display = bindings.showAppNameInput.checked ? '' : 'none';
+                markSettingAsDirty();
             });
 
             bindings.settingOpenCameraButton.addEventListener('click', function () {
@@ -439,7 +428,6 @@
             bindings.settingCropFrame.addEventListener('pointercancel', stopSettingDrag);
 
             bindings.form.addEventListener('submit', function () {
-                window.clearTimeout(settingAutoSaveTimer);
                 setSettingSaveState('Menyimpan perubahan...', 'muted');
             });
         }
@@ -469,7 +457,7 @@
 
         document.addEventListener('async:refreshed', function () {
             bindSettingPage();
-            setSettingSaveState('Perubahan berhasil disimpan otomatis.', 'success');
+            setSettingSaveState('Perubahan berhasil disimpan.', 'success');
         });
 
         document.addEventListener('async:form-success', function (event) {
@@ -477,7 +465,7 @@
                 return;
             }
 
-            setSettingSaveState('Perubahan berhasil disimpan otomatis.', 'success');
+            setSettingSaveState('Perubahan berhasil disimpan.', 'success');
         });
 
         document.addEventListener('async:form-error', function (event) {

@@ -3,7 +3,6 @@ const OFFLINE_URL = '/offline.html';
 const STATIC_ASSETS = [
     OFFLINE_URL,
     '/favicon.ico',
-    '/login',
 ];
 
 self.addEventListener('install', (event) => {
@@ -32,6 +31,11 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(request.url);
     if (url.origin !== self.location.origin) {
+        return;
+    }
+
+    if (url.pathname.startsWith('/login') || url.pathname.startsWith('/password') || url.pathname.startsWith('/register') || url.pathname.startsWith('/auth/')) {
+        event.respondWith(fetch(request));
         return;
     }
 

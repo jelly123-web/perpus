@@ -43,7 +43,7 @@ return [
 
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemma-3-1b-it'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
     ],
 
     'recaptcha' => [

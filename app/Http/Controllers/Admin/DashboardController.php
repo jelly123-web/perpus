@@ -36,7 +36,7 @@ class DashboardController extends Controller
                 'text' => trim((string) $item['text']),
             ])
             ->filter(fn (array $item): bool => $item['text'] !== '')
-            ->take(-12)
+            ->take(-6)
             ->values()
             ->all();
         $apiKey = config('services.gemini.key');
@@ -54,16 +54,27 @@ class DashboardController extends Controller
                 }
             } catch (\Throwable $e) {
                 Log::error('Chatbot AI Error: '.$e->getMessage());
-
-                return response()->json([
-                    'status' => 'error',
-                    'reply' => $e->getMessage(),
-                    'source' => 'gemini',
-                ], 503);
             }
         }
 
-        $reply = 'Mode AI belum aktif. Isi `GEMINI_API_KEY` yang valid agar chatbot bisa menjawab pertanyaan umum, lalu coba lagi.';
+        $reply = $this->buildFallbackChatbotReply($message, $lower, $user, $aiConfigured);
+
+        return response()->json([
+            'status' => 'success',
+            'reply' => $reply,
+            'source' => 'fallback',
+        ]);
+    }
+
+    private function buildFallbackChatbotReply(string $message, string $lower, ?User $user, bool $aiConfigured): string
+    {
+        $reply = $aiConfigured
+            ? 'Saya tetap bisa bantu di mode cepat. Coba tulis pertanyaanmu langsung, misalnya minta penjelasan, hitungan sederhana, ide, caption, pesan singkat, coding dasar, atau soal perpustakaan.'
+            : 'Saya sedang jalan di mode lokal. Coba tulis pertanyaanmu langsung, misalnya minta penjelasan, hitungan sederhana, ide, caption, pesan singkat, coding dasar, atau soal perpustakaan.';
+
+        if ($mathReply = $this->trySolveMathExpression($message)) {
+            return $mathReply;
+        }
 
         $contains = function (array $needles) use ($lower): bool {
             foreach ($needles as $needle) {
@@ -76,6 +87,28 @@ class DashboardController extends Controller
 
         if ($contains(['halo', 'hai', 'hello', 'assalamualaikum', 'permisi'])) {
             $reply = 'Halo! Saya chatbot perpustakaan. Saya bisa bantu: cari buku, aturan pinjam, aturan kembali, dan status pinjaman kamu.';
+        } elseif ($contains(['siapa kamu', 'kamu siapa'])) {
+            $reply = 'Saya ChatBot Perpus. Kalau AI online tersedia saya bisa jawab lebih luas, tapi saat mode lokal saya tetap bisa bantu soal perpustakaan, hitungan sederhana, ide singkat, caption, waktu, dan tanggal.';
+        } elseif ($contains(['bisa apa', 'apa yang bisa kamu lakukan', 'fitur kamu'])) {
+            $reply = "Saya bisa bantu:\n- cari buku\n- jelaskan aturan pinjam/kembali\n- cek status pinjaman\n- hitung sederhana\n- buat caption singkat\n- kasih ide cepat\nKalau Gemini aktif, jawaban saya juga bisa lebih umum seperti AI biasa.";
+        } elseif ($contains(['jam berapa', 'sekarang jam berapa', 'waktu sekarang'])) {
+            $reply = 'Sekarang jam '.now()->translatedFormat('H:i').' WIB/ICT.';
+        } elseif ($contains(['hari apa', 'tanggal berapa', 'tanggal sekarang'])) {
+            $reply = 'Sekarang '.now()->translatedFormat('l, d F Y').'.';
+        } elseif ($contains(['apa itu ', 'jelaskan ', 'pengertian '])) {
+            $reply = $this->buildDefinitionReply($message);
+        } elseif ($contains(['buat caption', 'bikin caption', 'caption untuk'])) {
+            $reply = $this->buildCaptionReply($message);
+        } elseif ($contains(['beri ide', 'kasih ide', 'butuh ide', 'ide untuk'])) {
+            $reply = $this->buildIdeasReply($message);
+        } elseif ($contains(['buat surat', 'bikin surat', 'buat pesan', 'bikin pesan'])) {
+            $reply = $this->buildMessageReply($message);
+        } elseif ($contains(['buat kode', 'bikin kode', 'coding', 'program', 'php', 'javascript', 'python'])) {
+            $reply = $this->buildCodingReply($lower);
+        } elseif ($contains(['belajar', 'cara belajar', 'tips belajar'])) {
+            $reply = "Tips belajar cepat:\n- pecah materi jadi bagian kecil\n- fokus 25-30 menit lalu istirahat\n- coba jelaskan ulang dengan kata sendiri\n- latihan soal atau contoh nyata\n- ulang lagi bagian yang masih lemah";
+        } elseif ($contains(['ringkas', 'rangkum', 'summary'])) {
+            $reply = 'Bisa. Kirim teks yang ingin diringkas, lalu saya bantu buat versi singkatnya. Kalau AI online aktif, hasilnya akan lebih fleksibel.';
         } elseif ($contains(['cara pinjam', 'pinjam buku', 'ajukan pinjam', 'peminjaman'])) {
             $reply = "Cara pinjam:\n1) Cari buku di dashboard peminjam.\n2) Klik buku yang dipilih.\n3) Isi tanggal (otomatis 1 hari) lalu klik Ajukan Pinjam.\n4) Tunggu petugas memproses pengajuan.";
         } elseif ($contains(['cara kembali', 'pengembalian', 'kembaliin', 'kembalikan'])) {
@@ -126,29 +159,132 @@ class DashboardController extends Controller
             }
         }
 
-        return response()->json([
-            'status' => 'success',
-            'reply' => $reply,
-            'source' => 'fallback',
-        ]);
+        return $reply;
+    }
+
+    private function trySolveMathExpression(string $message): ?string
+    {
+        $expression = mb_strtolower(trim($message));
+        $expression = preg_replace('/^(berapa|hitung|hasil|tolong hitung)\s+/i', '', $expression);
+        $expression = str_replace(['x', ':', '='], ['*', '/', ''], $expression);
+
+        if (! preg_match('/[0-9]/', $expression)) {
+            return null;
+        }
+
+        if (! preg_match('/^[0-9\.\+\-\*\/%\(\)\s]+$/', $expression)) {
+            return null;
+        }
+
+        if (str_contains($expression, '**') || str_contains($expression, '//')) {
+            return null;
+        }
+
+        try {
+            /** @var mixed $result */
+            $result = eval('return '.$expression.';');
+
+            if (! is_numeric($result)) {
+                return null;
+            }
+
+            $formatted = floor((float) $result) == (float) $result
+                ? (string) (int) $result
+                : rtrim(rtrim(number_format((float) $result, 6, '.', ''), '0'), '.');
+
+            return 'Hasilnya: '.$formatted;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function buildCaptionReply(string $message): string
+    {
+        $topic = $this->extractTopic($message, ['buat caption', 'bikin caption', 'caption untuk']);
+        $topicText = $topic !== '' ? $topic : 'postingan kamu';
+
+        return "Coba salah satu caption ini:\n"
+            ."- {$topicText} yang sederhana tapi tetap berkesan.\n"
+            ."- Cerita kecil dari {$topicText}, semoga bikin hari lebih baik.\n"
+            ."- {$topicText} hari ini, semoga bermanfaat dan menginspirasi.";
+    }
+
+    private function buildIdeasReply(string $message): string
+    {
+        $topic = $this->extractTopic($message, ['beri ide', 'kasih ide', 'butuh ide', 'ide untuk']);
+        $topicText = $topic !== '' ? $topic : 'topik kamu';
+
+        return "Ide cepat untuk {$topicText}:\n"
+            ."- buat versi yang simpel dan mudah dijalankan dulu\n"
+            ."- tambahkan unsur yang unik atau beda dari biasanya\n"
+            ."- sesuaikan dengan siapa target yang akan melihat atau memakai\n"
+            ."- buat 2-3 variasi lalu pilih yang paling jelas manfaatnya";
+    }
+
+    private function buildDefinitionReply(string $message): string
+    {
+        $topic = $this->extractTopic($message, ['apa itu', 'jelaskan', 'pengertian']);
+        $topicText = $topic !== '' ? $topic : 'topik itu';
+
+        return "{$topicText} adalah sesuatu yang perlu dilihat dari fungsi, tujuan, dan contohnya.\n"
+            ."Kalau kamu mau, kirim topiknya lebih spesifik, misalnya: \"jelaskan fotosintesis\" atau \"apa itu variabel di pemrograman\", nanti saya jawab lebih pas.";
+    }
+
+    private function buildMessageReply(string $message): string
+    {
+        $topic = $this->extractTopic($message, ['buat surat', 'bikin surat', 'buat pesan', 'bikin pesan']);
+        $topicText = $topic !== '' ? $topic : 'keperluan kamu';
+
+        return "Contoh pesan singkat untuk {$topicText}:\n"
+            ."Halo, izin menyampaikan bahwa saya membutuhkan bantuan terkait {$topicText}. Mohon informasinya jika ada langkah yang perlu saya ikuti. Terima kasih.";
+    }
+
+    private function buildCodingReply(string $lower): string
+    {
+        if (str_contains($lower, 'php')) {
+            return "Contoh PHP sederhana:\n```php\n<?php\n\$nama = 'Dunia';\necho 'Halo, ' . \$nama;\n```\nKalau mau, bilang juga kamu butuh contoh PHP untuk apa.";
+        }
+
+        if (str_contains($lower, 'javascript')) {
+            return "Contoh JavaScript sederhana:\n```javascript\nconst nama = 'Dunia';\nconsole.log(`Halo, ${nama}`);\n```\nKalau mau, saya bisa bantu contoh JS untuk form, array, atau fetch.";
+        }
+
+        if (str_contains($lower, 'python')) {
+            return "Contoh Python sederhana:\n```python\nnama = 'Dunia'\nprint(f'Halo, {nama}')\n```\nKalau mau, saya bisa bantu contoh Python untuk perulangan, fungsi, atau input data.";
+        }
+
+        return "Bisa bantu coding dasar. Sebutkan bahasanya ya, misalnya:\n- PHP\n- JavaScript\n- Python\nLalu tulis kebutuhanmu, misalnya form login, loop, fungsi, atau hitung data.";
+    }
+
+    private function extractTopic(string $message, array $prefixes): string
+    {
+        $normalized = trim($message);
+
+        foreach ($prefixes as $prefix) {
+            if (preg_match('/'.preg_quote($prefix, '/').'\s+(.+)$/i', $normalized, $matches)) {
+                return trim($matches[1], " \t\n\r\0\x0B.,!?");
+            }
+        }
+
+        return '';
     }
 
     private function getGeminiResponse(string $message, array $history, ?User $user): ?string
     {
         $apiKey = config('services.gemini.key');
-        $preferredModel = (string) config('services.gemini.model', 'gemma-3-1b-it');
+        $preferredModel = (string) config('services.gemini.model', 'gemini-2.0-flash');
 
         if (!$apiKey || $apiKey === 'your_gemini_api_key_here') {
             return null;
         }
 
         $context = $this->getLibraryContext($user);
-        $instructionText = implode("\n\n", [
-            'Anda adalah asisten AI percakapan umum di aplikasi perpustakaan sekolah bernama Perpus Pintar.',
-            'Jawab seperti asisten chat modern: natural, langsung, membantu, dan bisa membahas topik umum apa pun, bukan hanya aturan pinjam buku.',
-            'Jika pertanyaan menyentuh data perpustakaan atau akun, gunakan konteks yang tersedia dan jangan mengarang data.',
-            'Jika pengguna meminta opini, penjelasan, ide, rangkuman, bantuan belajar, coding, atau pengetahuan umum, jawab secara normal seperti chatbot AI umum.',
-            'Jika jawaban berkaitan dengan fitur aplikasi perpustakaan, sesuaikan dengan konteks berikut:',
+        $instructionText = implode("\n", [
+            'Anda adalah asisten AI cepat di aplikasi perpustakaan sekolah Perpus Pintar.',
+            'Jawab natural, langsung, dan ringkas.',
+            'Utamakan jawaban 1-4 kalimat kecuali pengguna meminta detail.',
+            'Jika pertanyaan menyentuh data perpustakaan atau akun, pakai konteks yang tersedia dan jangan mengarang.',
+            'Konteks aplikasi:',
             $context,
         ]);
 
@@ -170,7 +306,7 @@ class DashboardController extends Controller
             ->values()
             ->all();
 
-        $models = collect([$preferredModel, 'gemma-3-1b-it', 'gemma-3-4b-it', 'gemini-2.0-flash', 'gemini-flash-lite-latest'])
+        $models = collect([$preferredModel, 'gemini-flash-lite-latest', 'gemini-2.0-flash', 'gemma-3-1b-it', 'gemma-3-4b-it'])
             ->filter()
             ->unique()
             ->values();
@@ -193,9 +329,9 @@ class DashboardController extends Controller
                     )
                     : $contents,
                 'generationConfig' => [
-                    'temperature' => 0.8,
-                    'topP' => 0.95,
-                    'maxOutputTokens' => 900,
+                    'temperature' => 0.55,
+                    'topP' => 0.9,
+                    'maxOutputTokens' => 320,
                 ],
             ];
 
@@ -212,7 +348,7 @@ class DashboardController extends Controller
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'X-goog-api-key' => $apiKey,
-            ])->timeout(45)->post($apiUrl, $payload);
+            ])->connectTimeout(3)->timeout(12)->post($apiUrl, $payload);
 
             if ($response->successful()) {
                 $text = data_get($response->json(), 'candidates.0.content.parts.0.text');

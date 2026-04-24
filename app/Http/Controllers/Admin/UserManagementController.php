@@ -62,7 +62,7 @@ class UserManagementController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ], [
             'email.unique' => 'Email sudah dipakai akun lain.',
-            'nik.unique' => 'NIK/KTP sudah dipakai akun lain.',
+            'nik.unique' => 'NIK sudah dipakai akun lain.',
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
@@ -207,7 +207,7 @@ class UserManagementController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ], [
             'email.unique' => 'Email sudah dipakai akun lain.',
-            'nik.unique' => 'NIK/KTP sudah dipakai akun lain.',
+            'nik.unique' => 'NIK sudah dipakai akun lain.',
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
