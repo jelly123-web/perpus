@@ -28,14 +28,14 @@
         @csrf
 
         <div>
-            <label for="username" class="block text-xs font-semibold text-lib-800 uppercase tracking-wider mb-2">username</label>
+            <label for="username" class="block text-xs font-semibold text-lib-800 uppercase tracking-wider mb-2">username / email / ktp</label>
             <input
                 type="text"
                 id="username"
                 name="username"
                 value="{{ old('username') }}"
                 class="input-lib w-full px-4 py-3.5 rounded-xl text-sm text-lib-950"
-                placeholder="nama"
+                placeholder="masukkan username, email, atau no KTP"
                 autocomplete="username"
                 required
             >
@@ -87,6 +87,25 @@
             Masuk
         </button>
     </form>
+
+    <div class="my-5 flex items-center gap-3">
+        <div class="h-px flex-1 bg-lib-200"></div>
+        <span class="text-[11px] font-semibold uppercase tracking-[0.18em] text-lib-500">atau</span>
+        <div class="h-px flex-1 bg-lib-200"></div>
+    </div>
+
+    <a
+        href="{{ route('auth.google.redirect') }}"
+        class="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-lib-200 bg-white px-4 py-3.5 text-sm font-semibold text-lib-900 transition hover:border-lib-300 hover:bg-lib-50"
+    >
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5">
+            <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.23 1.26-.96 2.33-2.03 3.05l3.28 2.54c1.91-1.76 3.01-4.35 3.01-7.43 0-.72-.06-1.41-.19-2.08H12z"/>
+            <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.44l-3.28-2.54c-.91.61-2.08.98-3.33.98-2.56 0-4.72-1.73-5.49-4.05H3.12v2.62A9.99 9.99 0 0012 22z"/>
+            <path fill="#4A90E2" d="M6.51 13.95A5.99 5.99 0 016.2 12c0-.68.12-1.34.31-1.95V7.43H3.12A9.99 9.99 0 002 12c0 1.61.39 3.13 1.12 4.57l3.39-2.62z"/>
+            <path fill="#FBBC05" d="M12 5.98c1.47 0 2.79.51 3.83 1.49l2.87-2.87C16.95 2.98 14.69 2 12 2a9.99 9.99 0 00-8.88 5.43l3.39 2.62C7.28 7.71 9.44 5.98 12 5.98z"/>
+        </svg>
+        <span>Masuk dengan Google</span>
+    </a>
 
     <p class="text-center mt-7 text-sm text-lib-700/60">
         Belum punya akun?

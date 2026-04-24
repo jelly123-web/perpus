@@ -95,6 +95,10 @@
                     <div class="profile-box-value">{{ $user->username }}</div>
                 </div>
                 <div class="profile-box">
+                    <div class="profile-box-label">NIK / KTP</div>
+                    <div class="profile-box-value">{{ $user->nik ?: 'Belum diisi' }}</div>
+                </div>
+                <div class="profile-box">
                     <div class="profile-box-label">Kelas / Jurusan</div>
                     <div class="profile-box-value">{{ $user->academicLabel() ?: 'Belum diisi' }}</div>
                 </div>
@@ -115,12 +119,16 @@
                 </div>
 
                 <div class="profile-form-grid">
+                    <input name="nik" value="{{ old('nik', $user->nik) }}" class="form-input px-3 py-3 text-sm" placeholder="NIK / No KTP">
                     <input type="email" name="email" value="{{ old('email', $user->email) }}" class="form-input px-3 py-3 text-sm" placeholder="Email" required>
-                    <input name="phone" value="{{ old('phone', $user->phone) }}" class="form-input px-3 py-3 text-sm" placeholder="No HP">
                 </div>
 
                 <div class="profile-form-grid">
+                    <input name="phone" value="{{ old('phone', $user->phone) }}" class="form-input px-3 py-3 text-sm" placeholder="No HP">
                     <input name="kelas" value="{{ old('kelas', $user->kelas) }}" class="form-input px-3 py-3 text-sm" placeholder="Kelas">
+                </div>
+
+                <div class="profile-form-grid">
                     <input name="jurusan" value="{{ old('jurusan', $user->jurusan) }}" class="form-input px-3 py-3 text-sm" placeholder="Jurusan">
                 </div>
 

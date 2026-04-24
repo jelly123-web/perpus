@@ -3,15 +3,21 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\ActivityLogger;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use RuntimeException;
 use Illuminate\View\View;
+use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
@@ -41,7 +47,9 @@ class LoginController extends Controller
 
     public function show(): View
     {
-        return view('auth.login');
+        return view('auth.login', [
+            'googleLoginEnabled' => $this->googleLoginEnabled(),
+        ]);
     }
 
     public function authenticate(Request $request): RedirectResponse|JsonResponse
@@ -50,8 +58,8 @@ class LoginController extends Controller
             'username' => ['required', 'string', 'min:3'],
             'password' => ['required', 'string', 'min:5'],
         ], [
-            'username.required' => 'NIS atau username wajib diisi.',
-            'username.min' => 'NIS atau username minimal 3 karakter.',
+            'username.required' => 'Username, email, atau NIK/KTP wajib diisi.',
+            'username.min' => 'Username, email, atau NIK/KTP minimal 3 karakter.',
             'password.required' => 'Kata sandi wajib diisi.',
             'password.min' => 'Kata sandi minimal 5 karakter.',
         ]);
@@ -59,11 +67,10 @@ class LoginController extends Controller
         $loginValue = $credentials['username'];
 
         try {
-            $user = User::query()->where('username', $loginValue)->first();
-
-            if (! $user) {
-                $user = User::query()->where('name', $loginValue)->first();
-            }
+            $user = User::query()
+                ->where('username', $loginValue)
+                ->orWhere('nik', $loginValue)
+                ->first();
 
             if (! $user) {
                 $emailMatches = User::query()->where('email', $loginValue)->get();
@@ -71,15 +78,15 @@ class LoginController extends Controller
                 if ($emailMatches->count() > 1) {
                     if ($request->ajax()) {
                         return response()->json([
-                            'message' => 'Email ini dipakai beberapa akun. Silakan login memakai username/NIS.',
-                            'errors' => ['username' => ['Email ini dipakai beberapa akun. Silakan login memakai username/NIS.']],
+                            'message' => 'Email ini dipakai beberapa akun. Silakan login memakai username atau NIK/KTP.',
+                            'errors' => ['username' => ['Email ini dipakai beberapa akun. Silakan login memakai username atau NIK/KTP.']],
                         ], 422);
                     }
 
                     return back()
                         ->withInput($request->only('username', 'remember'))
                         ->withErrors([
-                            'username' => 'Email ini dipakai beberapa akun. Silakan login memakai username/NIS.',
+                            'username' => 'Email ini dipakai beberapa akun. Silakan login memakai username atau NIK/KTP.',
                         ]);
                 }
 
@@ -103,15 +110,15 @@ class LoginController extends Controller
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             if ($request->ajax()) {
                 return response()->json([
-                    'message' => 'Username/NIS atau kata sandi tidak cocok.',
-                    'errors' => ['username' => ['Username/NIS atau kata sandi tidak cocok.']],
+                    'message' => 'Username, email, atau NIK/KTP tidak cocok dengan kata sandi.',
+                    'errors' => ['username' => ['Username, email, atau NIK/KTP tidak cocok dengan kata sandi.']],
                 ], 422);
             }
 
             return back()
                 ->withInput($request->only('username', 'remember'))
                 ->withErrors([
-                    'username' => 'Username/NIS atau kata sandi tidak cocok.',
+                    'username' => 'Username, email, atau NIK/KTP tidak cocok dengan kata sandi.',
                 ]);
         }
 
@@ -164,5 +171,151 @@ class LoginController extends Controller
         }
 
         return redirect()->route('login')->with('status', 'Anda berhasil logout.');
+    }
+
+    public function redirectToGoogle(): RedirectResponse
+    {
+        if (! $this->googleLoginEnabled()) {
+            return redirect()->route('login')
+                ->withErrors(['username' => 'Login Google belum dikonfigurasi. Isi GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, dan GOOGLE_REDIRECT_URI terlebih dahulu.']);
+        }
+
+        return Socialite::driver('google')
+            ->scopes(['openid', 'profile', 'email'])
+            ->redirect();
+    }
+
+    public function handleGoogleCallback(Request $request): RedirectResponse
+    {
+        if (! $this->googleLoginEnabled()) {
+            return redirect()->route('login')
+                ->withErrors(['username' => 'Login Google belum dikonfigurasi. Isi GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, dan GOOGLE_REDIRECT_URI terlebih dahulu.']);
+        }
+
+        try {
+            $googleUser = Socialite::driver('google')->user();
+            $user = $this->resolveGoogleUser($googleUser);
+        } catch (AuthenticationException $exception) {
+            report($exception);
+
+            return redirect()->route('login')
+                ->withErrors(['username' => $exception->getMessage() ?: 'Otentikasi Google gagal. Silakan coba lagi.']);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return redirect()->route('login')
+                ->withErrors(['username' => $exception->getMessage() ?: 'Login Google gagal diproses.']);
+        }
+
+        Auth::login($user, true);
+        $request->session()->regenerate();
+
+        ActivityLogger::log('auth', 'login', 'Berhasil login ke sistem melalui Google');
+
+        return redirect()->intended($this->resolveHomeRouteFor($user))
+            ->with('status', 'Selamat datang, '.$user->name.'!');
+    }
+
+    private function resolveGoogleUser(object $googleUser): User
+    {
+        $googleId = (string) ($googleUser->id ?? '');
+        $email = trim((string) ($googleUser->email ?? ''));
+        $name = trim((string) ($googleUser->name ?? ''));
+
+        if ($googleId === '') {
+            throw new AuthenticationException('Google tidak mengirim identitas akun yang valid.');
+        }
+
+        if ($email === '') {
+            throw new AuthenticationException('Akun Google ini tidak memiliki email yang bisa dipakai untuk login.');
+        }
+
+        $existingByGoogleId = User::query()->where('google_id', $googleId)->first();
+
+        if ($existingByGoogleId) {
+            if (! $existingByGoogleId->is_active) {
+                throw new AuthenticationException('Akun ini sedang dinonaktifkan.');
+            }
+
+            if (! $existingByGoogleId->hasVerifiedEmail()) {
+                $existingByGoogleId->forceFill([
+                    'email_verified_at' => Carbon::now(),
+                ])->save();
+            }
+
+            return $existingByGoogleId;
+        }
+
+        $emailMatches = User::query()->where('email', $email)->get();
+
+        if ($emailMatches->count() > 1) {
+            throw new AuthenticationException('Email Google ini terhubung ke beberapa akun. Silakan login memakai username atau NIK/KTP lalu hubungi admin untuk menghubungkan akun Google.');
+        }
+
+        $user = $emailMatches->first();
+
+        if ($user) {
+            if (! $user->is_active) {
+                throw new AuthenticationException('Akun ini sedang dinonaktifkan.');
+            }
+
+            $user->forceFill([
+                'google_id' => $googleId,
+                'email_verified_at' => $user->email_verified_at ?: Carbon::now(),
+            ])->save();
+
+            return $user;
+        }
+
+        $user = User::query()->create([
+            'name' => $name !== '' ? $name : Str::before($email, '@'),
+            'username' => $this->generateUniqueUsername($email, $name),
+            'email' => $email,
+            'role_id' => $this->resolveGoogleRoleId(),
+            'is_active' => true,
+            'password' => Str::random(40),
+            'google_id' => $googleId,
+            'email_verified_at' => Carbon::now(),
+        ]);
+
+        return $user;
+    }
+
+    private function generateUniqueUsername(string $email, string $name = ''): string
+    {
+        $baseUsername = Str::of($email)->before('@')->slug('_')->value();
+
+        if ($baseUsername === '') {
+            $baseUsername = Str::of($name)->slug('_')->value();
+        }
+
+        $baseUsername = $baseUsername !== '' ? $baseUsername : 'user';
+        $username = $baseUsername;
+        $counter = 1;
+
+        while (User::query()->where('username', $username)->exists()) {
+            $username = $baseUsername.'_'.$counter;
+            $counter++;
+        }
+
+        return $username;
+    }
+
+    private function resolveGoogleRoleId(): int
+    {
+        $roleId = Role::query()->where('name', 'siswa')->value('id');
+
+        if (! $roleId) {
+            throw new RuntimeException('Role siswa belum tersedia. Buat role siswa terlebih dahulu sebelum mengaktifkan login Google.');
+        }
+
+        return (int) $roleId;
+    }
+
+    private function googleLoginEnabled(): bool
+    {
+        return filled(config('services.google.client_id'))
+            && filled(config('services.google.client_secret'))
+            && filled(config('services.google.redirect'));
     }
 }
