@@ -414,14 +414,20 @@
         }
     });
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function initLoanLivePage() {
         syncLoanDueAt();
-    });
+    }
 
     document.addEventListener('async:refreshed', function (event) {
         if ((event.detail?.selectors || []).includes('#loanPageWrap')) {
             syncLoanDueAt();
         }
     });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLoanLivePage, { once: true });
+    } else {
+        initLoanLivePage();
+    }
 </script>
 @endsection

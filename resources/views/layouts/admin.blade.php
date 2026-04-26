@@ -796,6 +796,75 @@
             }
         }
 
+        let loanPageLiveSignature = null;
+        let loanPageLiveBusy = false;
+
+        async function pollGlobalLoanPage() {
+            const loanStatsWrap = document.getElementById('loanStatsWrap');
+            const loanPageWrap = document.getElementById('loanPageWrap');
+
+            if (!loanStatsWrap || !loanPageWrap || loanPageLiveBusy || document.hidden) {
+                return;
+            }
+
+            loanPageLiveBusy = true;
+
+            try {
+                const response = await fetch('{{ route('admin.loans.live-snapshot') }}?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const nextSignature = data.signature || null;
+
+                if (loanPageLiveSignature !== null && nextSignature && nextSignature !== loanPageLiveSignature) {
+                    await refreshAsyncTargets(['#loanStatsWrap', '#loanPageWrap']);
+                }
+
+                loanPageLiveSignature = nextSignature;
+            } catch (error) {
+                console.error('Error polling loan page:', error);
+            } finally {
+                loanPageLiveBusy = false;
+            }
+        }
+
+        async function syncGlobalLoanPageSignature() {
+            const loanPageWrap = document.getElementById('loanPageWrap');
+
+            if (!loanPageWrap) {
+                loanPageLiveSignature = null;
+                return;
+            }
+
+            try {
+                const response = await fetch('{{ route('admin.loans.live-snapshot') }}?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                loanPageLiveSignature = data.signature || null;
+            } catch (error) {
+                console.error('Error syncing loan page signature:', error);
+            }
+        }
+
         function toggleNotifPanel() {
             const isOpen = notifPanel.classList.contains('show');
             if (isOpen) {
@@ -1251,6 +1320,24 @@
             handleAsyncFormSubmit(form);
         });
 
+        document.addEventListener('async:refreshed', function (event) {
+            const selectors = event.detail?.selectors || [];
+
+            if (selectors.includes('#loanPageWrap') || selectors.includes('#loanStatsWrap')) {
+                syncGlobalLoanPageSignature();
+            }
+        });
+
+        document.addEventListener('async:form-success', function () {
+            syncGlobalLoanPageSignature();
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                pollGlobalLoanPage();
+            }
+        });
+
         // Initialize Global Notifications
         @php
             $notificationPollInterval = ($user?->role?->name === 'kepsek' || $user?->isSuperAdmin()) ? 1000 : 15000;
@@ -1259,6 +1346,10 @@
         window.setInterval(function () {
             refreshGlobalNotifications(false);
         }, @json($notificationPollInterval));
+        syncGlobalLoanPageSignature();
+        window.setInterval(function () {
+            pollGlobalLoanPage();
+        }, 1000);
     </script>
 </body>
 </html>

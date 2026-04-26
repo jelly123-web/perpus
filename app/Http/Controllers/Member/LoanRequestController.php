@@ -69,7 +69,7 @@ class LoanRequestController extends Controller
             ->exists();
 
         if ($hasOpenRequest) {
-            $message = 'Buku ini sudah ada di daftar pengajuan atau sedang Anda pinjam.';
+            $message = 'Buku ini sudah ada di daftar pengajuan Anda atau masih sedang dipinjam di akun ini.';
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 422);

@@ -143,8 +143,8 @@
                                         data-cover-url="{{ $book->cover_image ? asset('storage/'.$book->cover_image) : '' }}"
                                         data-borrowed-at="{{ now()->toDateString() }}"
                                         data-due-at="{{ now()->addDay()->toDateString() }}"
-                                        data-borrow-state="{{ $borrowerActiveSanction ? 'sanctioned' : ($book->stock_available > 0 ? 'available' : 'unavailable') }}"
-                                        data-can-borrow="{{ $book->stock_available > 0 && ! $borrowerActiveSanction ? '1' : '0' }}"
+                                        data-borrow-state="{{ $book->borrow_state ?? ($borrowerActiveSanction ? 'sanctioned' : ($book->stock_available > 0 ? 'available' : 'unavailable')) }}"
+                                        data-can-borrow="{{ ($book->can_borrow ?? ($book->stock_available > 0 && ! $borrowerActiveSanction)) ? '1' : '0' }}"
                                     >
                                         <div class="dbx-book-thumb">
                                             @if ($book->cover_image)
@@ -154,8 +154,14 @@
                                             @endif
                                         </div>
                                         <div class="dbx-book-body">
-                                            <div class="dbx-book-chip {{ $book->stock_available > 0 ? '' : 'unavailable' }}">
-                                                {{ $book->stock_available > 0 ? 'Tersedia' : 'Habis' }}
+                                            <div class="dbx-book-chip {{ ($book->borrow_state ?? '') !== 'available' ? 'unavailable' : '' }}">
+                                                {{
+                                                    ($book->borrow_state ?? null) === 'requested'
+                                                        ? 'Menunggu petugas'
+                                                        : (($book->borrow_state ?? null) === 'sanctioned'
+                                                            ? 'Akun disanksi'
+                                                            : ($book->stock_available > 0 ? 'Tersedia' : 'Habis'))
+                                                }}
                                             </div>
                                             <div class="dbx-book-name">{{ $book->title }}</div>
                                             <div class="dbx-book-author">{{ $book->author ?? 'Penulis tidak tersedia' }}</div>
@@ -654,8 +660,12 @@
             }
 
             borrowerBookGrid.innerHTML = books.map(function (book) {
-                const chipClass = book.stock > 0 ? '' : ' unavailable';
-                const chipLabel = book.stock > 0 ? 'Tersedia' : 'Habis';
+                const chipClass = book.borrow_state === 'available' ? '' : ' unavailable';
+                const chipLabel = book.borrow_state === 'requested'
+                    ? 'Menunggu petugas'
+                    : (book.borrow_state === 'sanctioned'
+                        ? 'Akun disanksi'
+                        : (book.stock > 0 ? 'Tersedia' : 'Habis'));
                 const imageHtml = book.cover_url
                     ? '<img src="' + escapeHtml(book.cover_url) + '" alt="' + escapeHtml(book.title) + '">'
                     : '<div class="dbx-book-fallback">' + escapeHtml((book.title || 'B').trim().charAt(0).toUpperCase()) + '</div>';
@@ -878,12 +888,16 @@
             syncBorrowDrawerDueAt();
             fallback.textContent = (bookTitle.trim().charAt(0) || 'B').toUpperCase();
 
-            status.textContent = borrowState === 'sanctioned' ? 'Akun disanksi' : (isAvailable ? 'Tersedia' : 'Tidak tersedia');
+            status.textContent = borrowState === 'sanctioned'
+                ? 'Akun disanksi'
+                : (borrowState === 'requested' ? 'Menunggu petugas' : (isAvailable ? 'Tersedia' : 'Tidak tersedia'));
             status.classList.toggle('unavailable', !isAvailable);
             submit.disabled = !isAvailable;
             submitLabel.textContent = borrowState === 'sanctioned'
                 ? 'Pinjam Dinonaktifkan Sementara'
-                : (isAvailable ? 'Ajukan Pinjam Lewat Sistem' : 'Stok Tidak Tersedia');
+                : (borrowState === 'requested'
+                    ? 'Pengajuan Sudah Dikirim'
+                    : (isAvailable ? 'Ajukan Pinjam Lewat Sistem' : 'Stok Tidak Tersedia'));
 
             if (button.dataset.coverUrl) {
                 image.src = button.dataset.coverUrl;

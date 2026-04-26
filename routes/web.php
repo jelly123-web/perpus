@@ -112,6 +112,7 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
 
         Route::get('/loans', [LoanController::class, 'index'])->middleware('permission:manage_loans')->name('loans.index');
+        Route::get('/loans/live-snapshot', [LoanController::class, 'liveSnapshot'])->middleware('permission:manage_loans')->name('loans.live-snapshot');
         Route::post('/loans', [LoanController::class, 'store'])->middleware('permission:manage_loans')->name('loans.store');
         Route::post('/loans/return', [LoanController::class, 'returnBook'])->middleware('permission:manage_loans')->name('loans.return');
         Route::post('/loans/sanctions', [LoanController::class, 'storeSanction'])->middleware('permission:manage_loans')->name('loans.sanctions.store');

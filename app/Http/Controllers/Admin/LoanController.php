@@ -89,6 +89,23 @@ class LoanController extends Controller
         return view('admin.loans.index', compact('loans', 'requestedLoans', 'sanctionableLoans', 'sanctions', 'sanctionMonitoring', 'activeLoans', 'books', 'members', 'memberStatuses', 'loanStats'));
     }
 
+    public function liveSnapshot(): JsonResponse
+    {
+        $loanUpdatedAt = Loan::query()->max('updated_at');
+        $sanctionUpdatedAt = Sanction::query()->max('updated_at');
+
+        return response()->json([
+            'signature' => implode('|', [
+                (string) Loan::query()->count(),
+                (string) Loan::query()->where('status', 'requested')->count(),
+                (string) Loan::query()->whereIn('status', ['borrowed', 'late'])->count(),
+                (string) Sanction::query()->where('status', 'active')->count(),
+                $loanUpdatedAt ? Carbon::parse($loanUpdatedAt)->timestamp : 0,
+                $sanctionUpdatedAt ? Carbon::parse($sanctionUpdatedAt)->timestamp : 0,
+            ]),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $data = $request->validate([

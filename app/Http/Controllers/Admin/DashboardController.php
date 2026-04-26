@@ -435,12 +435,27 @@ class DashboardController extends Controller
             ->orderByDesc('loans_count')
             ->take(4)
             ->get();
-        $borrowerCategories = $this->getBorrowerCategories();
-        $borrowerBooks = $this->getBorrowerBooks($bookFilters);
-
         $borrowerActiveSanction = $isBorrowerDashboard
             ? $this->getActiveBorrowerSanction($user?->id, $today)
             : null;
+
+        $borrowerCategories = $this->getBorrowerCategories();
+        $borrowerBooks = $this->getBorrowerBooks($bookFilters);
+        $borrowerOpenLoanBookIds = $isBorrowerDashboard
+            ? $this->getBorrowerOpenLoanBookIds($user?->id)
+            : collect();
+
+        $borrowerBooks = $borrowerBooks->map(function (Book $book) use ($borrowerActiveSanction, $borrowerOpenLoanBookIds): Book {
+            $hasPendingRequest = $borrowerOpenLoanBookIds->contains((int) $book->id);
+            $borrowState = $borrowerActiveSanction
+                ? 'sanctioned'
+                : ($hasPendingRequest ? 'requested' : ($book->stock_available > 0 ? 'available' : 'unavailable'));
+
+            $book->borrow_state = $borrowState;
+            $book->can_borrow = $borrowState === 'available';
+
+            return $book;
+        });
 
         $borrowerLoans = $isBorrowerDashboard
             ? Loan::query()
@@ -757,6 +772,43 @@ class DashboardController extends Controller
                 })
                 ->values();
 
+            if ($user->hasPermission('manage_loans')) {
+                $lateLoans = Loan::query()
+                    ->with(['book', 'member'])
+                    ->where('status', 'late')
+                    ->latest('updated_at')
+                    ->take(5)
+                    ->get();
+
+                $requestedLoans = Loan::query()
+                    ->with(['book', 'member'])
+                    ->where('status', 'requested')
+                    ->latest('created_at')
+                    ->take(5)
+                    ->get();
+
+                $notifications = $notifications
+                    ->merge($lateLoans->map(fn (Loan $loan) => [
+                        'tone' => 'danger',
+                        'icon' => 'triangle-alert',
+                        'title' => 'Buku terlambat dikembalikan',
+                        'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
+                        'signature' => 'superadmin-late-'.$loan->id.'-'.$loan->status,
+                        'href' => route('admin.loans.index'),
+                    ]))
+                    ->merge($requestedLoans->map(fn (Loan $loan) => [
+                        'tone' => 'info',
+                        'icon' => 'info',
+                        'title' => 'Permintaan pinjam baru',
+                        'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
+                        'signature' => 'superadmin-requested-'.$loan->id,
+                        'href' => route('admin.loans.index'),
+                    ]))
+                    ->sortByDesc(fn (array $notification) => str_contains((string) ($notification['signature'] ?? ''), 'superadmin-procurement-') ? 0 : 1)
+                    ->take(10)
+                    ->values();
+            }
+
             return response()->json([
                 'notifications' => $notifications,
             ]);
@@ -811,6 +863,7 @@ class DashboardController extends Controller
         $borrowerActiveSanction = $this->getActiveBorrowerSanction($user?->id, now());
         $categories = $this->getBorrowerCategories();
         $books = $this->getBorrowerBooks($bookFilters);
+        $borrowerOpenLoanBookIds = $this->getBorrowerOpenLoanBookIds($user?->id);
 
         return response()->json([
             'filters' => $bookFilters,
@@ -827,8 +880,12 @@ class DashboardController extends Controller
                 'cover_url' => $book->cover_image ? asset('storage/'.$book->cover_image) : null,
                 'borrowed_at' => now()->toDateString(),
                 'due_at' => now()->addDay()->toDateString(),
-                'borrow_state' => $borrowerActiveSanction ? 'sanctioned' : ($book->stock_available > 0 ? 'available' : 'unavailable'),
-                'can_borrow' => $book->stock_available > 0 && ! $borrowerActiveSanction,
+                'borrow_state' => $borrowerActiveSanction
+                    ? 'sanctioned'
+                    : ($borrowerOpenLoanBookIds->contains((int) $book->id) ? 'requested' : ($book->stock_available > 0 ? 'available' : 'unavailable')),
+                'can_borrow' => ! $borrowerActiveSanction
+                    && ! $borrowerOpenLoanBookIds->contains((int) $book->id)
+                    && $book->stock_available > 0,
             ])->values(),
         ]);
     }
@@ -874,6 +931,21 @@ class DashboardController extends Controller
             ->orderBy('title')
             ->take(12)
             ->get();
+    }
+
+    private function getBorrowerOpenLoanBookIds(?int $userId)
+    {
+        if (! $userId) {
+            return collect();
+        }
+
+        return Loan::query()
+            ->where('member_id', $userId)
+            ->whereIn('status', ['requested', 'borrowed', 'late'])
+            ->pluck('book_id')
+            ->map(fn ($bookId) => (int) $bookId)
+            ->unique()
+            ->values();
     }
 
     private function getActiveBorrowerSanction(?int $userId, \Illuminate\Support\Carbon $today): ?Sanction
