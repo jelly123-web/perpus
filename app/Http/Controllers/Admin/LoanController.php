@@ -12,6 +12,7 @@ use App\Support\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
@@ -23,12 +24,7 @@ class LoanController extends Controller
     {
         $today = Carbon::today();
         $loans = Loan::query()->with(['book', 'member', 'processor'])->latest()->paginate(10);
-        $requestedLoans = Loan::query()
-            ->with(['book', 'member'])
-            ->where('status', 'requested')
-            ->latest('created_at')
-            ->take(20)
-            ->get();
+        $requestedLoans = $this->getRequestedLoans();
         $sanctionableLoans = Loan::query()
             ->with(['book', 'member'])
             ->latest()
@@ -91,18 +87,19 @@ class LoanController extends Controller
 
     public function liveSnapshot(): JsonResponse
     {
-        $loanUpdatedAt = Loan::query()->max('updated_at');
-        $sanctionUpdatedAt = Sanction::query()->max('updated_at');
+        return response()->json([
+            'signature' => $this->loanLiveSignature(),
+        ]);
+    }
+
+    public function requestedPanel(): JsonResponse
+    {
+        $requestedLoans = $this->getRequestedLoans();
 
         return response()->json([
-            'signature' => implode('|', [
-                (string) Loan::query()->count(),
-                (string) Loan::query()->where('status', 'requested')->count(),
-                (string) Loan::query()->whereIn('status', ['borrowed', 'late'])->count(),
-                (string) Sanction::query()->where('status', 'active')->count(),
-                $loanUpdatedAt ? Carbon::parse($loanUpdatedAt)->timestamp : 0,
-                $sanctionUpdatedAt ? Carbon::parse($sanctionUpdatedAt)->timestamp : 0,
-            ]),
+            'signature' => $this->requestedPanelSignature(),
+            'requested_count' => $requestedLoans->count(),
+            'html' => view('admin.loans._requested-panel', compact('requestedLoans'))->render(),
         ]);
     }
 
@@ -246,6 +243,81 @@ class LoanController extends Controller
         return $this->successResponse($request, 'Status peminjam diperbarui menjadi disanksi.');
     }
 
+    private function getRequestedLoans(): Collection
+    {
+        return Loan::query()
+            ->with(['book', 'member'])
+            ->where('status', 'requested')
+            ->latest('created_at')
+            ->take(20)
+            ->get();
+    }
+
+    private function requestedPanelSignature(): string
+    {
+        $requestedLoans = Loan::query()
+            ->where('status', 'requested')
+            ->latest('created_at')
+            ->take(20)
+            ->get(['id', 'status', 'created_at', 'updated_at']);
+
+        return sha1(json_encode([
+            'requested_count' => Loan::query()->where('status', 'requested')->count(),
+            'requested_loans' => $requestedLoans
+                ->map(fn (Loan $loan) => [
+                    'id' => $loan->id,
+                    'status' => $loan->status,
+                    'created_at' => optional($loan->created_at)?->format('Y-m-d H:i:s.u'),
+                    'updated_at' => optional($loan->updated_at)?->format('Y-m-d H:i:s.u'),
+                ])
+                ->values()
+                ->all(),
+        ], JSON_UNESCAPED_UNICODE));
+    }
+
+    private function loanLiveSignature(): string
+    {
+        $recentLoans = Loan::query()
+            ->latest('updated_at')
+            ->take(30)
+            ->get(['id', 'status', 'member_id', 'book_id', 'updated_at', 'returned_at']);
+        $activeSanctions = Sanction::query()
+            ->where('status', 'active')
+            ->latest('updated_at')
+            ->take(20)
+            ->get(['id', 'member_id', 'type', 'status', 'starts_at', 'ends_at', 'updated_at']);
+
+        return sha1(json_encode([
+            'loan_count' => Loan::query()->count(),
+            'requested_count' => Loan::query()->where('status', 'requested')->count(),
+            'borrowing_count' => Loan::query()->whereIn('status', ['borrowed', 'late'])->count(),
+            'active_sanction_count' => Sanction::query()->where('status', 'active')->count(),
+            'recent_loans' => $recentLoans
+                ->map(fn (Loan $loan) => [
+                    'id' => $loan->id,
+                    'status' => $loan->status,
+                    'member_id' => $loan->member_id,
+                    'book_id' => $loan->book_id,
+                    'updated_at' => optional($loan->updated_at)?->format('Y-m-d H:i:s.u'),
+                    'returned_at' => optional($loan->returned_at)?->toDateString(),
+                ])
+                ->values()
+                ->all(),
+            'active_sanctions' => $activeSanctions
+                ->map(fn (Sanction $sanction) => [
+                    'id' => $sanction->id,
+                    'member_id' => $sanction->member_id,
+                    'type' => $sanction->type,
+                    'status' => $sanction->status,
+                    'starts_at' => optional($sanction->starts_at)?->toDateString(),
+                    'ends_at' => optional($sanction->ends_at)?->toDateString(),
+                    'updated_at' => optional($sanction->updated_at)?->format('Y-m-d H:i:s.u'),
+                ])
+                ->values()
+                ->all(),
+        ], JSON_UNESCAPED_UNICODE));
+    }
+
     public function updateSanctionStatus(Request $request, Sanction $sanction): JsonResponse|RedirectResponse
     {
         $data = $request->validate([
@@ -330,7 +402,13 @@ class LoanController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        if ($loan->status === 'requested' && $data['status'] === 'borrowed') {
+        $previousStatus = $loan->status;
+        $nextStatus = $data['status'];
+        $stockHoldingStatuses = ['borrowed', 'late'];
+        $wasHoldingStock = in_array($previousStatus, $stockHoldingStatuses, true);
+        $willHoldStock = in_array($nextStatus, $stockHoldingStatuses, true);
+
+        if (! $wasHoldingStock && $willHoldStock) {
             if (($loan->book?->stock_available ?? 0) < 1) {
                 return $this->errorResponse($request, 'Stok buku tidak tersedia untuk menyetujui pengajuan ini.', 422, 'loan');
             }
@@ -338,22 +416,21 @@ class LoanController extends Controller
             $loan->book?->decrement('stock_available');
         }
 
-        $wasReturned = $loan->status === 'returned';
         $loan->update([
-            'status' => $data['status'],
-            'processed_by' => $loan->processed_by ?? $request->user()->id,
-            'returned_at' => $data['status'] === 'returned'
+            'status' => $nextStatus,
+            'processed_by' => $request->user()->id,
+            'returned_at' => $nextStatus === 'returned'
                 ? ($data['returned_at'] ?? Carbon::today()->toDateString())
                 : null,
             'fine_amount' => 0,
-            'notes' => $data['notes'] ?? null,
+            'notes' => $data['notes'] ?? $loan->notes,
         ]);
 
-        if (! $wasReturned && $loan->status === 'returned') {
+        if ($wasHoldingStock && ! $willHoldStock) {
             $loan->book()->increment('stock_available');
         }
 
-        ActivityLogger::log('loans', 'update', 'Mengubah status peminjaman #'.$loan->id, ['loan_id' => $loan->id]);
+        ActivityLogger::log('loans', 'update', 'Mengubah status peminjaman #'.$loan->id.' dari '.$previousStatus.' ke '.$nextStatus, ['loan_id' => $loan->id]);
 
         return $this->successResponse($request, 'Data peminjaman berhasil diperbarui.');
     }

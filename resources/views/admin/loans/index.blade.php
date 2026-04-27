@@ -71,7 +71,7 @@
     <section id="loanStatsWrap" class="report-usage-row" style="margin-bottom: 32px;">
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--accent);">Pengajuan Baru</div>
-            <div class="report-usage-number">{{ $loanStats['requested'] }}</div>
+            <div class="report-usage-number" id="loanRequestedStat">{{ $loanStats['requested'] }}</div>
             <div class="report-usage-desc">Menunggu proses</div>
         </div>
         <div class="report-usage-widget">
@@ -98,46 +98,8 @@
 
     <div id="loanPageWrap" class="loan-shell">
         <div class="loan-stack">
-            <!-- Section: Pengajuan -->
-            <div class="loan-card">
-                <div class="loan-card-header">
-                    <div>
-                        <h2 class="loan-card-title">Pengajuan</h2>
-                        <p class="loan-card-subtitle">Pengajuan dari akun peminjam.</p>
-                    </div>
-                    <span class="loan-item-badge pending">{{ $requestedLoans->count() }} Menunggu</span>
-                </div>
-                <div class="loan-card-body">
-                    <div class="flex flex-col gap-4">
-                        @forelse ($requestedLoans as $requestedLoan)
-                            <div class="loan-item-card">
-                                <div class="loan-item-head">
-                                    <div>
-                                        <div class="loan-item-name">{{ $requestedLoan->member?->name ?? 'Peminjam' }}</div>
-                                        <div class="loan-item-info mt-1">
-                                            <strong>{{ $requestedLoan->book?->title ?? 'Buku' }}</strong>
-                                        </div>
-                                    </div>
-                                    <span class="loan-item-badge pending">Sistem</span>
-                                </div>
-                                <div class="loan-item-info">
-                                    Pinjam: {{ optional($requestedLoan->borrowed_at)->translatedFormat('d M Y') }}<br>
-                                    Batas: {{ optional($requestedLoan->due_at)->translatedFormat('d M Y') }}
-                                </div>
-                                @if($requestedLoan->notes)
-                                    <div class="p-3 rounded-xl bg-white border border-slate2-100 text-xs italic text-slate2-500">
-                                        "{{ $requestedLoan->notes }}"
-                                    </div>
-                                @endif
-                            </div>
-                        @empty
-                            <div class="report-empty-state" style="padding: 40px 20px;">
-                                <div class="report-empty-icon"><i data-lucide="inbox"></i></div>
-                                <p class="report-empty-text">Belum ada pengajuan baru.</p>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
+            <div id="loanRequestedPanel">
+                @include('admin.loans._requested-panel', ['requestedLoans' => $requestedLoans])
             </div>
 
             <!-- Section: Kunci Akun Peminjam -->
@@ -243,7 +205,7 @@
                                         <form method="POST" action="{{ route('admin.loans.update', $loan) }}" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
                                             @csrf
                                             @method('PUT')
-                                            <select name="status" class="loan-status-select" onchange="this.form.requestSubmit()">
+                                            <select name="status" class="loan-status-select" data-loan-status-select>
                                                 <option value="requested" @selected($loan->status === 'requested')>Menunggu</option>
                                                 <option value="borrowed" @selected($loan->status === 'borrowed')>Dipinjam</option>
                                                 <option value="late" @selected($loan->status === 'late')>Terlambat</option>
@@ -318,6 +280,9 @@
 </div>
 
 <script>
+    let loanRequestedPanelSignature = null;
+    let loanRequestedPanelBusy = false;
+
     function syncLoanDueAt() {
         const loanBorrowedAt = document.getElementById('loanBorrowedAt');
         const loanDueAt = document.getElementById('loanDueAt');
@@ -331,19 +296,156 @@
         loanDueAt.value = borrowedDate.toISOString().slice(0, 10);
     }
 
+    function updateRequestedLoanCounters(requestedCount) {
+        const requestedStat = document.getElementById('loanRequestedStat');
+        const requestedBadge = document.getElementById('loanRequestedBadge');
+
+        if (requestedStat) {
+            requestedStat.textContent = requestedCount;
+        }
+
+        if (requestedBadge) {
+            requestedBadge.textContent = requestedCount + ' Menunggu';
+        }
+    }
+
+    async function syncRequestedLoanPanelSignature() {
+        const requestedPanel = document.getElementById('loanRequestedPanel');
+
+        if (!requestedPanel) {
+            loanRequestedPanelSignature = null;
+            return;
+        }
+
+        try {
+            const response = await fetch('{{ route('admin.loans.requested-panel') }}?_t=' + Date.now(), {
+                cache: 'no-store',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            loanRequestedPanelSignature = data.signature || null;
+            updateRequestedLoanCounters(Number(data.requested_count || 0));
+        } catch (error) {
+            console.error('Error syncing requested panel signature:', error);
+        }
+    }
+
+    async function pollRequestedLoanPanel() {
+        const requestedPanel = document.getElementById('loanRequestedPanel');
+
+        if (!requestedPanel || loanRequestedPanelBusy || document.hidden) {
+            return;
+        }
+
+        loanRequestedPanelBusy = true;
+
+        try {
+            const response = await fetch('{{ route('admin.loans.requested-panel') }}?_t=' + Date.now(), {
+                cache: 'no-store',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            const nextSignature = data.signature || null;
+            const requestedCount = Number(data.requested_count || 0);
+
+            if (loanRequestedPanelSignature !== null && nextSignature && nextSignature !== loanRequestedPanelSignature && typeof data.html === 'string') {
+                requestedPanel.innerHTML = data.html;
+
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }
+
+            loanRequestedPanelSignature = nextSignature;
+            updateRequestedLoanCounters(requestedCount);
+        } catch (error) {
+            console.error('Error polling requested panel:', error);
+        } finally {
+            loanRequestedPanelBusy = false;
+        }
+    }
+
     document.addEventListener('change', function (event) {
         if (event.target && event.target.id === 'loanBorrowedAt') {
             syncLoanDueAt();
         }
     });
 
+    function submitLoanStatusSelect(select) {
+        const form = select?.form;
+
+        if (!form || form.dataset.submitting === 'true') {
+            return;
+        }
+
+        form.dataset.submitting = 'true';
+        form.requestSubmit();
+
+        window.setTimeout(function () {
+            delete form.dataset.submitting;
+        }, 250);
+    }
+
+    document.addEventListener('input', function (event) {
+        const select = event.target.closest('[data-loan-status-select]');
+
+        if (!select) {
+            return;
+        }
+
+        submitLoanStatusSelect(select);
+    });
+
+    document.addEventListener('change', function (event) {
+        const select = event.target.closest('[data-loan-status-select]');
+
+        if (!select) {
+            return;
+        }
+
+        submitLoanStatusSelect(select);
+    });
+
     function initLoanLivePage() {
         syncLoanDueAt();
+        syncRequestedLoanPanelSignature();
     }
 
     document.addEventListener('async:refreshed', function (event) {
-        if ((event.detail?.selectors || []).includes('#loanPageWrap')) {
+        const selectors = event.detail?.selectors || [];
+
+        if (selectors.includes('#loanPageWrap')) {
             syncLoanDueAt();
+        }
+
+        if (selectors.includes('#loanPageWrap') || selectors.includes('#loanStatsWrap')) {
+            syncRequestedLoanPanelSignature();
+        }
+    });
+
+    document.addEventListener('async:form-success', function () {
+        syncRequestedLoanPanelSignature();
+    });
+
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            pollRequestedLoanPanel();
         }
     });
 
@@ -352,5 +454,9 @@
     } else {
         initLoanLivePage();
     }
+
+    window.setInterval(function () {
+        pollRequestedLoanPanel();
+    }, 3000);
 </script>
 @endsection

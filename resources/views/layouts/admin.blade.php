@@ -9,6 +9,7 @@
         $showAppName = \App\Models\Setting::valueOr('show_app_name', '1') === '1';
         $isPetugasPanel = $user?->role?->name === 'petugas';
         $headerNotifications = collect();
+        $adminRoute = fn (string $name, array $parameters = []) => route($name, $parameters, false);
         $sidebarSections = collect([
             [
                 'title' => 'Utama',
@@ -57,7 +58,7 @@
                             'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
                             'time' => optional($loan->updated_at)->diffForHumans(),
                             'timestamp' => optional($loan->updated_at)->timestamp ?? 0,
-                            'href' => route('admin.loans.index'),
+                            'href' => $adminRoute('admin.loans.index'),
                         ])
                 )
                 ->merge(
@@ -74,7 +75,7 @@
                             'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
                             'time' => optional($loan->created_at)->diffForHumans(),
                             'timestamp' => optional($loan->created_at)->timestamp ?? 0,
-                            'href' => route('admin.loans.index'),
+                            'href' => $adminRoute('admin.loans.index'),
                         ])
                 );
         }
@@ -96,7 +97,7 @@
                             .' sebanyak '.((int) $procurement->quantity).' buku.',
                         'time' => optional($procurement->created_at)->diffForHumans(),
                         'timestamp' => optional($procurement->created_at)->timestamp ?? 0,
-                        'href' => route('dashboard'),
+                        'href' => $adminRoute('dashboard'),
                     ])
             );
         }
@@ -109,7 +110,7 @@
                     ->orderByRaw('COALESCE(rejected_at, approved_at, updated_at) DESC')
                     ->take(5)
                     ->get()
-                    ->map(function ($procurement) {
+                    ->map(function ($procurement) use ($adminRoute) {
                         $isRejected = $procurement->status === 'rejected';
                         $decisionMaker = $isRejected
                             ? ($procurement->rejector?->name ?? 'Pemeriksa')
@@ -123,7 +124,7 @@
                                 .' telah '.($isRejected ? 'ditolak' : 'disetujui').' oleh '.$decisionMaker.'.',
                             'time' => optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->diffForHumans(),
                             'timestamp' => optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->timestamp ?? (optional($procurement->updated_at)->timestamp ?? 0),
-                            'href' => route('admin.books.index'),
+                            'href' => $adminRoute('admin.books.index'),
                         ];
                     })
             );
@@ -519,7 +520,7 @@
                 @foreach ($sidebarSections as $section)
                     <div class="nav-section">{{ $section['title'] }}</div>
                     @foreach ($section['items'] as $item)
-                        <a href="{{ route($item['route']) }}" class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" data-async="true">
+                        <a href="{{ $adminRoute($item['route']) }}" class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" data-async="true">
                             <i data-lucide="{{ $item['icon'] }}" class="nav-icon"></i>
                             <span>{{ $item['label'] }}</span>
                         </a>
@@ -599,7 +600,7 @@
                             </div>
                         </div>
                         <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
-                        <a href="{{ route('profile.show') }}" class="user-chip" style="text-decoration:none;" data-async="true">
+                        <a href="{{ $adminRoute('profile.show') }}" class="user-chip" style="text-decoration:none;" data-async="true">
                             <div class="avatar js-global-profile-avatar" style="overflow:hidden;">
                                 @if (auth()->user()?->profile_photo_url)
                                     <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" class="js-global-profile-photo" style="width:100%;height:100%;object-fit:cover;">
@@ -630,7 +631,7 @@
         </div>
     </div>
 
-    <div id="chatbotRoot" data-user-id="{{ auth()->id() }}" data-endpoint="{{ route('chatbot.respond') }}">
+    <div id="chatbotRoot" data-user-id="{{ auth()->id() }}" data-endpoint="{{ $adminRoute('chatbot.respond') }}">
         <button id="chatbotFab" class="chatbot-fab" type="button" aria-label="Chatbot" aria-expanded="false">
             <i data-lucide="message-circle" class="w-5 h-5"></i>
         </button>
@@ -723,10 +724,11 @@
                 $canPoll = $user?->hasAnyPermission(['view_borrower_history', 'manage_loans', 'view_reports']) || $user?->role?->name === 'kepsek' || $user?->isSuperAdmin();
             @endphp
             const canPoll = @json($canPoll);
-            if (!canPoll) return;
+            if (!canPoll || window.__suspendGlobalPolling === true) return;
 
             try {
-                const response = await fetch('{{ route('borrower.notifications') }}', {
+                const response = await fetch('{{ $adminRoute('borrower.notifications') }}?_t=' + Date.now(), {
+                    cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
@@ -804,14 +806,14 @@
             const loanStatsWrap = document.getElementById('loanStatsWrap');
             const loanPageWrap = document.getElementById('loanPageWrap');
 
-            if (!loanStatsWrap || !loanPageWrap || loanPageLiveBusy || document.hidden) {
+            if (!loanStatsWrap || !loanPageWrap || loanPageLiveBusy || window.__suspendGlobalPolling === true || document.hidden) {
                 return;
             }
 
             loanPageLiveBusy = true;
 
             try {
-                const response = await fetch('{{ route('admin.loans.live-snapshot') }}?_t=' + Date.now(), {
+                const response = await fetch('{{ $adminRoute('admin.loans.live-snapshot') }}?_t=' + Date.now(), {
                     cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -847,7 +849,7 @@
             }
 
             try {
-                const response = await fetch('{{ route('admin.loans.live-snapshot') }}?_t=' + Date.now(), {
+                const response = await fetch('{{ $adminRoute('admin.loans.live-snapshot') }}?_t=' + Date.now(), {
                     cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1330,11 +1332,13 @@
         });
 
         document.addEventListener('async:form-success', function () {
+            refreshGlobalNotifications(false);
             syncGlobalLoanPageSignature();
         });
 
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {
+                refreshGlobalNotifications(false);
                 pollGlobalLoanPage();
             }
         });
@@ -1345,7 +1349,7 @@
                 || $user?->hasPermission('view_borrower_history')
                 || $user?->role?->name === 'kepsek'
                 || $user?->isSuperAdmin()
-                ? 1000
+                ? 5000
                 : 15000;
         @endphp
         refreshGlobalNotifications(true);
@@ -1355,7 +1359,7 @@
         syncGlobalLoanPageSignature();
         window.setInterval(function () {
             pollGlobalLoanPage();
-        }, 1000);
+        }, 3000);
     </script>
 </body>
 </html>

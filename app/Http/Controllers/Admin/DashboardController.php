@@ -925,12 +925,7 @@ class DashboardController extends Controller
             ->where('status', 'returned')
             ->count();
 
-        $latestLoanUpdate = Loan::query()
-            ->where('member_id', $userId)
-            ->max('updated_at');
-        $latestSanctionUpdate = Sanction::query()
-            ->where('member_id', $userId)
-            ->max('updated_at');
+        $notifications = $this->buildBorrowerNotifications($recentLoans, $activeSanction, $today);
 
         return [
             'active_sanction' => $activeSanction,
@@ -941,15 +936,15 @@ class DashboardController extends Controller
                 'returned' => $returnedCount,
             ],
             'account_status' => $activeSanction ? 'Sedang kena sanksi' : 'Aktif',
-            'notifications' => $this->buildBorrowerNotifications($recentLoans, $activeSanction, $today),
-            'signature' => implode('|', [
-                (string) $requestedCount,
-                (string) $borrowedCount,
-                (string) $returnedCount,
-                $activeSanction ? '1' : '0',
-                $latestLoanUpdate ? (string) \Illuminate\Support\Carbon::parse($latestLoanUpdate)->timestamp : '0',
-                $latestSanctionUpdate ? (string) \Illuminate\Support\Carbon::parse($latestSanctionUpdate)->timestamp : '0',
-            ]),
+            'notifications' => $notifications,
+            'signature' => $this->buildBorrowerSnapshotSignature(
+                $recentLoans,
+                $activeSanction,
+                $requestedCount,
+                $borrowedCount,
+                $returnedCount,
+                $notifications
+            ),
         ];
     }
 
@@ -983,21 +978,21 @@ class DashboardController extends Controller
                     'body' => $borrowerActiveSanction->ends_at
                         ? 'Akun Anda kena sanksi sampai '.$borrowerActiveSanction->ends_at->translatedFormat('d M Y').'.'
                         : 'Akun Anda sedang kena sanksi sampai ada pemberitahuan berikutnya.',
-                    'signature' => 'sanction-active-'.($borrowerActiveSanction->id ?? 'current'),
+                    'signature' => 'sanction-active-'.$this->buildSanctionSnapshotSignature($borrowerActiveSanction),
                 ])
             )
             ->merge(
                 $borrowerLoans
                     ->whereIn('status', ['borrowed', 'late'])
                     ->take(3)
-                    ->map(function (Loan $loan) use ($today): array {
-                        $isLate = $loan->status === 'late' || ($loan->due_at && $loan->due_at->lt($today));
+                    ->map(function (Loan $loan): array {
+                        $isLate = $loan->status === 'late';
 
                         return [
                             'tone' => $isLate ? 'danger' : 'info',
                             'title' => $isLate ? 'Buku melewati batas pengembalian' : 'Pengingat tanggal pengembalian',
                             'body' => ($loan->book?->title ?? 'Buku').' harus dikembalikan paling lambat '.(optional($loan->due_at)->translatedFormat('d M Y') ?? '-').'.',
-                            'signature' => 'loan-due-'.$loan->id.'-'.$loan->status,
+                            'signature' => 'loan-due-'.$this->buildLoanSnapshotSignature($loan),
                         ];
                     })
             )
@@ -1009,11 +1004,55 @@ class DashboardController extends Controller
                         'tone' => 'success',
                         'title' => 'Status buku menunggu petugas',
                         'body' => 'Pengajuan untuk buku '.($loan->book?->title ?? 'pilihan Anda').' sedang menunggu diproses petugas.',
-                        'signature' => 'loan-requested-'.$loan->id,
+                        'signature' => 'loan-requested-'.$this->buildLoanSnapshotSignature($loan),
                     ])
             )
             ->take(4)
             ->values();
+    }
+
+    private function buildBorrowerSnapshotSignature($recentLoans, ?Sanction $activeSanction, int $requestedCount, int $borrowedCount, int $returnedCount, $notifications): string
+    {
+        return sha1(json_encode([
+            'requested' => $requestedCount,
+            'borrowed' => $borrowedCount,
+            'returned' => $returnedCount,
+            'active_sanction' => $activeSanction ? $this->buildSanctionSnapshotSignature($activeSanction) : null,
+            'recent_loans' => $recentLoans
+                ->take(10)
+                ->map(fn (Loan $loan) => $this->buildLoanSnapshotSignature($loan))
+                ->values()
+                ->all(),
+            'notifications' => collect($notifications)
+                ->pluck('signature')
+                ->filter()
+                ->values()
+                ->all(),
+        ], JSON_UNESCAPED_UNICODE));
+    }
+
+    private function buildLoanSnapshotSignature(Loan $loan): string
+    {
+        return implode('|', [
+            (string) $loan->id,
+            (string) $loan->status,
+            (string) optional($loan->borrowed_at)?->toDateString(),
+            (string) optional($loan->due_at)?->toDateString(),
+            (string) optional($loan->returned_at)?->toDateString(),
+            (string) optional($loan->updated_at)?->format('Y-m-d H:i:s.u'),
+        ]);
+    }
+
+    private function buildSanctionSnapshotSignature(Sanction $sanction): string
+    {
+        return implode('|', [
+            (string) $sanction->id,
+            (string) $sanction->status,
+            (string) $sanction->type,
+            (string) optional($sanction->starts_at)?->toDateString(),
+            (string) optional($sanction->ends_at)?->toDateString(),
+            (string) optional($sanction->updated_at)?->format('Y-m-d H:i:s.u'),
+        ]);
     }
 
     private function buildLoanStatusNotifications(string $prefix)
@@ -1047,6 +1086,7 @@ class DashboardController extends Controller
                 'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
                 'signature' => $prefix.'-late-'.$loan->id.'-'.optional($loan->updated_at)?->timestamp,
                 'href' => route('admin.loans.index'),
+                'timestamp' => optional($loan->updated_at)?->timestamp ?? 0,
             ]))
             ->merge($borrowedLoans->map(fn (Loan $loan) => [
                 'tone' => 'success',
@@ -1055,6 +1095,7 @@ class DashboardController extends Controller
                 'body' => ($loan->member?->name ?? 'Anggota').' sedang meminjam buku "'.($loan->book?->title ?? 'Buku').'".',
                 'signature' => $prefix.'-borrowed-'.$loan->id.'-'.optional($loan->updated_at)?->timestamp,
                 'href' => route('admin.loans.index'),
+                'timestamp' => optional($loan->updated_at)?->timestamp ?? 0,
             ]))
             ->merge($requestedLoans->map(fn (Loan $loan) => [
                 'tone' => 'info',
@@ -1063,8 +1104,16 @@ class DashboardController extends Controller
                 'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
                 'signature' => $prefix.'-requested-'.$loan->id.'-'.optional($loan->created_at)?->timestamp,
                 'href' => route('admin.loans.index'),
+                'timestamp' => optional($loan->created_at)?->timestamp ?? 0,
             ]))
+            ->sortByDesc('timestamp')
             ->take(10)
+            ->values()
+            ->map(function (array $notification): array {
+                unset($notification['timestamp']);
+
+                return $notification;
+            })
             ->values();
     }
 }

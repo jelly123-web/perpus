@@ -222,10 +222,10 @@
             <button type="button" class="btn-report-action" onclick="window.print()">
                 <i data-lucide="printer" class="w-4 h-4"></i> Cetak
             </button>
-            <a href="{{ route('admin.reports.export', array_merge(request()->query(), ['format' => 'excel'])) }}" class="btn-report-action">
+            <a href="{{ route('admin.reports.export', array_merge(request()->query(), ['format' => 'excel']), false) }}" class="btn-report-action">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Unduh Excel
             </a>
-            <a href="{{ route('admin.reports.export', array_merge(request()->query(), ['format' => 'pdf'])) }}" class="btn-report-action">
+            <a href="{{ route('admin.reports.export', array_merge(request()->query(), ['format' => 'pdf']), false) }}" class="btn-report-action">
                 <i data-lucide="file-text" class="w-4 h-4"></i> Unduh PDF
             </a>
         </div>
@@ -235,27 +235,27 @@
         <button
             type="button"
             class="report-tab {{ $filters['type'] !== 'loans' && $filters['period'] === 'monthly' ? 'active' : '' }}"
-            onclick="window.location.href='{{ route('admin.reports.index', ['period' => 'monthly', 'type' => 'all']) }}'"
+            onclick="window.location.href='{{ route('admin.reports.index', ['period' => 'monthly', 'type' => 'all'], false) }}'"
         >
             Laporan Bulanan
         </button>
         <button
             type="button"
             class="report-tab {{ $filters['type'] !== 'loans' && $filters['period'] === 'yearly' ? 'active' : '' }}"
-            onclick="window.location.href='{{ route('admin.reports.index', ['period' => 'yearly', 'type' => 'all']) }}'"
+            onclick="window.location.href='{{ route('admin.reports.index', ['period' => 'yearly', 'type' => 'all'], false) }}'"
         >
             Laporan Tahunan
         </button>
         <button
             type="button"
             class="report-tab {{ $filters['type'] === 'loans' ? 'active' : '' }}"
-            onclick="window.location.href='{{ route('admin.reports.index', ['period' => $filters['period'] ?: 'monthly', 'type' => 'loans']) }}'"
+            onclick="window.location.href='{{ route('admin.reports.index', ['period' => $filters['period'] ?: 'monthly', 'type' => 'loans'], false) }}'"
         >
             Statistik Penggunaan
         </button>
     </section>
 
-    <form method="GET" action="{{ route('admin.reports.index') }}" class="report-filter-card">
+    <form method="GET" action="{{ route('admin.reports.index', [], false) }}" class="report-filter-card">
         <div class="report-filter-grid">
             <div class="flex flex-col gap-2">
                 <label class="report-micro">Jenis Laporan</label>

@@ -41,11 +41,11 @@ class LoginController extends Controller
 
         foreach ($routePriority as $route => $permission) {
             if ($user->hasPermission($permission)) {
-                return route($route);
+                return route($route, [], false);
             }
         }
 
-        return route('profile.show');
+        return route('profile.show', [], false);
     }
 
     public function show(): View

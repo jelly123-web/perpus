@@ -564,7 +564,7 @@
                     <span>PENTING: Batas waktu peminjaman buku ini adalah <strong>1 hari</strong> saja.</span>
                 </div>
 
-                <form method="POST" action="{{ route('loan-requests.store') }}" class="dbx-book-form" id="borrowerLoanForm" data-async="true" data-success-call="closeBorrowDrawer" data-refresh-targets="#asyncDashboardWrap" data-loading-label="Mengirim Pengajuan...">
+                <form method="POST" action="{{ route('loan-requests.store') }}" class="dbx-book-form" id="borrowerLoanForm">
                     @csrf
                     <input type="hidden" name="book_id" id="borrowDrawerBookId">
                     <div class="dbx-book-form-grid">
@@ -586,14 +586,33 @@
     document.addEventListener('DOMContentLoaded', function () {
         const borrowDrawer = document.getElementById('borrowDrawer');
         const borrowDrawerMask = document.getElementById('borrowDrawerMask');
-        const borrowerNotifList = document.getElementById('borrowerNotificationList');
-        const sanctionAlert = document.getElementById('borrowerSanctionAlert');
-        const accountStatus = document.getElementById('borrowerAccountStatus');
-        const borrowerBookGrid = document.getElementById('borrowerBookGrid');
-        const borrowerBookKeyword = document.getElementById('borrowerBookKeyword');
-        const borrowerBookCategoryFilter = document.getElementById('borrowerBookCategoryFilter');
-        const borrowerBookAvailabilityFilter = document.getElementById('borrowerBookAvailabilityFilter');
-        const borrowerBookFilterForm = document.getElementById('borrowerBookFilterForm');
+        function getBorrowerNotifList() {
+            return document.getElementById('borrowerNotificationList');
+        }
+
+        function getSanctionAlert() {
+            return document.getElementById('borrowerSanctionAlert');
+        }
+
+        function getAccountStatus() {
+            return document.getElementById('borrowerAccountStatus');
+        }
+
+        function getBorrowerBookGrid() {
+            return document.getElementById('borrowerBookGrid');
+        }
+
+        function getBorrowerBookKeyword() {
+            return document.getElementById('borrowerBookKeyword');
+        }
+
+        function getBorrowerBookCategoryFilter() {
+            return document.getElementById('borrowerBookCategoryFilter');
+        }
+
+        function getBorrowerBookAvailabilityFilter() {
+            return document.getElementById('borrowerBookAvailabilityFilter');
+        }
 
         function escapeHtml(value) {
             return String(value)
@@ -617,6 +636,10 @@
             if (borrowState === 'requested') return 'Pengajuan Sudah Dikirim';
             if (borrowState === 'borrowed') return 'Buku Sedang Dipinjam';
             return isAvailable ? 'Ajukan Pinjam Lewat Sistem' : 'Stok Tidak Tersedia';
+        }
+
+        function setBorrowerRealtimePause(isPaused) {
+            window.__suspendGlobalPolling = isPaused;
         }
 
         function showToast(notification) {
@@ -668,7 +691,36 @@
             });
         }
 
+        function applyBorrowerLoanRequestOptimistic(bookId) {
+            if (!bookId) {
+                return;
+            }
+
+            const card = document.querySelector('.js-borrow-book[data-id="' + CSS.escape(String(bookId)) + '"]');
+
+            if (!card) {
+                return;
+            }
+
+            card.dataset.borrowState = 'requested';
+            card.dataset.canBorrow = '0';
+
+            const chip = card.querySelector('.dbx-book-chip');
+            if (chip) {
+                chip.textContent = 'Menunggu petugas';
+                chip.classList.add('unavailable');
+            }
+
+            const requestedStat = document.getElementById('stat-requested');
+            if (requestedStat) {
+                const currentValue = Number(requestedStat.textContent || 0);
+                requestedStat.textContent = String(currentValue + 1);
+            }
+        }
+
         function renderBorrowerBooks(books) {
+            const borrowerBookGrid = getBorrowerBookGrid();
+
             if (!borrowerBookGrid) {
                 return;
             }
@@ -715,6 +767,8 @@
         }
 
         function syncBorrowerBookCategories(categories, selectedValue) {
+            const borrowerBookCategoryFilter = getBorrowerBookCategoryFilter();
+
             if (!borrowerBookCategoryFilter || !Array.isArray(categories)) {
                 return;
             }
@@ -726,6 +780,11 @@
         }
 
         async function refreshBorrowerBooks() {
+            const borrowerBookGrid = getBorrowerBookGrid();
+            const borrowerBookKeyword = getBorrowerBookKeyword();
+            const borrowerBookCategoryFilter = getBorrowerBookCategoryFilter();
+            const borrowerBookAvailabilityFilter = getBorrowerBookAvailabilityFilter();
+
             if (!borrowerBookGrid || !borrowerBookKeyword || !borrowerBookCategoryFilter || !borrowerBookAvailabilityFilter) {
                 return;
             }
@@ -766,34 +825,41 @@
             }
         }
 
-        // Live Search & Filter
-        if (borrowerBookKeyword) {
-            let searchTimeout;
-            borrowerBookKeyword.addEventListener('input', function () {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(refreshBorrowerBooks, 300);
-            });
-        }
+        let borrowerSearchTimeout;
 
-        if (borrowerBookCategoryFilter) {
-            borrowerBookCategoryFilter.addEventListener('change', refreshBorrowerBooks);
-        }
+        document.addEventListener('input', function (event) {
+            if (event.target?.id !== 'borrowerBookKeyword') {
+                return;
+            }
 
-        if (borrowerBookAvailabilityFilter) {
-            borrowerBookAvailabilityFilter.addEventListener('change', refreshBorrowerBooks);
-        }
+            clearTimeout(borrowerSearchTimeout);
+            borrowerSearchTimeout = setTimeout(refreshBorrowerBooks, 300);
+        });
 
-        if (borrowerBookFilterForm) {
-            borrowerBookFilterForm.addEventListener('submit', function (e) {
-                e.preventDefault();
+        document.addEventListener('change', function (event) {
+            if (event.target?.id === 'borrowerBookCategoryFilter' || event.target?.id === 'borrowerBookAvailabilityFilter') {
                 refreshBorrowerBooks();
-            });
-        }
+            }
+        });
+
+        document.addEventListener('submit', function (event) {
+            const borrowerBookFilterForm = event.target.closest('#borrowerBookFilterForm');
+
+            if (!borrowerBookFilterForm) {
+                return;
+            }
+
+            event.preventDefault();
+            refreshBorrowerBooks();
+        });
 
         document.addEventListener('notificationsUpdated', function (event) {
             const data = event.detail;
             const notifications = Array.isArray(data.notifications) ? data.notifications : [];
             const dashboardWrap = document.getElementById('asyncDashboardWrap');
+            const borrowerNotifList = getBorrowerNotifList();
+            const sanctionAlert = getSanctionAlert();
+            const accountStatus = getAccountStatus();
 
             if (dashboardWrap?.dataset.dashboardRole === 'principal') {
                 const nextSignatures = notifications
@@ -887,6 +953,7 @@
             borrowDrawer.classList.remove('open');
             borrowDrawerMask.classList.remove('show');
             borrowDrawer.setAttribute('aria-hidden', 'true');
+            setBorrowerRealtimePause(false);
         };
 
         function syncBorrowDrawerDueAt() {
@@ -958,6 +1025,7 @@
             borrowDrawer.classList.add('open');
             borrowDrawerMask.classList.add('show');
             borrowDrawer.setAttribute('aria-hidden', 'false');
+            setBorrowerRealtimePause(true);
         }
 
         bindBorrowBookCards();
@@ -977,69 +1045,85 @@
             syncBorrowDrawerDueAt();
         }
 
+        let borrowerLoanSubmitBusy = false;
+
         const borrowerLoanForm = document.getElementById('borrowerLoanForm');
         if (borrowerLoanForm) {
-            borrowerLoanForm.addEventListener('submit', async function (event) {
+            borrowerLoanForm.addEventListener('submit', function (event) {
                 event.preventDefault();
-                
-                const bookTitle = document.getElementById('borrowDrawerTitle').textContent;
-                const confirmMsg = 'Apakah Anda yakin ingin meminjam buku "' + bookTitle + '"?\n\n' +
-                                 'PENTING: Batas waktu peminjaman adalah 1 HARI. Jika terlambat, akun Anda dapat dikenakan sanksi.';
-                
-                if (!confirm(confirmMsg)) {
-                    return;
-                }
 
                 const submitBtn = document.getElementById('borrowDrawerSubmit');
                 const submitLabel = document.getElementById('borrowDrawerSubmitLabel');
+                const bookId = document.getElementById('borrowDrawerBookId')?.value || '';
                 const originalLabel = submitLabel.textContent;
                 
                 // Disable button and show loading
+                borrowerLoanSubmitBusy = true;
+                setBorrowerRealtimePause(true);
                 submitBtn.disabled = true;
                 submitLabel.textContent = 'Sedang mengirim...';
 
-                try {
-                    const formData = new FormData(borrowerLoanForm);
-                    const response = await fetch(borrowerLoanForm.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        }
-                    });
+                const formData = new FormData(borrowerLoanForm);
 
-                    const result = await response.json();
+                fetch(borrowerLoanForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                }).then(async function (response) {
+                    const rawBody = await response.text();
+                    let result = {};
 
-                    if (response.ok && result.status === 'success') {
+                    try {
+                        result = rawBody ? JSON.parse(rawBody) : {};
+                    } catch (parseError) {
+                        result = { message: rawBody || 'Terjadi kesalahan saat mengirim pengajuan.' };
+                    }
+
+                    if (!response.ok || result.status !== 'success') {
+                        throw new Error(result.message || ('Terjadi kesalahan saat mengirim pengajuan. Status: ' + response.status));
+                    }
+
+                    return result;
+                })
+                    .then(function (result) {
+                        applyBorrowerLoanRequestOptimistic(bookId);
+                        borrowerLoanForm.reset();
                         showToast({
                             title: 'Berhasil!',
-                            body: result.message,
+                            body: result.message || 'Pengajuan berhasil dikirim.',
                             tone: 'success'
                         });
+
                         closeBorrowDrawer();
-                        borrowerLoanForm.reset();
-                        
-                        // Refresh notifications, stats, and available books
-                        refreshGlobalNotifications(false);
-                        refreshBorrowerBooks();
-                    } else {
+                        submitLabel.textContent = originalLabel;
+                        borrowerLoanSubmitBusy = false;
+                        submitBtn.disabled = false;
+                        setBorrowerRealtimePause(false);
+
+                        Promise.allSettled([
+                            refreshGlobalNotifications(false),
+                            refreshBorrowerBooks(),
+                        ]);
+                    })
+                    .catch(function (error) {
                         showToast({
                             title: 'Gagal',
-                            body: result.message || 'Terjadi kesalahan saat mengirim pengajuan.',
+                            body: error.message || 'Terjadi kesalahan saat mengirim pengajuan.',
                             tone: 'danger'
                         });
-                    }
-                } catch (error) {
-                    showToast({
-                        title: 'Error',
-                        body: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-                        tone: 'danger'
+
+                        borrowerLoanSubmitBusy = false;
+                        submitBtn.disabled = false;
+                        setBorrowerRealtimePause(false);
+                        submitLabel.textContent = originalLabel;
+                        refreshBorrowerBooks().catch(function (refreshError) {
+                            console.error('Error restoring borrower books:', refreshError);
+                        });
                     });
-                } finally {
-                    submitBtn.disabled = false;
-                    submitLabel.textContent = originalLabel;
-                }
             });
         }
 
@@ -1053,8 +1137,9 @@
 
         async function syncBorrowerRealtime() {
             const dashboardWrap = document.getElementById('asyncDashboardWrap');
+            const borrowerBookGrid = getBorrowerBookGrid();
 
-            if (!borrowerBookGrid || borrowerRealtimeBusy || document.hidden || dashboardWrap?.dataset.dashboardRole !== 'borrower') {
+            if (!borrowerBookGrid || borrowerRealtimeBusy || borrowerLoanSubmitBusy || document.hidden || dashboardWrap?.dataset.dashboardRole !== 'borrower') {
                 return;
             }
 
@@ -1070,11 +1155,11 @@
             }
         }
 
-        if (borrowerBookGrid) {
+        if (getBorrowerBookGrid()) {
             syncBorrowerRealtime();
             window.setInterval(function () {
                 syncBorrowerRealtime();
-            }, 500);
+            }, 10000);
 
             document.addEventListener('visibilitychange', function () {
                 if (!document.hidden) {

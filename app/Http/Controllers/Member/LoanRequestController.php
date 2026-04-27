@@ -106,7 +106,7 @@ class LoanRequestController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => $successMessage,
-                'loan' => $loan,
+                'loan_id' => $loan->id,
             ]);
         }
 

@@ -298,7 +298,7 @@ class BookController extends Controller
 
         if ($book) {
             $book->increment('stock_total', $procurement->quantity);
-            $book->increment('stock_available', $procurement->quantity);
+            $book->syncStockAvailability();
         } else {
             try {
                 $book = Book::query()->create([
@@ -330,7 +330,7 @@ class BookController extends Controller
                 }
 
                 $book->increment('stock_total', $procurement->quantity);
-                $book->increment('stock_available', $procurement->quantity);
+                $book->syncStockAvailability();
             }
         }
 

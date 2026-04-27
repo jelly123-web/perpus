@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request;
 
 class ActivityLogger
 {
@@ -18,7 +19,9 @@ class ActivityLogger
         ]);
 
         // Kirim notifikasi ke Discord setelah response utama selesai agar request utama tidak ikut menunggu webhook.
-        if (in_array($action, ['create', 'update', 'delete', 'restore', 'login', 'import', 'export', 'backup'])) {
+        $isAsyncRequest = Request::expectsJson() || Request::ajax();
+
+        if (! $isAsyncRequest && in_array($action, ['create', 'update', 'delete', 'restore', 'login', 'import', 'export', 'backup'])) {
             app()->terminating(function () use ($module, $action, $description): void {
                 DiscordNotifier::notifyAction($module, $action, $description);
             });
