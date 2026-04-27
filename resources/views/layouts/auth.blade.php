@@ -3,6 +3,7 @@
 <head>
     @php
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
+        $appNameColor = \App\Models\Setting::valueOr('app_name_color', '#21323a');
         $appLogo = \App\Models\Setting::appLogoPath();
         $showAppName = \App\Models\Setting::valueOr('show_app_name', '1') === '1';
     @endphp
@@ -206,7 +207,7 @@
                 </div>
                 @if ($showAppName)
                     <div class="flex flex-col items-center gap-1.5">
-                        <h1 class="text-lib-800 text-xl font-bold tracking-tight">{{ $appName }}</h1>
+                        <h1 class="text-xl font-bold tracking-tight" style="color: {{ $appNameColor }}">{{ $appName }}</h1>
                     </div>
                 @endif
             </div>
@@ -231,7 +232,7 @@
                         @else
                             <div class="text-center leading-tight">
                                 <div class="text-lib-900 text-xs font-semibold tracking-[0.3em] uppercase">Logo</div>
-                                <div class="text-lib-700 text-[11px] mt-1">{{ $appName }}</div>
+                                <div class="text-[11px] mt-1" style="color: {{ $appNameColor }}">{{ $appName }}</div>
                             </div>
                         @endif
                     </div>

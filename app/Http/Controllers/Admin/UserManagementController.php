@@ -53,7 +53,7 @@ class UserManagementController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'nik' => ['nullable', 'string', 'max:32', 'unique:users,nik'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
             'jurusan' => ['nullable', 'string', 'max:100'],
@@ -61,7 +61,6 @@ class UserManagementController extends Controller
             'password' => ['required', 'string', 'min:5'],
             'is_active' => ['nullable', 'boolean'],
         ], [
-            'email.unique' => 'Email sudah dipakai akun lain.',
             'nik.unique' => 'NIK sudah dipakai akun lain.',
         ]);
 
@@ -113,7 +112,6 @@ class UserManagementController extends Controller
 
             $user = User::query()
                 ->where('username', $username)
-                ->orWhere('email', $email)
                 ->first();
 
             $payload = [
@@ -198,7 +196,7 @@ class UserManagementController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id],
             'nik' => ['nullable', 'string', 'max:32', 'unique:users,nik,'.$user->id],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
             'jurusan' => ['nullable', 'string', 'max:100'],
@@ -206,7 +204,6 @@ class UserManagementController extends Controller
             'password' => ['nullable', 'string', 'min:5'],
             'is_active' => ['nullable', 'boolean'],
         ], [
-            'email.unique' => 'Email sudah dipakai akun lain.',
             'nik.unique' => 'NIK sudah dipakai akun lain.',
         ]);
 

@@ -10,6 +10,7 @@
     data-dashboard-role="{{ $isPrincipalDashboard ? 'principal' : ($isBorrowerDashboard ? 'borrower' : 'other') }}"
     data-principal-signatures="{{ $isPrincipalDashboard ? $principalProcurements->map(fn ($procurement) => 'principal-procurement-'.$procurement->id.'-'.$procurement->status)->implode('|') : '' }}"
     data-borrower-signatures="{{ $isBorrowerDashboard ? $borrowerNotifications->pluck('signature')->filter()->implode('|') : '' }}"
+    data-borrower-state-signature="{{ $isBorrowerDashboard ? ($borrowerSnapshot['signature'] ?? '') : '' }}"
 >
     <div class="dbx-pattern"></div>
     <div class="dbx-body">
@@ -819,9 +820,13 @@
                     })
                     .filter(Boolean)
                     .join('|');
+                const nextStateSignature = data.signature || nextSignatures;
+                const stateChanged = dashboardWrap.dataset.borrowerStateSignature !== nextStateSignature;
+                const notificationChanged = dashboardWrap.dataset.borrowerSignatures !== nextSignatures;
 
-                if (dashboardWrap.dataset.borrowerSignatures !== nextSignatures) {
+                if (stateChanged || notificationChanged) {
                     dashboardWrap.dataset.borrowerSignatures = nextSignatures;
+                    dashboardWrap.dataset.borrowerStateSignature = nextStateSignature;
                     refreshBorrowerBooks().catch(function (error) {
                         console.error('Error refreshing borrower books:', error);
                     });
@@ -1044,16 +1049,44 @@
             }
         });
 
-        // Notifications are updated via 'notificationsUpdated' event
+        let borrowerRealtimeBusy = false;
+
+        async function syncBorrowerRealtime() {
+            const dashboardWrap = document.getElementById('asyncDashboardWrap');
+
+            if (!borrowerBookGrid || borrowerRealtimeBusy || document.hidden || dashboardWrap?.dataset.dashboardRole !== 'borrower') {
+                return;
+            }
+
+            borrowerRealtimeBusy = true;
+
+            try {
+                await Promise.all([
+                    refreshGlobalNotifications(false),
+                    refreshBorrowerBooks(),
+                ]);
+            } finally {
+                borrowerRealtimeBusy = false;
+            }
+        }
+
         if (borrowerBookGrid) {
+            syncBorrowerRealtime();
             window.setInterval(function () {
-                refreshBorrowerBooks();
-            }, 1000);
+                syncBorrowerRealtime();
+            }, 500);
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    syncBorrowerRealtime();
+                }
+            });
         }
 
         // Auto refresh entire dashboard for stats/logs
         window.setInterval(function() {
-            if (document.querySelector('#asyncDashboardWrap')) {
+            const dashboardWrap = document.querySelector('#asyncDashboardWrap');
+            if (dashboardWrap && dashboardWrap.dataset.dashboardRole !== 'borrower') {
                 refreshAsyncTargets(['#asyncDashboardWrap']);
             }
         }, 30000);

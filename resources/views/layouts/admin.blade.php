@@ -4,6 +4,7 @@
     @php
         $user = auth()->user();
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
+        $appNameColor = \App\Models\Setting::valueOr('app_name_color', '#21323a');
         $appLogo = \App\Models\Setting::appLogoPath();
         $showAppName = \App\Models\Setting::valueOr('show_app_name', '1') === '1';
         $isPetugasPanel = $user?->role?->name === 'petugas';
@@ -197,7 +198,7 @@
         .topbar-brand-mark img,.sidebar-brand-mark img{height:100%;width:auto;object-fit:contain;padding:8px}
         .topbar-brand-mark.has-image img,.sidebar-brand-mark.has-image img{padding:0}
         .topbar-brand-text{display:flex;flex-direction:column;justify-content:center}
-        .topbar-brand-title{font-size:18px;font-weight:700;letter-spacing:-.03em;color:#21323a;line-height:1.1}
+        .topbar-brand-title{font-size:18px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
         .topbar-brand-sub{font-size:11px;color:#6d6257;line-height:1.1;margin-top:3px}
         .topbar-btn,.user-chip{border:1px solid rgba(154,107,66,.18);background:rgba(255,249,243,.82);box-shadow:0 8px 18px rgba(87,59,33,.06);backdrop-filter:blur(8px)}
         .topbar-btn{width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:var(--fg)}
@@ -550,7 +551,7 @@
                             </div>
                             @if ($showAppName)
                                 <div class="topbar-brand-text">
-                                    <div class="topbar-brand-title font-display">{{ $appName }}</div>
+                                    <div class="topbar-brand-title font-display" style="color: {{ $appNameColor }}">{{ $appName }}</div>
                                 </div>
                             @endif
                         </div>

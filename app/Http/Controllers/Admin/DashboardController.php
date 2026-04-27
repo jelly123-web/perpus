@@ -435,9 +435,10 @@ class DashboardController extends Controller
             ->orderByDesc('loans_count')
             ->take(4)
             ->get();
-        $borrowerActiveSanction = $isBorrowerDashboard
-            ? $this->getActiveBorrowerSanction($user?->id, $today)
+        $borrowerSnapshot = $isBorrowerDashboard
+            ? $this->getBorrowerDashboardSnapshot($user?->id, $today)
             : null;
+        $borrowerActiveSanction = $borrowerSnapshot['active_sanction'] ?? null;
 
         $borrowerCategories = $this->getBorrowerCategories();
         $borrowerBooks = $this->getBorrowerBooks($bookFilters);
@@ -458,19 +459,11 @@ class DashboardController extends Controller
             return $book;
         });
 
-        $borrowerLoans = $isBorrowerDashboard
-            ? Loan::query()
-                ->with(['book.category', 'processor'])
-                ->where('member_id', $user?->id)
-                ->latest('created_at')
-                ->take(8)
-                ->get()
-            : collect();
-
-        $borrowerLoanStats = [
-            'requested' => $isBorrowerDashboard ? $borrowerLoans->where('status', 'requested')->count() : 0,
-            'borrowed' => $isBorrowerDashboard ? $borrowerLoans->whereIn('status', ['borrowed', 'late'])->count() : 0,
-            'returned' => $isBorrowerDashboard ? $borrowerLoans->where('status', 'returned')->count() : 0,
+        $borrowerLoans = $borrowerSnapshot['recent_loans'] ?? collect();
+        $borrowerLoanStats = $borrowerSnapshot['stats'] ?? [
+            'requested' => 0,
+            'borrowed' => 0,
+            'returned' => 0,
         ];
 
         $borrowerGuideSteps = $isBorrowerDashboard
@@ -484,9 +477,7 @@ class DashboardController extends Controller
             ]
             : [];
 
-        $borrowerNotifications = $isBorrowerDashboard
-            ? $this->buildBorrowerNotifications($borrowerLoans, $borrowerActiveSanction, $today)
-            : collect();
+        $borrowerNotifications = $borrowerSnapshot['notifications'] ?? collect();
 
         $recentLoans = Loan::query()
             ->with(['book', 'member'])
@@ -652,6 +643,7 @@ class DashboardController extends Controller
             'categoryChart',
             'dashboardMeta',
             'loanChart',
+            'borrowerSnapshot',
             'borrowerLoanStats',
             'borrowerActiveSanction',
             'borrowerGuideSteps',
@@ -695,27 +687,16 @@ class DashboardController extends Controller
         $today = now();
 
         if ($isBorrower) {
-            $borrowerActiveSanction = $this->getActiveBorrowerSanction($user?->id, $today);
-            $borrowerLoans = Loan::query()
-                ->with(['book.category', 'processor'])
-                ->where('member_id', $user?->id)
-                ->latest('created_at')
-                ->take(10)
-                ->get();
-
-            $notifications = $this->buildBorrowerNotifications($borrowerLoans, $borrowerActiveSanction, $today);
+            $borrowerSnapshot = $this->getBorrowerDashboardSnapshot($user?->id, $today);
 
             return response()->json([
-                'notifications' => $notifications,
-                'account_status' => $borrowerActiveSanction ? 'Sedang kena sanksi' : 'Aktif',
-                'sanction_message' => $borrowerActiveSanction
+                'notifications' => $borrowerSnapshot['notifications'],
+                'account_status' => $borrowerSnapshot['account_status'],
+                'sanction_message' => $borrowerSnapshot['active_sanction']
                     ? 'Akun Anda sedang disanksi dan belum bisa mengajukan pinjam.'
                     : null,
-                'borrower_loan_stats' => [
-                    'requested' => $borrowerLoans->where('status', 'requested')->count(),
-                    'borrowed' => $borrowerLoans->whereIn('status', ['borrowed', 'late'])->count(),
-                    'returned' => $borrowerLoans->where('status', 'returned')->count(),
-                ],
+                'borrower_loan_stats' => $borrowerSnapshot['stats'],
+                'signature' => $borrowerSnapshot['signature'],
             ]);
         }
 
@@ -774,37 +755,8 @@ class DashboardController extends Controller
                 ->values();
 
             if ($user->hasPermission('manage_loans')) {
-                $lateLoans = Loan::query()
-                    ->with(['book', 'member'])
-                    ->where('status', 'late')
-                    ->latest('updated_at')
-                    ->take(5)
-                    ->get();
-
-                $requestedLoans = Loan::query()
-                    ->with(['book', 'member'])
-                    ->where('status', 'requested')
-                    ->latest('created_at')
-                    ->take(5)
-                    ->get();
-
                 $notifications = $notifications
-                    ->merge($lateLoans->map(fn (Loan $loan) => [
-                        'tone' => 'danger',
-                        'icon' => 'triangle-alert',
-                        'title' => 'Buku terlambat dikembalikan',
-                        'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
-                        'signature' => 'superadmin-late-'.$loan->id.'-'.$loan->status,
-                        'href' => route('admin.loans.index'),
-                    ]))
-                    ->merge($requestedLoans->map(fn (Loan $loan) => [
-                        'tone' => 'info',
-                        'icon' => 'info',
-                        'title' => 'Permintaan pinjam baru',
-                        'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
-                        'signature' => 'superadmin-requested-'.$loan->id,
-                        'href' => route('admin.loans.index'),
-                    ]))
+                    ->merge($this->buildLoanStatusNotifications('superadmin'))
                     ->sortByDesc(fn (array $notification) => str_contains((string) ($notification['signature'] ?? ''), 'superadmin-procurement-') ? 0 : 1)
                     ->take(10)
                     ->values();
@@ -816,39 +768,7 @@ class DashboardController extends Controller
         }
 
         // Admin or Officer Notifications
-        $lateLoans = Loan::query()
-            ->with(['book', 'member'])
-            ->where('status', 'late')
-            ->latest('updated_at')
-            ->take(5)
-            ->get();
-
-        $requestedLoans = Loan::query()
-            ->with(['book', 'member'])
-            ->where('status', 'requested')
-            ->latest('created_at')
-            ->take(5)
-            ->get();
-
-        $notifications = collect()
-            ->merge($lateLoans->map(fn (Loan $loan) => [
-                'tone' => 'danger',
-                'icon' => 'triangle-alert',
-                'title' => 'Buku terlambat dikembalikan',
-                'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
-                'signature' => 'admin-late-'.$loan->id.'-'.$loan->status,
-                'href' => route('admin.loans.index'),
-            ]))
-            ->merge($requestedLoans->map(fn (Loan $loan) => [
-                'tone' => 'info',
-                'icon' => 'info',
-                'title' => 'Permintaan pinjam baru',
-                'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
-                'signature' => 'admin-requested-'.$loan->id,
-                'href' => route('admin.loans.index'),
-            ]))
-            ->take(10)
-            ->values();
+        $notifications = $this->buildLoanStatusNotifications('admin');
 
         return response()->json([
             'notifications' => $notifications,
@@ -967,6 +887,72 @@ class DashboardController extends Controller
             }, collect());
     }
 
+    private function getBorrowerDashboardSnapshot(?int $userId, \Illuminate\Support\Carbon $today): array
+    {
+        if (! $userId) {
+            return [
+                'active_sanction' => null,
+                'recent_loans' => collect(),
+                'stats' => [
+                    'requested' => 0,
+                    'borrowed' => 0,
+                    'returned' => 0,
+                ],
+                'account_status' => 'Aktif',
+                'notifications' => collect(),
+                'signature' => '0|0|0|0|0|0',
+            ];
+        }
+
+        $activeSanction = $this->getActiveBorrowerSanction($userId, $today);
+        $recentLoans = Loan::query()
+            ->with(['book.category', 'processor'])
+            ->where('member_id', $userId)
+            ->latest('created_at')
+            ->take(10)
+            ->get();
+
+        $requestedCount = Loan::query()
+            ->where('member_id', $userId)
+            ->where('status', 'requested')
+            ->count();
+        $borrowedCount = Loan::query()
+            ->where('member_id', $userId)
+            ->whereIn('status', ['borrowed', 'late'])
+            ->count();
+        $returnedCount = Loan::query()
+            ->where('member_id', $userId)
+            ->where('status', 'returned')
+            ->count();
+
+        $latestLoanUpdate = Loan::query()
+            ->where('member_id', $userId)
+            ->max('updated_at');
+        $latestSanctionUpdate = Sanction::query()
+            ->where('member_id', $userId)
+            ->max('updated_at');
+
+        return [
+            'active_sanction' => $activeSanction,
+            'recent_loans' => $recentLoans,
+            'stats' => [
+                'requested' => $requestedCount,
+                'borrowed' => $borrowedCount,
+                'returned' => $returnedCount,
+            ],
+            'account_status' => $activeSanction ? 'Sedang kena sanksi' : 'Aktif',
+            'notifications' => $this->buildBorrowerNotifications($recentLoans, $activeSanction, $today),
+            'signature' => implode('|', [
+                (string) $requestedCount,
+                (string) $borrowedCount,
+                (string) $returnedCount,
+                $activeSanction ? '1' : '0',
+                $latestLoanUpdate ? (string) \Illuminate\Support\Carbon::parse($latestLoanUpdate)->timestamp : '0',
+                $latestSanctionUpdate ? (string) \Illuminate\Support\Carbon::parse($latestSanctionUpdate)->timestamp : '0',
+            ]),
+        ];
+    }
+
     private function getActiveBorrowerSanction(?int $userId, \Illuminate\Support\Carbon $today): ?Sanction
     {
         if (! $userId) {
@@ -1027,6 +1013,58 @@ class DashboardController extends Controller
                     ])
             )
             ->take(4)
+            ->values();
+    }
+
+    private function buildLoanStatusNotifications(string $prefix)
+    {
+        $lateLoans = Loan::query()
+            ->with(['book', 'member'])
+            ->where('status', 'late')
+            ->latest('updated_at')
+            ->take(5)
+            ->get();
+
+        $borrowedLoans = Loan::query()
+            ->with(['book', 'member'])
+            ->where('status', 'borrowed')
+            ->latest('updated_at')
+            ->take(5)
+            ->get();
+
+        $requestedLoans = Loan::query()
+            ->with(['book', 'member'])
+            ->where('status', 'requested')
+            ->latest('created_at')
+            ->take(5)
+            ->get();
+
+        return collect()
+            ->merge($lateLoans->map(fn (Loan $loan) => [
+                'tone' => 'danger',
+                'icon' => 'triangle-alert',
+                'title' => 'Buku terlambat dikembalikan',
+                'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
+                'signature' => $prefix.'-late-'.$loan->id.'-'.optional($loan->updated_at)?->timestamp,
+                'href' => route('admin.loans.index'),
+            ]))
+            ->merge($borrowedLoans->map(fn (Loan $loan) => [
+                'tone' => 'success',
+                'icon' => 'book-check',
+                'title' => 'Buku berhasil dipinjam',
+                'body' => ($loan->member?->name ?? 'Anggota').' sedang meminjam buku "'.($loan->book?->title ?? 'Buku').'".',
+                'signature' => $prefix.'-borrowed-'.$loan->id.'-'.optional($loan->updated_at)?->timestamp,
+                'href' => route('admin.loans.index'),
+            ]))
+            ->merge($requestedLoans->map(fn (Loan $loan) => [
+                'tone' => 'info',
+                'icon' => 'info',
+                'title' => 'Permintaan pinjam baru',
+                'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
+                'signature' => $prefix.'-requested-'.$loan->id.'-'.optional($loan->created_at)?->timestamp,
+                'href' => route('admin.loans.index'),
+            ]))
+            ->take(10)
             ->values();
     }
 }

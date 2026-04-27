@@ -25,13 +25,12 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id],
             'nik' => ['nullable', 'string', 'max:32', 'unique:users,nik,'.$user->id],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
             'jurusan' => ['nullable', 'string', 'max:100'],
             'profile_photo' => ['nullable', 'image', 'max:2048'],
         ], [
-            'email.unique' => 'Email sudah dipakai akun lain.',
             'nik.unique' => 'NIK sudah dipakai akun lain.',
         ]);
 

@@ -27,7 +27,7 @@ class RegisterController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:3', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
             'jurusan' => ['nullable', 'string', 'max:100'],
@@ -40,7 +40,6 @@ class RegisterController extends Controller
             'name.min' => 'Nama minimal 3 karakter.',
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
-            'email.unique' => 'Email sudah dipakai akun lain.',
             'kelas.max' => 'Kelas maksimal 100 karakter.',
             'jurusan.max' => 'Jurusan maksimal 100 karakter.',
             'password.required' => 'Kata sandi wajib diisi.',

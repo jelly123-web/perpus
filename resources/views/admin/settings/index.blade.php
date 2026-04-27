@@ -4,6 +4,7 @@
 @php($title = 'Setting')
 @php($eyebrow = 'Khusus Superadmin')
 @php($appName = $settings['app_name']->value ?? 'LibraVault')
+@php($appNameColor = $settings['app_name_color']->value ?? '#21323a')
 @php($appLogo = \App\Models\Setting::appLogoPath())
 @php($showAppName = ($settings['show_app_name']->value ?? '1') === '1')
 
@@ -23,7 +24,7 @@
     .setting-brand-logo.has-image{width:auto;max-width:240px;height:86px;padding:10px 16px;background:transparent;border:none;box-shadow:none}
     .setting-brand-logo img{height:100%;width:auto;object-fit:contain;padding:16px}
     .setting-brand-logo.has-image img{padding:0}
-    .setting-brand-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#203746;line-height:1}
+    .setting-brand-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1}
     .setting-brand-sub{font-size:12px;color:#70828c;margin-top:10px;letter-spacing:.18em;text-transform:uppercase}
     .setting-field{margin-top:16px}
     .setting-label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
@@ -97,6 +98,15 @@
             </div>
 
             <div class="setting-field">
+                <label class="setting-label" for="app_name_color">Warna Nama Aplikasi</label>
+                <div class="flex items-center gap-3">
+                    <input id="app_name_color" name="app_name_color" type="color" class="h-12 w-14 rounded-xl border border-[var(--border)] bg-white p-1" value="{{ old('app_name_color', $appNameColor) }}" required>
+                    <input id="app_name_color_text" type="text" class="form-input px-3 py-3 text-sm uppercase tracking-[0.12em] font-mono" value="{{ old('app_name_color', $appNameColor) }}" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$" inputmode="text">
+                </div>
+                <div class="setting-help">Warna nama aplikasi dipakai di halaman login dan area admin.</div>
+            </div>
+
+            <div class="setting-field">
                 <div class="setting-toggle">
                     <div class="setting-toggle-copy">
                         <div class="setting-toggle-title">Tampilkan Nama Aplikasi</div>
@@ -159,7 +169,7 @@
                         @endif
                     </div>
                     <div id="settingPreviewNameWrap" style="{{ old('show_app_name', $showAppName ? '1' : null) ? '' : 'display:none;' }}">
-                        <div id="settingPreviewName" class="setting-brand-name">{{ old('app_name', $appName) }}</div>
+                        <div id="settingPreviewName" class="setting-brand-name" style="color: {{ $appNameColor }}">{{ old('app_name', $appName) }}</div>
                     </div>
                 </div>
             </div>

@@ -32,6 +32,8 @@
             return {
                 form,
                 appNameInput: document.getElementById('app_name'),
+                appNameColorInput: document.getElementById('app_name_color'),
+                appNameColorTextInput: document.getElementById('app_name_color_text'),
                 showAppNameInput: document.getElementById('show_app_name'),
                 appLogoInput: document.getElementById('app_logo'),
                 removeLogoInput: document.getElementById('remove_logo'),
@@ -79,6 +81,18 @@
 
         function markSettingAsDirty() {
             setSettingSaveState('Perubahan belum disimpan.', 'muted');
+        }
+
+        function syncSettingNameColor(color) {
+            if (!settingCurrentBindings?.settingPreviewName) {
+                return;
+            }
+
+            settingCurrentBindings.settingPreviewName.style.color = color || '#21323a';
+
+            if (settingCurrentBindings.appNameColorTextInput) {
+                settingCurrentBindings.appNameColorTextInput.value = color || '#21323a';
+            }
         }
 
         function syncSettingPreview(previewUrl, fileName) {
@@ -355,6 +369,35 @@
                 bindings.settingPreviewName.textContent = bindings.appNameInput.value.trim() || 'LibraVault';
                 markSettingAsDirty();
             });
+
+            if (bindings.appNameColorInput) {
+                const updateColor = function (value) {
+                    const normalized = /^#[0-9A-Fa-f]{6}$/.test(value) ? value.toUpperCase() : '#21323a';
+                    bindings.appNameColorInput.value = normalized;
+                    syncSettingNameColor(normalized);
+                };
+
+                updateColor(bindings.appNameColorInput.value || '#21323a');
+
+                bindings.appNameColorInput.addEventListener('input', function () {
+                    updateColor(bindings.appNameColorInput.value);
+                    markSettingAsDirty();
+                });
+
+                if (bindings.appNameColorTextInput) {
+                    bindings.appNameColorTextInput.addEventListener('input', function () {
+                        if (/^#[0-9A-Fa-f]{6}$/.test(bindings.appNameColorTextInput.value)) {
+                            updateColor(bindings.appNameColorTextInput.value);
+                            return;
+                        }
+                    });
+
+                    bindings.appNameColorTextInput.addEventListener('change', function () {
+                        updateColor(bindings.appNameColorTextInput.value);
+                        markSettingAsDirty();
+                    });
+                }
+            }
 
             bindings.showAppNameInput.checked = bindings.showAppNameInput.checked;
             bindings.settingPreviewNameWrap.style.display = bindings.showAppNameInput.checked ? '' : 'none';

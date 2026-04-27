@@ -99,12 +99,6 @@ class BackupController extends Controller
                                 return;
                             }
 
-                            if ($table === 'users' && isset($payload['email']) && filled($payload['email'])) {
-                                DB::table($table)->where('email', $payload['email'])->update($payload);
-                                $count++;
-                                return;
-                            }
-
                             if ($table === 'users' && isset($payload['username']) && filled($payload['username'])) {
                                 DB::table($table)->where('username', $payload['username'])->update($payload);
                                 $count++;

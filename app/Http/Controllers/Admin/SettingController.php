@@ -25,6 +25,12 @@ class SettingController extends Controller
                 'type' => 'text',
                 'value' => 'LibraVault',
             ],
+            'app_name_color' => [
+                'key' => 'app_name_color',
+                'label' => 'Warna Nama Aplikasi',
+                'type' => 'color',
+                'value' => '#21323a',
+            ],
             'app_logo' => [
                 'key' => 'app_logo',
                 'label' => 'Logo Aplikasi',
@@ -61,14 +67,23 @@ class SettingController extends Controller
     {
         $data = $request->validate([
             'app_name' => ['required', 'string', 'max:255'],
+            'app_name_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'app_logo' => ['nullable', 'image', 'max:2048'],
             'show_app_name' => ['nullable', 'boolean'],
             'discord_webhook_url' => ['nullable', 'url', 'max:2048'],
+        ], [
+            'app_name_color.required' => 'Warna nama aplikasi wajib diisi.',
+            'app_name_color.regex' => 'Format warna nama aplikasi harus seperti #1A2B3C.',
         ]);
 
         Setting::query()->updateOrCreate(
             ['key' => 'app_name'],
             ['label' => 'Nama Aplikasi', 'type' => 'text', 'value' => trim($data['app_name'])]
+        );
+
+        Setting::query()->updateOrCreate(
+            ['key' => 'app_name_color'],
+            ['label' => 'Warna Nama Aplikasi', 'type' => 'color', 'value' => strtoupper(trim($data['app_name_color']))]
         );
 
         Setting::query()->updateOrCreate(
