@@ -597,7 +597,7 @@
                                 </div>
                             </div>
                         </div>
-                        <form method="POST" action="{{ route('logout') }}" data-async="true">@csrf<button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
+                        <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
                         <a href="{{ route('profile.show') }}" class="user-chip" style="text-decoration:none;" data-async="true">
                             <div class="avatar js-global-profile-avatar" style="overflow:hidden;">
                                 @if (auth()->user()?->profile_photo_url)
@@ -1340,7 +1340,12 @@
 
         // Initialize Global Notifications
         @php
-            $notificationPollInterval = ($user?->role?->name === 'kepsek' || $user?->isSuperAdmin()) ? 1000 : 15000;
+            $notificationPollInterval = $user?->hasPermission('manage_loans')
+                || $user?->hasPermission('view_borrower_history')
+                || $user?->role?->name === 'kepsek'
+                || $user?->isSuperAdmin()
+                ? 1000
+                : 15000;
         @endphp
         refreshGlobalNotifications(true);
         window.setInterval(function () {

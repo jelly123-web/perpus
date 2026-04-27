@@ -57,7 +57,19 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::query()->whereIn('username', ['petugas', 'siswa', 'guru', 'admin'])->delete();
+        User::query()->updateOrCreate(
+            ['username' => 'siswa'],
+            [
+                'email' => 'siswa@example.com',
+                'name' => 'Siswa Peminjam',
+                'phone' => '08987654321',
+                'role_id' => $siswaRole->id,
+                'is_active' => true,
+                'password' => 'siswa123',
+            ]
+        );
+
+        User::query()->whereIn('username', ['petugas', 'guru', 'admin'])->delete();
 
         collect([
             ['key' => 'library_name', 'label' => 'Nama Perpustakaan', 'type' => 'text', 'value' => 'Perpustakaan Digital Sekolah'],

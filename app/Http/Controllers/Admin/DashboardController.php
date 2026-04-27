@@ -441,15 +441,16 @@ class DashboardController extends Controller
 
         $borrowerCategories = $this->getBorrowerCategories();
         $borrowerBooks = $this->getBorrowerBooks($bookFilters);
-        $borrowerOpenLoanBookIds = $isBorrowerDashboard
-            ? $this->getBorrowerOpenLoanBookIds($user?->id)
+        $borrowerOpenLoanStates = $isBorrowerDashboard
+            ? $this->getBorrowerOpenLoanStates($user?->id)
             : collect();
 
-        $borrowerBooks = $borrowerBooks->map(function (Book $book) use ($borrowerActiveSanction, $borrowerOpenLoanBookIds): Book {
-            $hasPendingRequest = $borrowerOpenLoanBookIds->contains((int) $book->id);
+        $borrowerBooks = $borrowerBooks->map(function (Book $book) use ($borrowerActiveSanction, $borrowerOpenLoanStates): Book {
+            $loanState = $borrowerOpenLoanStates->get((int) $book->id);
+            $requestableStock = max(0, (int) $book->stock_available - (int) ($book->requested_loans_count ?? 0));
             $borrowState = $borrowerActiveSanction
                 ? 'sanctioned'
-                : ($hasPendingRequest ? 'requested' : ($book->stock_available > 0 ? 'available' : 'unavailable'));
+                : ($loanState ?: ($requestableStock > 0 ? 'available' : 'unavailable'));
 
             $book->borrow_state = $borrowState;
             $book->can_borrow = $borrowState === 'available';
@@ -863,7 +864,7 @@ class DashboardController extends Controller
         $borrowerActiveSanction = $this->getActiveBorrowerSanction($user?->id, now());
         $categories = $this->getBorrowerCategories();
         $books = $this->getBorrowerBooks($bookFilters);
-        $borrowerOpenLoanBookIds = $this->getBorrowerOpenLoanBookIds($user?->id);
+        $borrowerOpenLoanStates = $this->getBorrowerOpenLoanStates($user?->id);
 
         return response()->json([
             'filters' => $bookFilters,
@@ -871,22 +872,26 @@ class DashboardController extends Controller
                 'slug' => $category->slug,
                 'name' => $category->name,
             ])->values(),
-            'books' => $books->map(fn (Book $book) => [
-                'id' => $book->id,
-                'title' => $book->title,
-                'author' => $book->author ?? 'Penulis tidak tersedia',
-                'category' => $book->category?->name ?? 'Tanpa kategori',
-                'stock' => (int) $book->stock_available,
-                'cover_url' => $book->cover_image ? asset('storage/'.$book->cover_image) : null,
-                'borrowed_at' => now()->toDateString(),
-                'due_at' => now()->addDay()->toDateString(),
-                'borrow_state' => $borrowerActiveSanction
+            'books' => $books->map(function (Book $book) use ($borrowerActiveSanction, $borrowerOpenLoanStates): array {
+                $loanState = $borrowerOpenLoanStates->get((int) $book->id);
+                $requestableStock = max(0, (int) $book->stock_available - (int) ($book->requested_loans_count ?? 0));
+                $borrowState = $borrowerActiveSanction
                     ? 'sanctioned'
-                    : ($borrowerOpenLoanBookIds->contains((int) $book->id) ? 'requested' : ($book->stock_available > 0 ? 'available' : 'unavailable')),
-                'can_borrow' => ! $borrowerActiveSanction
-                    && ! $borrowerOpenLoanBookIds->contains((int) $book->id)
-                    && $book->stock_available > 0,
-            ])->values(),
+                    : ($loanState ?: ($requestableStock > 0 ? 'available' : 'unavailable'));
+
+                return [
+                    'id' => $book->id,
+                    'title' => $book->title,
+                    'author' => $book->author ?? 'Penulis tidak tersedia',
+                    'category' => $book->category?->name ?? 'Tanpa kategori',
+                    'stock' => (int) $book->stock_available,
+                    'cover_url' => $book->cover_image ? asset('storage/'.$book->cover_image) : null,
+                    'borrowed_at' => now()->toDateString(),
+                    'due_at' => now()->addDay()->toDateString(),
+                    'borrow_state' => $borrowState,
+                    'can_borrow' => $borrowState === 'available',
+                ];
+            })->values(),
         ]);
     }
 
@@ -910,6 +915,9 @@ class DashboardController extends Controller
     {
         return Book::query()
             ->with('category')
+            ->withCount([
+                'loans as requested_loans_count' => fn ($query) => $query->where('status', 'requested'),
+            ])
             ->when(
                 $bookFilters['keyword'] !== '',
                 fn ($query) => $query->where(function ($innerQuery) use ($bookFilters): void {
@@ -925,7 +933,10 @@ class DashboardController extends Controller
             )
             ->when(
                 $bookFilters['availability'] === 'available',
-                fn ($query) => $query->where('stock_available', '>', 0)
+                fn ($query) => $query->whereRaw(
+                    'stock_available > (select count(*) from loans where loans.book_id = books.id and loans.status = ?)',
+                    ['requested']
+                )
             )
             ->orderByRaw("CASE WHEN title LIKE ? THEN 0 ELSE 1 END", [$bookFilters['keyword'].'%'])
             ->orderBy('title')
@@ -933,19 +944,27 @@ class DashboardController extends Controller
             ->get();
     }
 
-    private function getBorrowerOpenLoanBookIds(?int $userId)
+    private function getBorrowerOpenLoanStates(?int $userId)
     {
         if (! $userId) {
             return collect();
         }
 
         return Loan::query()
+            ->select(['book_id', 'status'])
             ->where('member_id', $userId)
             ->whereIn('status', ['requested', 'borrowed', 'late'])
-            ->pluck('book_id')
-            ->map(fn ($bookId) => (int) $bookId)
-            ->unique()
-            ->values();
+            ->orderByRaw("CASE WHEN status IN ('borrowed', 'late') THEN 0 ELSE 1 END")
+            ->get()
+            ->reduce(function ($carry, Loan $loan) {
+                $bookId = (int) $loan->book_id;
+
+                if (! $carry->has($bookId)) {
+                    $carry->put($bookId, in_array($loan->status, ['borrowed', 'late'], true) ? 'borrowed' : 'requested');
+                }
+
+                return $carry;
+            }, collect());
     }
 
     private function getActiveBorrowerSanction(?int $userId, \Illuminate\Support\Carbon $today): ?Sanction

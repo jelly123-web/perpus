@@ -17,9 +17,11 @@ class ActivityLogger
             'properties' => $properties,
         ]);
 
-        // Kirim notifikasi ke Discord untuk aksi penting
-        if (in_array($action, ['create', 'update', 'delete', 'restore', 'login', 'logout', 'import', 'export', 'backup'])) {
-            DiscordNotifier::notifyAction($module, $action, $description);
+        // Kirim notifikasi ke Discord setelah response utama selesai agar request utama tidak ikut menunggu webhook.
+        if (in_array($action, ['create', 'update', 'delete', 'restore', 'login', 'import', 'export', 'backup'])) {
+            app()->terminating(function () use ($module, $action, $description): void {
+                DiscordNotifier::notifyAction($module, $action, $description);
+            });
         }
     }
 }

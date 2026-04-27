@@ -27,10 +27,15 @@ class LoanRequestController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $book = Book::query()->findOrFail($data['book_id']);
+        $book = Book::query()
+            ->withCount([
+                'loans as requested_loans_count' => fn ($query) => $query->where('status', 'requested'),
+            ])
+            ->findOrFail($data['book_id']);
         $today = Carbon::today()->toDateString();
+        $requestableStock = max(0, (int) $book->stock_available - (int) ($book->requested_loans_count ?? 0));
 
-        if ($book->stock_available < 1) {
+        if ($requestableStock < 1) {
             $message = 'Stok buku sedang habis. Pilih buku lain atau hubungi petugas.';
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 422);

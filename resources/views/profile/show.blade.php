@@ -100,10 +100,6 @@
                     <div class="profile-box-value">{{ $user->username }}</div>
                 </div>
                 <div class="profile-box">
-                    <div class="profile-box-label">NIK</div>
-                    <div class="profile-box-value">{{ $user->nik ?: 'Belum diisi' }}</div>
-                </div>
-                <div class="profile-box">
                     <div class="profile-box-label">Kelas / Jurusan</div>
                     <div class="profile-box-value">{{ $user->academicLabel() ?: 'Belum diisi' }}</div>
                 </div>
@@ -124,7 +120,6 @@
                 </div>
 
                 <div class="profile-form-grid">
-                    <input name="nik" value="{{ old('nik', $user->nik) }}" class="form-input px-3 py-3 text-sm" placeholder="NIK">
                     <input type="email" name="email" value="{{ old('email', $user->email) }}" class="form-input px-3 py-3 text-sm" placeholder="Email" required>
                 </div>
 

@@ -9,6 +9,7 @@
     class="dbx"
     data-dashboard-role="{{ $isPrincipalDashboard ? 'principal' : ($isBorrowerDashboard ? 'borrower' : 'other') }}"
     data-principal-signatures="{{ $isPrincipalDashboard ? $principalProcurements->map(fn ($procurement) => 'principal-procurement-'.$procurement->id.'-'.$procurement->status)->implode('|') : '' }}"
+    data-borrower-signatures="{{ $isBorrowerDashboard ? $borrowerNotifications->pluck('signature')->filter()->implode('|') : '' }}"
 >
     <div class="dbx-pattern"></div>
     <div class="dbx-body">
@@ -158,9 +159,11 @@
                                                 {{
                                                     ($book->borrow_state ?? null) === 'requested'
                                                         ? 'Menunggu petugas'
+                                                        : (($book->borrow_state ?? null) === 'borrowed'
+                                                            ? 'Sedang dipinjam'
                                                         : (($book->borrow_state ?? null) === 'sanctioned'
                                                             ? 'Akun disanksi'
-                                                            : ($book->stock_available > 0 ? 'Tersedia' : 'Habis'))
+                                                            : (($book->borrow_state ?? null) === 'available' ? 'Tersedia' : 'Habis')))
                                                 }}
                                             </div>
                                             <div class="dbx-book-name">{{ $book->title }}</div>
@@ -560,7 +563,7 @@
                     <span>PENTING: Batas waktu peminjaman buku ini adalah <strong>1 hari</strong> saja.</span>
                 </div>
 
-                <form method="POST" action="{{ route('loan-requests.store') }}" class="dbx-book-form" id="borrowerLoanForm" data-async="true" data-success-call="closeBorrowDrawer" data-refresh-targets="#asyncDashboardWrap">
+                <form method="POST" action="{{ route('loan-requests.store') }}" class="dbx-book-form" id="borrowerLoanForm" data-async="true" data-success-call="closeBorrowDrawer" data-refresh-targets="#asyncDashboardWrap" data-loading-label="Mengirim Pengajuan...">
                     @csrf
                     <input type="hidden" name="book_id" id="borrowDrawerBookId">
                     <div class="dbx-book-form-grid">
@@ -598,6 +601,21 @@
                 .replaceAll('>', '&gt;')
                 .replaceAll('"', '&quot;')
                 .replaceAll("'", '&#039;');
+        }
+
+        function getBorrowStateLabel(borrowState) {
+            if (borrowState === 'requested') return 'Menunggu petugas';
+            if (borrowState === 'borrowed') return 'Sedang dipinjam';
+            if (borrowState === 'sanctioned') return 'Akun disanksi';
+            if (borrowState === 'available') return 'Tersedia';
+            return 'Habis';
+        }
+
+        function getBorrowDrawerLabel(borrowState, isAvailable) {
+            if (borrowState === 'sanctioned') return 'Pinjam Dinonaktifkan Sementara';
+            if (borrowState === 'requested') return 'Pengajuan Sudah Dikirim';
+            if (borrowState === 'borrowed') return 'Buku Sedang Dipinjam';
+            return isAvailable ? 'Ajukan Pinjam Lewat Sistem' : 'Stok Tidak Tersedia';
         }
 
         function showToast(notification) {
@@ -661,11 +679,7 @@
 
             borrowerBookGrid.innerHTML = books.map(function (book) {
                 const chipClass = book.borrow_state === 'available' ? '' : ' unavailable';
-                const chipLabel = book.borrow_state === 'requested'
-                    ? 'Menunggu petugas'
-                    : (book.borrow_state === 'sanctioned'
-                        ? 'Akun disanksi'
-                        : (book.stock > 0 ? 'Tersedia' : 'Habis'));
+                const chipLabel = getBorrowStateLabel(book.borrow_state);
                 const imageHtml = book.cover_url
                     ? '<img src="' + escapeHtml(book.cover_url) + '" alt="' + escapeHtml(book.title) + '">'
                     : '<div class="dbx-book-fallback">' + escapeHtml((book.title || 'B').trim().charAt(0).toUpperCase()) + '</div>';
@@ -715,6 +729,9 @@
                 return;
             }
 
+            const activeDrawerBookId = borrowDrawer?.classList.contains('open')
+                ? (document.getElementById('borrowDrawerBookId')?.value || '')
+                : '';
             const params = new URLSearchParams({
                 q: (borrowerBookKeyword.value || '').trim(),
                 category: borrowerBookCategoryFilter.value || '',
@@ -736,6 +753,13 @@
                 const data = await response.json();
                 syncBorrowerBookCategories(Array.isArray(data.categories) ? data.categories : [], params.get('category') || '');
                 renderBorrowerBooks(Array.isArray(data.books) ? data.books : []);
+
+                if (activeDrawerBookId && borrowDrawer?.classList.contains('open')) {
+                    const nextBookCard = borrowerBookGrid.querySelector('[data-id="' + CSS.escape(activeDrawerBookId) + '"]');
+                    if (nextBookCard) {
+                        openBorrowDrawer(nextBookCard);
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching borrower books:', error);
             }
@@ -788,6 +812,22 @@
                 return;
             }
 
+            if (dashboardWrap?.dataset.dashboardRole === 'borrower') {
+                const nextSignatures = notifications
+                    .map(function (notification) {
+                        return notification.signature || '';
+                    })
+                    .filter(Boolean)
+                    .join('|');
+
+                if (dashboardWrap.dataset.borrowerSignatures !== nextSignatures) {
+                    dashboardWrap.dataset.borrowerSignatures = nextSignatures;
+                    refreshBorrowerBooks().catch(function (error) {
+                        console.error('Error refreshing borrower books:', error);
+                    });
+                }
+            }
+
             // Update dashboard notif list
             if (borrowerNotifList) {
                 if (notifications.length === 0) {
@@ -831,7 +871,10 @@
             }
         });
 
-        function closeBorrowDrawer() {
+        // Make closeBorrowDrawer globally accessible for data-success-call
+        window.closeBorrowDrawer = function() {
+            const borrowDrawer = document.getElementById('borrowDrawer');
+            const borrowDrawerMask = document.getElementById('borrowDrawerMask');
             if (!borrowDrawer || !borrowDrawerMask) {
                 return;
             }
@@ -839,7 +882,7 @@
             borrowDrawer.classList.remove('open');
             borrowDrawerMask.classList.remove('show');
             borrowDrawer.setAttribute('aria-hidden', 'true');
-        }
+        };
 
         function syncBorrowDrawerDueAt() {
             const borrowedAt = document.getElementById('borrowDrawerBorrowedAt');
@@ -888,16 +931,12 @@
             syncBorrowDrawerDueAt();
             fallback.textContent = (bookTitle.trim().charAt(0) || 'B').toUpperCase();
 
-            status.textContent = borrowState === 'sanctioned'
-                ? 'Akun disanksi'
-                : (borrowState === 'requested' ? 'Menunggu petugas' : (isAvailable ? 'Tersedia' : 'Tidak tersedia'));
+            status.textContent = getBorrowStateLabel(borrowState) === 'Habis'
+                ? 'Tidak tersedia'
+                : getBorrowStateLabel(borrowState);
             status.classList.toggle('unavailable', !isAvailable);
             submit.disabled = !isAvailable;
-            submitLabel.textContent = borrowState === 'sanctioned'
-                ? 'Pinjam Dinonaktifkan Sementara'
-                : (borrowState === 'requested'
-                    ? 'Pengajuan Sudah Dikirim'
-                    : (isAvailable ? 'Ajukan Pinjam Lewat Sistem' : 'Stok Tidak Tersedia'));
+            submitLabel.textContent = getBorrowDrawerLabel(borrowState, isAvailable);
 
             if (button.dataset.coverUrl) {
                 image.src = button.dataset.coverUrl;
@@ -1009,7 +1048,7 @@
         if (borrowerBookGrid) {
             window.setInterval(function () {
                 refreshBorrowerBooks();
-            }, 15000);
+            }, 1000);
         }
 
         // Auto refresh entire dashboard for stats/logs

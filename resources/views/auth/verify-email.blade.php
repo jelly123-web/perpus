@@ -23,7 +23,7 @@
             </button>
         </form>
 
-        <form method="POST" action="{{ route('logout') }}" data-async-auth="true" data-loading-label="Logout...">
+        <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="w-full rounded-xl border border-lib-200 bg-white px-4 py-3 text-sm font-semibold text-lib-900 transition hover:border-lib-300 hover:bg-lib-50">
                 Logout
