@@ -18,6 +18,8 @@
     .loan-field{display:flex;flex-direction:column;gap:10px}
     .loan-label{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
     .loan-input-group{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .loan-form-grid input[type="date"]::-webkit-calendar-picker-indicator{display:none;-webkit-appearance:none}
+    .loan-form-grid input[type="date"]{appearance:none;-webkit-appearance:none}
     
     .loan-item-card{padding:24px;border-radius:24px;background:var(--bg-soft);border:1px solid var(--border-light);display:flex;flex-direction:column;gap:16px;transition:.2s ease}
     .loan-item-card:hover{background:#fff;transform:translateY(-2px);box-shadow:var(--shadow-sm)}
@@ -135,85 +137,6 @@
                             </div>
                         @endforelse
                     </div>
-                </div>
-            </div>
-
-            <!-- Section: Input Peminjaman -->
-            <div class="loan-card">
-                <div class="loan-card-header">
-                    <div>
-                        <h2 class="loan-card-title">Input Pinjam</h2>
-                        <p class="loan-card-subtitle">Catat transaksi peminjaman baru.</p>
-                    </div>
-                </div>
-                <div class="loan-card-body">
-                    <form method="POST" action="{{ route('admin.loans.store') }}" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                        @csrf
-                        <div class="loan-field">
-                            <label class="loan-label">Buku</label>
-                            <select name="book_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
-                                <option value="">Pilih buku</option>
-                                @foreach ($books as $book)
-                                    <option value="{{ $book->id }}">{{ $book->title }} (stok {{ $book->stock_available }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="loan-field">
-                            <label class="loan-label">Peminjam</label>
-                            <select name="member_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
-                                <option value="">Pilih peminjam</option>
-                                @foreach ($members as $member)
-                                    <option value="{{ $member->id }}">{{ $member->name }} {{ $member->academicLabel() ? ' | '.$member->academicLabel() : '' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="loan-input-group">
-                            <div class="loan-field">
-                                <label class="loan-label">Tgl Pinjam</label>
-                                <input id="loanBorrowedAt" type="date" name="borrowed_at" class="form-input px-4 py-3 text-sm rounded-xl" value="{{ now()->toDateString() }}" required>
-                            </div>
-                            <div class="loan-field">
-                                <label class="loan-label">Tgl Kembali</label>
-                                <input id="loanDueAt" type="date" name="due_at" class="form-input px-4 py-3 text-sm rounded-xl bg-slate2-50" value="{{ now()->addDay()->toDateString() }}" required readonly>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn-loan-submit">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Simpan Peminjaman
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Section: Pengembalian -->
-            <div class="loan-card">
-                <div class="loan-card-header">
-                    <div>
-                        <h2 class="loan-card-title">Pengembalian</h2>
-                        <p class="loan-card-subtitle">Proses buku yang dikembalikan.</p>
-                    </div>
-                </div>
-                <div class="loan-card-body">
-                    <form method="POST" action="{{ route('admin.loans.return') }}" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                        @csrf
-                        <div class="loan-field">
-                            <label class="loan-label">Transaksi Aktif</label>
-                            <select name="loan_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
-                                <option value="">Pilih transaksi</option>
-                                @foreach ($activeLoans as $activeLoan)
-                                    <option value="{{ $activeLoan->id }}">
-                                        {{ $activeLoan->member?->name }} - {{ $activeLoan->book?->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="loan-field">
-                            <label class="loan-label">Tgl Kembali</label>
-                            <input type="date" name="returned_at" class="form-input px-4 py-3 text-sm rounded-xl" value="{{ now()->toDateString() }}" required>
-                        </div>
-                        <button type="submit" class="btn-loan-submit">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i> Simpan Pengembalian
-                        </button>
-                    </form>
                 </div>
             </div>
 
