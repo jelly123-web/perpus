@@ -111,7 +111,8 @@ Route::middleware('auth')->group(function (): void {
         Route::put('/books/procurements/{procurement}/reject', [BookController::class, 'rejectProcurement'])->middleware('permission:view_reports')->name('books.procurements.reject');
         Route::put('/books/{book}', [BookController::class, 'update'])->middleware('permission:manage_books')->name('books.update');
         Route::get('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
-        Route::post('/books/search-by-image', [\App\Http\Controllers\Admin\BookSearchController::class, 'searchByImage'])->middleware('permission:search_books_by_image')->name('books.search-by-image');
+        Route::get('/books/search-by-image', [\App\Http\Controllers\Admin\BookSearchController::class, 'show'])->name('books.search-by-image.page');
+        Route::post('/books/search-by-image', [\App\Http\Controllers\Admin\BookSearchController::class, 'searchByImage'])->name('books.search-by-image');
 
         Route::get('/loans', [LoanController::class, 'index'])->middleware('permission:manage_loans')->name('loans.index');
         Route::get('/loans/live-snapshot', [LoanController::class, 'liveSnapshot'])->middleware('permission:manage_loans')->name('loans.live-snapshot');

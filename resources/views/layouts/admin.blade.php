@@ -26,6 +26,7 @@
                     ['label' => 'Kelola Akun Pengguna', 'icon' => 'users-round', 'route' => 'admin.users.index', 'match' => 'admin.users.*', 'permission' => 'manage_users'],
                     ['label' => 'Table Access', 'icon' => 'shield-check', 'route' => 'admin.roles.index', 'match' => 'admin.roles.*', 'permission' => 'manage_roles'],
                     ['label' => 'Kelola Data Buku', 'icon' => 'book-copy', 'route' => 'admin.books.index', 'match' => 'admin.books.index', 'permission' => 'manage_books'],
+                    ['label' => 'Cari Buku dari Foto', 'icon' => 'scan-search', 'route' => 'admin.books.search-by-image.page', 'match' => 'admin.books.search-by-image.*', 'permission' => 'search_books_by_image'],
                     ['label' => 'Backup & Restore Database', 'icon' => 'database-backup', 'route' => 'admin.backups.index', 'match' => 'admin.backups.*', 'permission' => 'manage_backups'],
                     ['label' => 'Restore Data', 'icon' => 'archive-restore', 'route' => 'admin.restore.index', 'match' => 'admin.restore.*', 'permission' => 'manage_users', 'super_admin_only' => true],
                     ['label' => 'Setting', 'icon' => 'settings-2', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'permission' => 'manage_settings'],

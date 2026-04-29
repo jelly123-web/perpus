@@ -95,28 +95,54 @@
                         <div class="dbx-borrower-alert" style="margin-bottom:18px;">{{ $message }}</div>
                     @enderror
 
-                    <form method="GET" action="{{ route('dashboard') }}" class="dbx-book-filters" id="borrowerBookFilterForm" data-async="true" data-refresh-targets="#asyncDashboardWrap">
+                    <form method="GET" action="{{ route('dashboard') }}" class="dbx-book-filters" id="borrowerBookFilterForm" data-async="true" data-refresh-targets="#asyncDashboardWrap" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
                         <input
                             type="text"
                             name="q"
                             id="borrowerBookKeyword"
                             class="dbx-book-filter-field"
+                            style="flex:1 1 260px;min-width:220px;"
                             value="{{ $bookFilters['keyword'] }}"
                             placeholder="Cari judul atau penulis"
                             autocomplete="off"
                         >
-                        <select name="category" id="borrowerBookCategoryFilter" class="dbx-book-filter-field">
+                        <select name="category" id="borrowerBookCategoryFilter" class="dbx-book-filter-field" style="flex:0 1 180px;min-width:160px;">
+                            style="flex:0 1 180px;min-width:160px;"
                             <option value="">Semua kategori</option>
                             @foreach ($borrowerCategories as $category)
                                 <option value="{{ $category->slug }}" @selected($bookFilters['category'] === $category->slug)>{{ $category->name }}</option>
                             @endforeach
                         </select>
-                        <select name="availability" id="borrowerBookAvailabilityFilter" class="dbx-book-filter-field">
+                        <select name="availability" id="borrowerBookAvailabilityFilter" class="dbx-book-filter-field" style="flex:0 0 140px;min-width:140px;">
                             <option value="available" @selected($bookFilters['availability'] === 'available')>Tersedia</option>
                             <option value="all" @selected($bookFilters['availability'] === 'all')>Semua buku</option>
                         </select>
-                        <button type="submit" class="dbx-book-filter-btn"><i data-lucide="search" class="w-4 h-4"></i>Cari</button>
+                        <div style="position:relative;display:inline-flex;align-items:center;">
+                            <button type="button" id="borrowerImageSearchSourceBtn" class="dbx-book-filter-btn" style="width:48px;height:48px;padding:0;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;" aria-label="Pilih foto buku">
+                                <i data-lucide="camera" class="w-5 h-5"></i>
+                            </button>
+                            <div id="borrowerImageSearchSourceMenu" style="display:none;position:absolute;top:58px;right:0;z-index:20;min-width:210px;padding:10px;border:1px solid rgba(196,149,106,.18);border-radius:16px;background:#fff;box-shadow:0 16px 30px rgba(15,76,92,.12);">
+                                <button type="button" id="borrowerImageSearchCamera" class="dbx-book-filter-btn" style="width:100%;justify-content:flex-start;margin-bottom:8px;">Foto Langsung</button>
+                                <button type="button" id="borrowerImageSearchGallery" class="dbx-book-filter-btn" style="width:100%;justify-content:flex-start;">Dari File / Galeri</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="dbx-book-filter-btn" style="min-width:96px;height:48px;padding:0 14px;white-space:nowrap;"><i data-lucide="search" class="w-4 h-4"></i>Cari</button>
                     </form>
+
+                    <input type="file" id="borrowerImageSearchCameraInput" name="image" accept="image/*" capture="environment" style="display:none;">
+                    <input type="file" id="borrowerImageSearchGalleryInput" name="image" accept="image/*" style="display:none;">
+                    <div id="borrowerImageSearchPreviewWrap" style="display:none;align-items:center;justify-content:center;min-height:140px;margin-top:14px;border:1px dashed rgba(196,149,106,.22);border-radius:18px;background:#fff;overflow:hidden;">
+                        <img id="borrowerImageSearchPreview" alt="Preview foto buku" style="max-width:100%;max-height:220px;object-fit:contain;">
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+                        <div id="borrowerImageSearchFileName" style="font-size:13px;color:var(--muted);display:none;"></div>
+                        <div id="borrowerImageSearchActions" style="display:none;gap:8px;">
+                            <button type="button" id="borrowerImageSearchActionBtn" class="dbx-book-filter-btn" style="height:36px;padding:0 14px;white-space:nowrap;font-size:13px;"><i data-lucide="search" class="w-4 h-4"></i>Cari Buku</button>
+                            <button type="button" id="borrowerImageSearchClearBtn" class="dbx-book-filter-btn" style="height:36px;padding:0 14px;white-space:nowrap;font-size:13px;background:var(--red-light);color:var(--red);border-color:transparent;"><i data-lucide="trash-2" class="w-4 h-4"></i>Hapus</button>
+                        </div>
+                    </div>
+                    <div id="borrowerImageSearchStatus" style="font-size:13px;color:var(--muted);margin-top:8px;"></div>
+                    <div id="borrowerImageSearchResults" style="display:none;margin-top:16px;"></div>
 
                     <div class="dbx-book-section-head">
                         <div class="dbx-book-section-copy">
@@ -766,6 +792,158 @@
             bindBorrowBookCards();
         }
 
+        function getBorrowerImageSearchCameraInput() {
+            return document.getElementById('borrowerImageSearchCameraInput');
+        }
+
+        function getBorrowerImageSearchGalleryInput() {
+            return document.getElementById('borrowerImageSearchGalleryInput');
+        }
+
+        function getBorrowerImageSearchPreviewWrap() {
+            return document.getElementById('borrowerImageSearchPreviewWrap');
+        }
+
+        function getBorrowerImageSearchPreview() {
+            return document.getElementById('borrowerImageSearchPreview');
+        }
+
+        function getBorrowerImageSearchFileName() {
+            return document.getElementById('borrowerImageSearchFileName');
+        }
+
+        function getBorrowerImageSearchStatus() {
+            return document.getElementById('borrowerImageSearchStatus');
+        }
+
+        function getBorrowerImageSearchResults() {
+            return document.getElementById('borrowerImageSearchResults');
+        }
+
+        function setBorrowerImageSearchPreview(file) {
+            const previewWrap = getBorrowerImageSearchPreviewWrap();
+            const preview = getBorrowerImageSearchPreview();
+            const fileName = getBorrowerImageSearchFileName();
+            const actions = document.getElementById('borrowerImageSearchActions');
+
+            if (!previewWrap || !preview || !fileName) {
+                return;
+            }
+
+            if (!file) {
+                previewWrap.style.display = 'none';
+                preview.removeAttribute('src');
+                fileName.style.display = 'none';
+                fileName.textContent = '';
+                if (actions) actions.style.display = 'none';
+                return;
+            }
+
+            preview.src = URL.createObjectURL(file);
+            previewWrap.style.display = 'flex';
+            fileName.style.display = 'block';
+            fileName.textContent = file.name || 'foto-buku';
+            if (actions) actions.style.display = 'flex';
+        }
+
+        function renderBorrowerImageSearchResults(books, message) {
+            const container = getBorrowerImageSearchResults();
+
+            if (!container) {
+                return;
+            }
+
+            if (!Array.isArray(books) || books.length === 0) {
+                container.style.display = 'block';
+                container.innerHTML = '<div class="text-sm text-slate2-400">Buku tidak ditemukan.</div>';
+                return;
+            }
+
+            container.style.display = 'block';
+            container.innerHTML = '<div class="dbx-book-section-sub" style="margin-bottom:12px;">' + escapeHtml(message || 'Buku hasil pencarian foto') + '</div>'
+                + '<div class="dbx-book-grid">' + books.map(function (book) {
+                    const chipClass = book.borrow_state === 'available' ? '' : ' unavailable';
+                    const chipLabel = getBorrowStateLabel(book.borrow_state);
+                    const imageHtml = book.cover_url
+                        ? '<img src="' + escapeHtml(book.cover_url) + '" alt="' + escapeHtml(book.title) + '">'
+                        : '<div class="dbx-book-fallback">' + escapeHtml((book.title || 'B').trim().charAt(0).toUpperCase()) + '</div>';
+
+                    return '<article class="dbx-book-card js-borrow-book"'
+                        + ' role="button" tabindex="0"'
+                        + ' data-id="' + escapeHtml(book.id) + '"'
+                        + ' data-title="' + escapeHtml(book.title) + '"'
+                        + ' data-author="' + escapeHtml(book.author || 'Penulis tidak tersedia') + '"'
+                        + ' data-category="' + escapeHtml(book.category_name || book.category || 'Tanpa kategori') + '"'
+                        + ' data-stock="' + escapeHtml(book.stock) + '"'
+                        + ' data-cover-url="' + escapeHtml(book.cover_url || '') + '"'
+                        + ' data-borrowed-at="' + escapeHtml(book.borrowed_at || '') + '"'
+                        + ' data-due-at="' + escapeHtml(book.due_at || '') + '"'
+                        + ' data-borrow-state="' + escapeHtml(book.borrow_state || 'available') + '"'
+                        + ' data-can-borrow="' + (book.can_borrow ? '1' : '0') + '">'
+                        + '<div class="dbx-book-thumb">' + imageHtml + '</div>'
+                        + '<div class="dbx-book-body">'
+                        + '<div class="dbx-book-chip' + chipClass + '">' + chipLabel + '</div>'
+                        + '<div class="dbx-book-name">' + escapeHtml(book.title) + '</div>'
+                        + '<div class="dbx-book-author">' + escapeHtml(book.author || 'Penulis tidak tersedia') + '</div>'
+                        + '<div class="dbx-book-meta"><span class="dbx-book-stock">' + escapeHtml(book.stock) + ' stok</span><span>' + escapeHtml(book.category_name || book.category || 'Umum') + '</span></div>'
+                        + '<div class="dbx-book-open"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>Lihat</div>'
+                        + '</div></article>';
+                }).join('') + '</div>';
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+
+            bindBorrowBookCards();
+        }
+
+        async function searchBorrowerBooksByImage(file) {
+            const status = getBorrowerImageSearchStatus();
+            const results = getBorrowerImageSearchResults();
+
+            if (!file || !status || !results) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}');
+            formData.append('image', file);
+
+            status.textContent = 'Mencari dari foto...';
+            results.style.display = 'block';
+            results.innerHTML = '<div class="text-sm text-slate2-400">Sedang mencari buku...</div>';
+
+            try {
+                const response = await fetch('{{ route('admin.books.search-by-image') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Pencarian foto gagal.');
+                }
+
+                const books = Array.isArray(data.books) ? data.books : [];
+                if (books.length === 0) {
+                    status.textContent = '';
+                    results.innerHTML = '<div class="text-sm text-slate2-400">Buku tidak ditemukan.</div>';
+                    return;
+                }
+
+                status.textContent = data.message || 'Pencarian selesai.';
+                renderBorrowerImageSearchResults(books, data.message || 'Hasil pencarian foto');
+            } catch (error) {
+                status.textContent = error.message || 'Pencarian foto gagal.';
+                results.innerHTML = '<div class="text-sm text-slate2-400">Gagal memproses foto. Coba foto yang lebih jelas.</div>';
+            }
+        }
+
         function syncBorrowerBookCategories(categories, selectedValue) {
             const borrowerBookCategoryFilter = getBorrowerBookCategoryFilter();
 
@@ -850,7 +1028,85 @@
             }
 
             event.preventDefault();
+
+            const file = borrowerImageSearchCameraInput && borrowerImageSearchCameraInput.files && borrowerImageSearchCameraInput.files[0]
+                ? borrowerImageSearchCameraInput.files[0]
+                : (borrowerImageSearchGalleryInput && borrowerImageSearchGalleryInput.files && borrowerImageSearchGalleryInput.files[0]
+                    ? borrowerImageSearchGalleryInput.files[0]
+                    : null);
+
+            if (file) {
+                searchBorrowerBooksByImage(file);
+                return;
+            }
+
             refreshBorrowerBooks();
+        });
+
+        const borrowerImageSearchCameraInput = getBorrowerImageSearchCameraInput();
+        const borrowerImageSearchGalleryInput = getBorrowerImageSearchGalleryInput();
+        const borrowerImageSearchSourceBtn = document.getElementById('borrowerImageSearchSourceBtn');
+        const borrowerImageSearchSourceMenu = document.getElementById('borrowerImageSearchSourceMenu');
+        const borrowerImageSearchCamera = document.getElementById('borrowerImageSearchCamera');
+        const borrowerImageSearchGallery = document.getElementById('borrowerImageSearchGallery');
+        if (borrowerImageSearchCameraInput) {
+            borrowerImageSearchCameraInput.addEventListener('change', function () {
+                const file = borrowerImageSearchCameraInput.files && borrowerImageSearchCameraInput.files[0] ? borrowerImageSearchCameraInput.files[0] : null;
+                if (borrowerImageSearchGalleryInput) {
+                    borrowerImageSearchGalleryInput.value = '';
+                }
+                setBorrowerImageSearchPreview(file);
+            });
+        }
+
+        if (borrowerImageSearchGalleryInput) {
+            borrowerImageSearchGalleryInput.addEventListener('change', function () {
+                const file = borrowerImageSearchGalleryInput.files && borrowerImageSearchGalleryInput.files[0] ? borrowerImageSearchGalleryInput.files[0] : null;
+                if (borrowerImageSearchCameraInput) {
+                    borrowerImageSearchCameraInput.value = '';
+                }
+                setBorrowerImageSearchPreview(file);
+            });
+        }
+
+        if (borrowerImageSearchCamera) {
+            borrowerImageSearchCamera.addEventListener('click', function () {
+                if (borrowerImageSearchCameraInput) {
+                    borrowerImageSearchCameraInput.click();
+                }
+                if (borrowerImageSearchSourceMenu) {
+                    borrowerImageSearchSourceMenu.style.display = 'none';
+                }
+            });
+        }
+
+        if (borrowerImageSearchGallery) {
+            borrowerImageSearchGallery.addEventListener('click', function () {
+                if (borrowerImageSearchGalleryInput) {
+                    borrowerImageSearchGalleryInput.click();
+                }
+                if (borrowerImageSearchSourceMenu) {
+                    borrowerImageSearchSourceMenu.style.display = 'none';
+                }
+            });
+        }
+
+        if (borrowerImageSearchSourceBtn && borrowerImageSearchSourceMenu) {
+            borrowerImageSearchSourceBtn.addEventListener('click', function (event) {
+                event.stopPropagation();
+                borrowerImageSearchSourceMenu.style.display = borrowerImageSearchSourceMenu.style.display === 'block' ? 'none' : 'block';
+            });
+        }
+
+        document.addEventListener('click', function (event) {
+            if (!borrowerImageSearchSourceMenu) {
+                return;
+            }
+
+            const clickedInside = event.target.closest('#borrowerImageSearchSourceMenu') || event.target.closest('#borrowerImageSearchSourceBtn');
+            if (!clickedInside) {
+                borrowerImageSearchSourceMenu.style.display = 'none';
+            }
         });
 
         document.addEventListener('notificationsUpdated', function (event) {

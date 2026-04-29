@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             'manage_roles' => 'Table Access',
             'manage_categories' => 'Kategori Buku',
             'manage_books' => 'Kelola Data Buku',
+            'search_books_by_image' => 'Cari Buku dengan Foto',
             'manage_backups' => 'Backup Data',
             'manage_settings' => 'Setting',
         ])->map(fn (string $label, string $name) => Permission::query()->updateOrCreate(['name' => $name], ['label' => $label]));
@@ -39,8 +40,8 @@ class DatabaseSeeder extends Seeder
         $siswaRole = Role::query()->updateOrCreate(['name' => 'siswa'], ['label' => 'Siswa']);
 
         $superAdminRole->permissions()->sync($permissions->reject(fn ($permission) => $permission->name === 'view_borrower_history')->pluck('id'));
-        $adminRole->permissions()->sync($permissions->whereIn('name', ['access_dashboard', 'view_reports', 'manage_loans', 'manage_users', 'manage_roles', 'manage_categories', 'manage_books', 'manage_backups'])->pluck('id'));
-        $petugasRole->permissions()->sync($permissions->whereIn('name', ['access_dashboard', 'view_reports', 'manage_loans', 'manage_categories', 'manage_books'])->pluck('id'));
+        $adminRole->permissions()->sync($permissions->whereIn('name', ['access_dashboard', 'view_reports', 'manage_loans', 'manage_users', 'manage_roles', 'manage_categories', 'manage_books', 'search_books_by_image', 'manage_backups'])->pluck('id'));
+        $petugasRole->permissions()->sync($permissions->whereIn('name', ['access_dashboard', 'view_reports', 'manage_loans', 'manage_categories', 'manage_books', 'search_books_by_image'])->pluck('id'));
         $kepsekRole->permissions()->sync($permissions->whereIn('name', ['access_dashboard', 'view_reports'])->pluck('id'));
         $guruRole->permissions()->sync($permissions->whereIn('name', ['access_dashboard', 'view_borrower_history'])->pluck('id'));
         $siswaRole->permissions()->sync($permissions->whereIn('name', ['access_dashboard', 'view_borrower_history'])->pluck('id'));

@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -489,10 +490,13 @@ class DashboardController extends Controller
         $searchTerms = $this->buildBorrowBookSearchTerms($keyword);
         $candidates = Book::query()
             ->with('category')
-            ->where('status', 'available')
             ->withCount([
                 'loans as requested_loans_count' => fn ($query) => $query->where('status', 'requested'),
             ])
+            ->when(
+                Schema::hasColumn('books', 'status'),
+                fn ($query) => $query->where('status', 'available')
+            )
             ->when(
                 ! $showAll && ! empty($searchTerms),
                 fn ($query) => $query->where(function ($innerQuery) use ($searchTerms): void {
@@ -754,8 +758,11 @@ class DashboardController extends Controller
 
         $popularBooks = Book::query()
             ->with('category')
-            ->where('status', 'available')
             ->withCount('loans')
+            ->when(
+                Schema::hasColumn('books', 'status'),
+                fn ($query) => $query->where('status', 'available')
+            )
             ->having('loans_count', '>', 0)
             ->orderByDesc('loans_count')
             ->take(4)
@@ -1163,10 +1170,13 @@ class DashboardController extends Controller
 
         return Book::query()
             ->with('category')
-            ->where('status', 'available')
             ->withCount([
                 'loans as requested_loans_count' => fn ($query) => $query->where('status', 'requested'),
             ])
+            ->when(
+                Schema::hasColumn('books', 'status'),
+                fn ($query) => $query->where('status', 'available')
+            )
             ->when(
                 ! empty($searchTerms),
                 fn ($query) => $query->where(function ($innerQuery) use ($searchTerms): void {

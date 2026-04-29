@@ -37,6 +37,10 @@
     .btn-book-glow.danger:focus,
     .btn-book-glow.danger:focus-visible,
     .btn-book-glow.danger:active{background:var(--red-light);color:var(--red);border-color:var(--red);box-shadow:0 0 0 3px rgba(196,69,54,.14)}
+    .book-search-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:18px;padding:18px 20px;border:1px solid rgba(196,149,106,.22);border-radius:20px;background:linear-gradient(135deg,rgba(255,250,244,.95),rgba(243,232,219,.85));box-shadow:var(--shadow-sm)}
+    .book-search-banner-title{font-size:16px;font-weight:800;color:var(--fg)}
+    .book-search-banner-text{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6}
+    .book-search-banner-link{white-space:nowrap}
     
     .member-toolbar{border-bottom: 1px solid var(--border-light); padding-bottom: 24px; margin-bottom: 32px;}
     .member-title{font-size: 36px; font-weight: 800;}
@@ -109,6 +113,16 @@
             <p class="member-subtitle">Manajemen koleksi perpustakaan: tambah buku baru, update stok, dan hapus data buku.</p>
         </div>
         <div class="member-badge" style="background:var(--accent);color:#fff;"><i data-lucide="book-copy" class="w-4 h-4"></i> Akses superadmin</div>
+    </div>
+
+    <div class="book-search-banner">
+        <div>
+            <div class="book-search-banner-title">Cari buku dari foto sampul</div>
+            <div class="book-search-banner-text">Upload foto buku, screenshot, atau hasil jepretan kamera. Sistem akan mencocokkan gambar dengan cover buku yang ada di katalog.</div>
+        </div>
+        <a href="{{ route('admin.books.search-by-image.page') }}" class="btn-book-glow primary book-search-banner-link">
+            <i data-lucide="image-search" class="w-4 h-4"></i> Buka Pencarian Foto
+        </a>
     </div>
 
     <section id="bookStatsWrap" class="member-mini-stats">
