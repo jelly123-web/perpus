@@ -42,6 +42,10 @@ class DashboardController extends Controller
         $apiKey = config('services.gemini.key');
         $aiConfigured = $apiKey && $apiKey !== 'your_gemini_api_key_here';
 
+        if ($borrowerBookResponse = $this->buildBorrowerBookChatResponse($message, $user)) {
+            return response()->json($borrowerBookResponse);
+        }
+
         if ($aiConfigured) {
             try {
                 $aiResponse = $this->getGeminiResponse($message, $history, $user);
@@ -64,6 +68,51 @@ class DashboardController extends Controller
             'reply' => $reply,
             'source' => 'fallback',
         ]);
+    }
+
+    private function buildBorrowerBookChatResponse(string $message, ?User $user): ?array
+    {
+        if (! $user?->hasPermission('view_borrower_history')) {
+            return null;
+        }
+
+        $normalized = preg_replace('/\s+/', ' ', trim($message));
+        $lower = mb_strtolower($normalized);
+
+        if (! $this->isBorrowBookIntent($lower)) {
+            return null;
+        }
+
+        $showAllBooks = $this->isBorrowAllBooksIntent($lower);
+        $keyword = $this->extractBorrowBookKeyword($normalized);
+        $searchTerms = $this->buildBorrowBookSearchTerms($keyword);
+        $displayKeyword = $searchTerms[0] ?? $keyword;
+        $borrowerActiveSanction = $this->getActiveBorrowerSanction($user->id, now());
+        $borrowerOpenLoanStates = $this->getBorrowerOpenLoanStates($user->id);
+        $books = $showAllBooks
+            ? $this->getBorrowerBookChatSuggestions('', $borrowerActiveSanction, $borrowerOpenLoanStates, 12, true)
+            : $this->getBorrowerBookChatSuggestions($displayKeyword, $borrowerActiveSanction, $borrowerOpenLoanStates, 6, false);
+        $hasExactMatch = $this->hasBorrowerBookExactMatch($displayKeyword);
+
+        if ($showAllBooks) {
+            $reply = "Ini semua buku yang tersedia di perpustakaan. Klik salah satu buku di bawah untuk lihat detail dan ajukan pinjam.";
+        } elseif ($displayKeyword === '') {
+            $reply = "Ini beberapa buku yang bisa kamu pinjam sekarang. Klik salah satu buku di bawah untuk lihat detail dan ajukan pinjam.";
+        } elseif ($hasExactMatch) {
+            $reply = "Ini hasil buku untuk \"{$displayKeyword}\". Klik salah satu buku di bawah untuk lihat detail dan ajukan pinjam.";
+        } elseif ($books->isNotEmpty()) {
+            $reply = "Aku belum menemukan yang persis untuk \"{$displayKeyword}\". Ini buku yang paling mendekati dari katalog perpustakaan.";
+        } else {
+            $reply = "Belum ada buku yang cocok untuk \"{$displayKeyword}\". Coba pakai judul, singkatan seperti mtk, atau ketik \"semua buku\" kalau mau lihat daftar lengkap.";
+        }
+
+        return [
+            'status' => 'success',
+            'reply' => $reply,
+            'source' => 'borrower_books',
+            'book_results' => $books->all(),
+            'book_query' => $showAllBooks ? 'semua buku' : $displayKeyword,
+        ];
     }
 
     private function buildFallbackChatbotReply(string $message, string $lower, ?User $user, bool $aiConfigured): string
@@ -269,6 +318,281 @@ class DashboardController extends Controller
         return '';
     }
 
+    private function isBorrowBookIntent(string $lower): bool
+    {
+        $needles = [
+            'mau pinjam',
+            'ingin pinjam',
+            'pengen pinjam',
+            'pinjam buku',
+            'cari buku',
+            'buku ',
+            'cari novel',
+            'buku apa',
+            'buku apa aja',
+            'rekomendasi buku',
+            'yg mana',
+            'yang mana',
+            'bindo',
+            'bahasa indonesia',
+            'semua buku',
+            'lihat semua buku',
+            'tampilkan semua buku',
+            'daftar semua buku',
+        ];
+
+        foreach ($needles as $needle) {
+            if (str_contains($lower, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isBorrowAllBooksIntent(string $lower): bool
+    {
+        $needles = [
+            'semua buku',
+            'lihat semua buku',
+            'tampilkan semua buku',
+            'daftar semua buku',
+        ];
+
+        foreach ($needles as $needle) {
+            if (str_contains($lower, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function extractBorrowBookKeyword(string $message): string
+    {
+        $patterns = [
+            '/^buku\s+(.+)$/iu',
+            '/(?:mau|ingin|pengen)\s+pinjam\s+buku\s+(.+)$/iu',
+            '/(?:mau|ingin|pengen)\s+pinjam\s+(.+)$/iu',
+            '/pinjam\s+buku\s+(.+)$/iu',
+            '/cari\s+buku\s+(.+)$/iu',
+            '/cari\s+(.+)$/iu',
+            '/rekomendasi\s+buku\s+(.+)$/iu',
+            '/buku\s+tentang\s+(.+)$/iu',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $message, $matches)) {
+                $keyword = $this->sanitizeBorrowBookKeyword($matches[1]);
+                $genericTerms = ['apa', 'apa aja', 'apa saja', 'dong', 'nih', 'ya'];
+
+                if (! in_array(mb_strtolower($keyword), $genericTerms, true)) {
+                    return $keyword;
+                }
+            }
+        }
+
+        return $this->sanitizeBorrowBookKeyword($message);
+    }
+
+    private function sanitizeBorrowBookKeyword(string $keyword): string
+    {
+        $keyword = mb_strtolower(trim($keyword));
+        $keyword = str_replace(['?', '!', '.', ';', ':', '"', "'"], ' ', $keyword);
+        $keyword = preg_replace('/\s+/', ' ', $keyword);
+
+        $splitters = [
+            ',',
+            ' dan ',
+            ' lalu ',
+            ' terus ',
+            ' yg mana',
+            ' yg man',
+            ' yg mna',
+            ' yang mana',
+            ' yang man',
+            ' yang mna',
+            ' kira kira',
+            ' kira-kira',
+            ' dong',
+            ' nih',
+            ' ya',
+            ' plis',
+            ' please',
+        ];
+
+        foreach ($splitters as $splitter) {
+            $position = mb_stripos($keyword, $splitter);
+            if ($position !== false) {
+                $keyword = trim(mb_substr($keyword, 0, $position));
+            }
+        }
+
+        $keyword = trim($keyword, " \t\n\r\0\x0B,.-");
+
+        return trim(preg_replace('/\s+/', ' ', $keyword));
+    }
+
+    private function buildBorrowBookSearchTerms(string $keyword): array
+    {
+        $keyword = $this->sanitizeBorrowBookKeyword($keyword);
+
+        if ($keyword === '') {
+            return [];
+        }
+
+        $aliases = [
+            'mtk' => ['matematika'],
+            'bindo' => ['bahasa indonesia', 'bahasa indonesia'],
+            'bahasa indo' => ['bahasa indonesia'],
+            'bahasa indonesia' => ['bahasa indonesia'],
+        ];
+
+        $terms = [$keyword];
+
+        foreach ($aliases as $alias => $mappedTerms) {
+            if (str_contains($keyword, $alias)) {
+                $terms = array_merge($terms, $mappedTerms);
+            }
+        }
+
+        return array_values(array_unique(array_filter(array_map(function (string $term): string {
+            return $this->sanitizeBorrowBookKeyword($term);
+        }, $terms))));
+    }
+
+    private function hasBorrowerBookExactMatch(string $keyword): bool
+    {
+        $searchTerms = $this->buildBorrowBookSearchTerms($keyword);
+
+        if (empty($searchTerms)) {
+            return false;
+        }
+
+        return Book::query()
+            ->where(function ($query) use ($searchTerms): void {
+                foreach ($searchTerms as $term) {
+                    $query->orWhere(function ($termQuery) use ($term): void {
+                        $termQuery
+                            ->where('title', 'like', $term.'%')
+                            ->orWhere('author', 'like', $term.'%')
+                            ->orWhere('title', 'like', '%'.$term.'%')
+                            ->orWhereHas('category', fn ($categoryQuery) => $categoryQuery->where('name', 'like', '%'.$term.'%'));
+                    });
+                }
+            })
+            ->exists();
+    }
+
+    private function getBorrowerBookChatSuggestions(string $keyword, ?Sanction $borrowerActiveSanction, \Illuminate\Support\Collection $borrowerOpenLoanStates, int $limit = 6, bool $showAll = false)
+    {
+        $searchTerms = $this->buildBorrowBookSearchTerms($keyword);
+        $candidates = Book::query()
+            ->with('category')
+            ->where('status', 'available')
+            ->withCount([
+                'loans as requested_loans_count' => fn ($query) => $query->where('status', 'requested'),
+            ])
+            ->when(
+                ! $showAll && ! empty($searchTerms),
+                fn ($query) => $query->where(function ($innerQuery) use ($searchTerms): void {
+                    foreach ($searchTerms as $term) {
+                        $innerQuery->orWhere(function ($termQuery) use ($term): void {
+                            $termQuery
+                                ->where('title', 'like', '%'.$term.'%')
+                                ->orWhere('author', 'like', '%'.$term.'%')
+                                ->orWhereHas('category', fn ($categoryQuery) => $categoryQuery->where('name', 'like', '%'.$term.'%'));
+                        });
+                    }
+                })
+            )
+            ->when($showAll, fn ($query) => $query->orderByDesc('stock_available'))
+            ->get();
+
+        if (! $showAll && $candidates->isEmpty()) {
+            return collect();
+        }
+
+        $terms = $searchTerms;
+        if (empty($terms) && $keyword !== '') {
+            $terms = [$this->sanitizeBorrowBookKeyword($keyword)];
+        }
+
+        return $candidates
+            ->sortByDesc(function (Book $book) use ($terms, $borrowerActiveSanction, $borrowerOpenLoanStates): int {
+                $score = 0;
+                $title = mb_strtolower((string) $book->title);
+                $author = mb_strtolower((string) ($book->author ?? ''));
+                $category = mb_strtolower((string) ($book->category?->name ?? ''));
+
+                foreach ($terms as $term) {
+                    if ($term === '') {
+                        continue;
+                    }
+
+                    $term = mb_strtolower($term);
+
+                    if ($title === $term || $author === $term || $category === $term) {
+                        $score += 100;
+                    }
+
+                    if (str_contains($title, $term)) {
+                        $score += 70;
+                    }
+
+                    if (str_contains($author, $term)) {
+                        $score += 35;
+                    }
+
+                    if (str_contains($category, $term)) {
+                        $score += 25;
+                    }
+
+                    similar_text($term, $title, $titlePercent);
+                    similar_text($term, $author, $authorPercent);
+                    similar_text($term, $category, $categoryPercent);
+                    $score += (int) round(max($titlePercent, $authorPercent, $categoryPercent) / 12);
+                }
+
+                $loanState = $borrowerOpenLoanStates->get((int) $book->id);
+                $requestableStock = max(0, (int) $book->stock_available - (int) ($book->requested_loans_count ?? 0));
+                if ($borrowerActiveSanction) {
+                    $score -= 15;
+                } elseif ($loanState === 'borrowed') {
+                    $score -= 8;
+                } elseif ($requestableStock > 0) {
+                    $score += 5;
+                }
+
+                return $score;
+            })
+            ->take($limit)
+            ->map(fn (Book $book): array => $this->formatBorrowerBookForChat($book, $borrowerActiveSanction, $borrowerOpenLoanStates))
+            ->values();
+    }
+
+    private function formatBorrowerBookForChat(Book $book, ?Sanction $borrowerActiveSanction, \Illuminate\Support\Collection $borrowerOpenLoanStates): array
+    {
+        $loanState = $borrowerOpenLoanStates->get((int) $book->id);
+        $requestableStock = max(0, (int) $book->stock_available - (int) ($book->requested_loans_count ?? 0));
+        $borrowState = $borrowerActiveSanction
+            ? 'sanctioned'
+            : ($loanState ?: ($requestableStock > 0 ? 'available' : 'unavailable'));
+
+        return [
+            'id' => $book->id,
+            'title' => $book->title,
+            'author' => $book->author ?? 'Penulis tidak tersedia',
+            'category' => $book->category?->name ?? 'Tanpa kategori',
+            'stock' => (int) $book->stock_available,
+            'cover_url' => $book->cover_image ? asset('storage/'.$book->cover_image) : null,
+            'borrowed_at' => now()->toDateString(),
+            'due_at' => now()->addDay()->toDateString(),
+            'borrow_state' => $borrowState,
+            'can_borrow' => $borrowState === 'available',
+        ];
+    }
+
     private function getGeminiResponse(string $message, array $history, ?User $user): ?string
     {
         $apiKey = config('services.gemini.key');
@@ -430,6 +754,7 @@ class DashboardController extends Controller
 
         $popularBooks = Book::query()
             ->with('category')
+            ->where('status', 'available')
             ->withCount('loans')
             ->having('loans_count', '>', 0)
             ->orderByDesc('loans_count')
@@ -833,18 +1158,27 @@ class DashboardController extends Controller
 
     private function getBorrowerBooks(array $bookFilters)
     {
+        $keyword = $this->sanitizeBorrowBookKeyword($bookFilters['keyword'] ?? '');
+        $searchTerms = $this->buildBorrowBookSearchTerms($keyword);
+
         return Book::query()
             ->with('category')
+            ->where('status', 'available')
             ->withCount([
                 'loans as requested_loans_count' => fn ($query) => $query->where('status', 'requested'),
             ])
             ->when(
-                $bookFilters['keyword'] !== '',
-                fn ($query) => $query->where(function ($innerQuery) use ($bookFilters): void {
-                    $innerQuery
-                        ->where('title', 'like', $bookFilters['keyword'].'%')
-                        ->orWhere('author', 'like', $bookFilters['keyword'].'%')
-                        ->orWhere('title', 'like', '%'.$bookFilters['keyword'].'%');
+                ! empty($searchTerms),
+                fn ($query) => $query->where(function ($innerQuery) use ($searchTerms): void {
+                    foreach ($searchTerms as $term) {
+                        $innerQuery->orWhere(function ($termQuery) use ($term): void {
+                            $termQuery
+                                ->where('title', 'like', $term.'%')
+                                ->orWhere('author', 'like', $term.'%')
+                                ->orWhere('title', 'like', '%'.$term.'%')
+                                ->orWhereHas('category', fn ($categoryQuery) => $categoryQuery->where('name', 'like', '%'.$term.'%'));
+                        });
+                    }
                 })
             )
             ->when(
@@ -858,7 +1192,7 @@ class DashboardController extends Controller
                     ['requested']
                 )
             )
-            ->orderByRaw("CASE WHEN title LIKE ? THEN 0 ELSE 1 END", [$bookFilters['keyword'].'%'])
+            ->orderByRaw("CASE WHEN title LIKE ? THEN 0 ELSE 1 END", [($searchTerms[0] ?? $keyword).'%'])
             ->orderBy('title')
             ->take(12)
             ->get();

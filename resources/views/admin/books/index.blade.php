@@ -192,7 +192,12 @@
                 </div>
                 <div class="book-grid">
                     <input type="number" name="stock_total" class="form-input px-3 py-3 text-sm" placeholder="Stok total" required>
-                    <div></div>
+                    <select name="status" class="form-select px-3 py-3 text-sm" required>
+                        <option value="available">Tersedia (Normal)</option>
+                        <option value="damaged">Rusak</option>
+                        <option value="lost">Hilang</option>
+                        <option value="hidden">Disembunyikan</option>
+                    </select>
                 </div>
                 <textarea name="description" class="form-textarea px-3 py-3 text-sm" rows="4" placeholder="Deskripsi buku"></textarea>
                 <button type="submit" class="btn-book-glow primary w-full py-4 rounded-xl font-bold mt-2">
@@ -239,7 +244,12 @@
                             <div class="book-row-meta">
                                 <div class="book-row-title">{{ $book->title }}</div>
                                 <div class="book-row-sub">{{ $book->author }}</div>
-                                <div class="book-row-sub2">Stok {{ $book->stock_available }}/{{ $book->stock_total }} | ISBN {{ $book->isbn ?: '-' }}</div>
+                                <div class="book-row-sub2">
+                                    Stok {{ $book->stock_available }}/{{ $book->stock_total }} | ISBN {{ $book->isbn ?: '-' }}
+                                    @if($book->status !== 'available')
+                                        | <span class="text-red-600 font-bold">{{ strtoupper($book->status) }}</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                         <div class="book-actions">
@@ -255,6 +265,7 @@
                                 data-published-year="{{ $book->published_year }}"
                                 data-stock-total="{{ $book->stock_total }}"
                                 data-stock-available="{{ $book->stock_available }}"
+                                data-status="{{ $book->status }}"
                                 data-category-id="{{ $book->category_id }}"
                                 data-description="{{ $book->description }}"
                                 data-cover-url="{{ $book->cover_image ? asset('storage/'.$book->cover_image) : '' }}"
@@ -383,7 +394,12 @@
             <div class="book-grid-3">
                 <input id="drawerBookStockTotal" type="number" name="stock_total" class="form-input px-3 py-3 text-sm" placeholder="Stok total" required>
                 <input id="drawerBookStockAvailable" type="number" name="stock_available" class="form-input px-3 py-3 text-sm" placeholder="Stok tersedia" required>
-                <div></div>
+                <select id="drawerBookStatus" name="status" class="form-select px-3 py-3 text-sm" required>
+                    <option value="available">Tersedia (Normal)</option>
+                    <option value="damaged">Rusak</option>
+                    <option value="lost">Hilang</option>
+                    <option value="hidden">Disembunyikan</option>
+                </select>
             </div>
             <textarea id="drawerBookDescription" name="description" class="form-textarea px-3 py-3 text-sm" rows="4" placeholder="Deskripsi buku"></textarea>
 
@@ -490,6 +506,7 @@
         document.getElementById('drawerBookYear').value = button.dataset.publishedYear || '';
         document.getElementById('drawerBookStockTotal').value = button.dataset.stockTotal || '';
         document.getElementById('drawerBookStockAvailable').value = button.dataset.stockAvailable || '';
+        document.getElementById('drawerBookStatus').value = button.dataset.status || 'available';
         document.getElementById('drawerBookCategory').value = button.dataset.categoryId || '';
         document.getElementById('drawerBookDescription').value = button.dataset.description || '';
         resetUploadState(editBookForm.querySelector('.js-cover-upload'));

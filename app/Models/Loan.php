@@ -14,6 +14,7 @@ class Loan extends Model
     protected $fillable = [
         'book_id',
         'member_id',
+        'borrower_name',
         'processed_by',
         'borrowed_at',
         'due_at',

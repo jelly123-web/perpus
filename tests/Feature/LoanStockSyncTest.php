@@ -129,4 +129,62 @@ class LoanStockSyncTest extends TestCase
         $book->refresh();
         $this->assertSame(2, (int) $book->stock_available);
     }
+
+    public function test_officer_can_create_a_direct_manual_loan_with_custom_due_date(): void
+    {
+        $permission = Permission::query()->updateOrCreate([
+            'name' => 'manage_loans',
+        ], [
+            'label' => 'Peminjaman Buku',
+        ]);
+
+        $role = Role::query()->updateOrCreate([
+            'name' => 'petugas',
+        ], [
+            'label' => 'Petugas',
+        ]);
+
+        $role->permissions()->sync([$permission->id]);
+
+        $officer = User::factory()->create([
+            'role_id' => $role->id,
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
+
+        $member = User::factory()->create();
+
+        $book = Book::query()->create([
+            'title' => 'Bahasa Indonesia',
+            'author' => 'Guru Bahasa',
+            'stock_total' => 2,
+            'stock_available' => 2,
+        ]);
+
+        $this->actingAs($officer)
+            ->withHeader('X-Requested-With', 'XMLHttpRequest')
+            ->withHeader('Accept', 'application/json')
+            ->post(route('admin.loans.store', [], false), [
+                'book_id' => $book->id,
+                'member_id' => $member->id,
+                'borrowed_at' => '2026-04-27',
+                'due_at' => '2026-04-30',
+                'notes' => 'Input manual oleh petugas.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'success');
+
+        $loan = Loan::query()
+            ->where('book_id', $book->id)
+            ->where('member_id', $member->id)
+            ->where('processed_by', $officer->id)
+            ->firstOrFail();
+
+        $this->assertSame('2026-04-27', optional($loan->borrowed_at)->toDateString());
+        $this->assertSame('2026-04-30', optional($loan->due_at)->toDateString());
+        $this->assertSame('borrowed', $loan->status);
+
+        $book->refresh();
+        $this->assertSame(1, (int) $book->stock_available);
+    }
 }

@@ -45,6 +45,18 @@ class UserManagementController extends Controller
         return view('admin.users.index', compact('users', 'roles', 'accountStats'));
     }
 
+    public function edit(User $user): View
+    {
+        $this->ensureAdminOrSuperAdmin();
+
+        $roles = Role::query()
+            ->where('name', '!=', 'super_admin')
+            ->orderBy('label')
+            ->get();
+
+        return view('admin.users.edit', compact('user', 'roles'));
+    }
+
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $this->ensureAdminOrSuperAdmin();

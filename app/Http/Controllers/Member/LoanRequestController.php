@@ -32,6 +32,16 @@ class LoanRequestController extends Controller
                 'loans as requested_loans_count' => fn ($query) => $query->where('status', 'requested'),
             ])
             ->findOrFail($data['book_id']);
+
+        if ($book->status !== 'available') {
+            $message = 'Buku ini sedang tidak dapat dipinjam (rusak/hilang/disembunyikan).';
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return back()->withErrors(['loan_request' => $message]);
+        }
+
         $today = Carbon::today()->toDateString();
         $requestableStock = max(0, (int) $book->stock_available - (int) ($book->requested_loans_count ?? 0));
 

@@ -135,14 +135,48 @@
                         <input type="password" name="password" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="••••••••" required>
                     </div>
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peran (Role)</label>
-                    <select name="role_id" class="form-select w-full px-4 py-3.5 text-sm rounded-xl" required>
-                        @foreach($roles as $role)
-                            <option value="{{ $role->id }}">{{ $role->name }}</option>
-                        @endforeach
-                    </select>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">NIK (Opsional)</label>
+                        <input name="nik" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="NIK...">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Telepon</label>
+                        <input name="phone" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="No. HP...">
+                    </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peran (Role)</label>
+                        <select name="role_id" class="form-select w-full px-4 py-3.5 text-sm rounded-xl" required onchange="toggleAcademicFields(this, '#academicFieldsStore')">
+                            <option value="">Pilih Role...</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->id }}" data-name="{{ $role->name }}">{{ $role->label ?: $role->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Status Akun</label>
+                        <select name="is_active" class="form-select w-full px-4 py-3.5 text-sm rounded-xl">
+                            <option value="1">Aktif</option>
+                            <option value="0">Non-aktif</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="academicFieldsStore" style="display: none;" class="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kelas</label>
+                        <input name="kelas" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Contoh: XII RPL 1">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Jurusan</label>
+                        <input name="jurusan" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Contoh: Rekayasa Perangkat Lunak">
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-account-glow primary w-full py-4 rounded-xl font-bold mt-2">
                     <i data-lucide="plus-circle" class="w-4 h-4"></i> Simpan Pengguna
                 </button>
@@ -173,7 +207,7 @@
                             <button onclick="openEditDrawer({{ $user->id }})" class="btn-account-glow">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i> Edit
                             </button>
-                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" data-async="true" data-confirm="Hapus akun ini?" data-remove-closest=".account-row" data-refresh-targets="#usersStats">
+                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" data-async="true" data-confirm="Hapus akun ini?" data-remove-closest=".account-row" data-refresh-targets="#usersStats,#accountList">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-account-glow danger">
@@ -236,6 +270,18 @@
     function closeEditDrawer() {
         document.getElementById('editDrawer').classList.remove('open');
         document.getElementById('drawerMask').classList.remove('show');
+    }
+
+    function toggleAcademicFields(select, targetId) {
+        const selectedOption = select.options[select.selectedIndex];
+        const roleName = selectedOption.getAttribute('data-name');
+        const target = document.querySelector(targetId);
+        
+        if (roleName === 'siswa' || roleName === 'guru') {
+            target.style.display = 'grid';
+        } else {
+            target.style.display = 'none';
+        }
     }
 </script>
 @endsection

@@ -63,6 +63,7 @@ class BookController extends Controller
             'place_of_publication' => ['nullable', 'string', 'max:255'],
             'published_year' => ['nullable', 'integer', 'digits:4', 'between:'.self::MIN_PUBLISHED_YEAR.','.((int) now()->addYear()->format('Y'))],
             'stock_total' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:available,damaged,lost,hidden'],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -215,6 +216,7 @@ class BookController extends Controller
             'published_year' => ['nullable', 'integer', 'digits:4', 'between:'.self::MIN_PUBLISHED_YEAR.','.((int) now()->addYear()->format('Y'))],
             'stock_total' => ['required', 'integer', 'min:0'],
             'stock_available' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:available,damaged,lost,hidden'],
             'description' => ['nullable', 'string'],
         ]);
 

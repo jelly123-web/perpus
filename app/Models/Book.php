@@ -24,6 +24,7 @@ class Book extends Model
         'page_count',
         'stock_total',
         'stock_available',
+        'status',
         'description',
         'delete',
         'deleted_by',

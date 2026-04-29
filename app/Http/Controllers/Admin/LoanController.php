@@ -54,7 +54,11 @@ class LoanController extends Controller
             ->whereIn('status', ['borrowed', 'late'])
             ->latest('borrowed_at')
             ->get();
-        $books = Book::query()->where('stock_available', '>', 0)->orderBy('title')->get();
+        $books = Book::query()
+            ->where('stock_available', '>', 0)
+            ->where('status', 'available')
+            ->orderBy('title')
+            ->get();
         $members = User::query()->whereHas('role', fn ($query) => $query->whereIn('name', ['siswa', 'guru']))->orderBy('name')->get();
         $memberStatuses = $members->map(function (User $member) use ($today): User {
             $activeSanction = Sanction::query()
@@ -107,37 +111,44 @@ class LoanController extends Controller
     {
         $data = $request->validate([
             'book_id' => ['required', 'exists:books,id'],
-            'member_id' => ['required', 'exists:users,id'],
+            'member_id' => ['nullable', 'exists:users,id'],
+            'borrower_name' => ['required_without:member_id', 'nullable', 'string', 'max:255'],
             'borrowed_at' => ['required', 'date'],
             'due_at' => ['required', 'date', 'after_or_equal:borrowed_at'],
             'notes' => ['nullable', 'string'],
+        ], [
+            'borrower_name.required_without' => 'Nama peminjam wajib diisi jika tidak memilih anggota.',
         ]);
 
         $book = Book::query()->findOrFail($data['book_id']);
-        $activeBorrowingBan = Sanction::query()
-            ->where('member_id', $data['member_id'])
-            ->where('type', 'suspend_borrowing')
-            ->where('status', 'active')
-            ->where(function ($query) use ($data): void {
-                $query
-                    ->whereNull('ends_at')
-                    ->orWhereDate('ends_at', '>=', $data['borrowed_at']);
-            })
-            ->latest('starts_at')
-            ->first();
+
+        // Only check for sanctions if a member is selected
+        if (!empty($data['member_id'])) {
+            $activeBorrowingBan = Sanction::query()
+                ->where('member_id', $data['member_id'])
+                ->where('type', 'suspend_borrowing')
+                ->where('status', 'active')
+                ->where(function ($query) use ($data): void {
+                    $query
+                        ->whereNull('ends_at')
+                        ->orWhereDate('ends_at', '>=', $data['borrowed_at']);
+                })
+                ->latest('starts_at')
+                ->first();
+
+            if ($activeBorrowingBan) {
+                $until = optional($activeBorrowingBan->ends_at)->translatedFormat('d M Y') ?? 'waktu yang belum ditentukan';
+
+                return $this->errorResponse($request, 'Peminjam masih terkena sanksi tidak boleh meminjam sampai '.$until.'.', 422, 'loan');
+            }
+        }
 
         if ($book->stock_available < 1) {
             return $this->errorResponse($request, 'Stok buku tidak tersedia.', 422, 'loan');
         }
 
-        if ($activeBorrowingBan) {
-            $until = optional($activeBorrowingBan->ends_at)->translatedFormat('d M Y') ?? 'waktu yang belum ditentukan';
-
-            return $this->errorResponse($request, 'Peminjam masih terkena sanksi tidak boleh meminjam sampai '.$until.'.', 422, 'loan');
-        }
-
         $borrowedAt = Carbon::parse($data['borrowed_at'])->toDateString();
-        $dueAt = Carbon::parse($data['borrowed_at'])->addDay()->toDateString();
+        $dueAt = Carbon::parse($data['due_at'])->toDateString();
 
         $loan = Loan::query()->create([
             ...$data,
@@ -150,7 +161,7 @@ class LoanController extends Controller
         $book->decrement('stock_available');
         ActivityLogger::log('loans', 'create', 'Mencatat peminjaman buku '.$book->title, ['loan_id' => $loan->id]);
 
-        return $this->successResponse($request, 'Peminjaman berhasil ditambahkan. Batas waktu pinjam otomatis 1 hari.');
+        return $this->successResponse($request, 'Peminjaman berhasil ditambahkan secara manual.');
     }
 
     public function storeSanction(Request $request): JsonResponse|RedirectResponse
@@ -165,6 +176,11 @@ class LoanController extends Controller
         ]);
 
         $loan = Loan::query()->with('member')->findOrFail($data['loan_id']);
+
+        if (!$loan->member_id) {
+            return $this->errorResponse($request, 'Sanksi hanya dapat diberikan kepada anggota terdaftar.', 422, 'loan');
+        }
+
         $startsAt = Carbon::parse($data['starts_at']);
         $durationDays = isset($data['duration_days']) ? (int) $data['duration_days'] : null;
         $endsAt = $data['type'] === 'suspend_borrowing' && $durationDays !== null
@@ -361,8 +377,8 @@ class LoanController extends Controller
         ]);
 
         $loan->book?->increment('stock_available');
-
-        if ($isLate) {
+  
+        if ($isLate && $loan->member_id) {
             Sanction::query()->create([
                 'loan_id' => $loan->id,
                 'member_id' => $loan->member_id,
@@ -375,7 +391,7 @@ class LoanController extends Controller
                 'ends_at' => $returnedAt->copy()->addDays($daysLate)->toDateString(),
                 'notes' => 'Sanksi otomatis karena pengembalian melewati batas waktu.',
             ]);
-
+  
             ActivityLogger::log(
                 'sanctions',
                 'create',

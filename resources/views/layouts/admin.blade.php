@@ -479,6 +479,16 @@
         .chatbot-bubble{max-width:86%;padding:10px 12px;border-radius:16px;font-size:13px;line-height:1.5;white-space:pre-line}
         .chatbot-bubble.user{align-self:flex-end;background:rgba(15,76,92,.10);color:var(--fg);border:1px solid rgba(15,76,92,.14)}
         .chatbot-bubble.bot{align-self:flex-start;background:#fff;border:1px solid var(--border);color:var(--fg)}
+        .chatbot-bubble.has-books{max-width:100%}
+        .chatbot-book-results{display:grid;gap:10px;margin-top:10px}
+        .chatbot-book-card{border:1px solid var(--border);border-radius:14px;padding:12px;background:linear-gradient(180deg,#fff,#fcfaf6);display:grid;gap:8px}
+        .chatbot-book-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+        .chatbot-book-name{font-size:13px;font-weight:800;color:var(--fg)}
+        .chatbot-book-chip{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:rgba(45,134,89,.12);color:#2d8659;font-size:11px;font-weight:700;white-space:nowrap}
+        .chatbot-book-chip.muted{background:rgba(90,109,115,.12);color:#5a6d73}
+        .chatbot-book-meta{font-size:12px;color:#5a6d73;line-height:1.55}
+        .chatbot-book-action{display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:12px;padding:10px 12px;background:#0f4c5c;color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+        .chatbot-book-action:hover{background:#0b3945}
         .chatbot-form{display:flex;gap:10px;padding:12px 12px;border-top:1px solid var(--border);background:#fff}
         .chatbot-input{flex:1;border:1px solid var(--border);border-radius:14px;padding:12px 12px;font-size:13px;background:var(--bg-soft)}
         .chatbot-input:focus{outline:none;border-color:rgba(196,149,106,.6);box-shadow:0 0 0 3px rgba(196,149,106,.14);background:#fff}
@@ -631,7 +641,12 @@
         </div>
     </div>
 
-    <div id="chatbotRoot" data-user-id="{{ auth()->id() }}" data-endpoint="{{ $adminRoute('chatbot.respond') }}">
+    <div
+        id="chatbotRoot"
+        data-user-id="{{ auth()->id() }}"
+        data-endpoint="{{ $adminRoute('chatbot.respond') }}"
+        data-is-borrower="{{ auth()->user()?->hasPermission('view_borrower_history') ? '1' : '0' }}"
+    >
         <button id="chatbotFab" class="chatbot-fab" type="button" aria-label="Chatbot" aria-expanded="false">
             <i data-lucide="message-circle" class="w-5 h-5"></i>
         </button>
@@ -1144,6 +1159,10 @@
         const chatbotInput = document.getElementById('chatbotInput');
 
         function defaultChatbotGreeting() {
+            if (chatbotRoot?.dataset?.isBorrower === '1') {
+                return 'Halo! Kalau kamu mau pinjam buku, tulis saja seperti "saya mau pinjam buku matematika" atau "buku apa aja yang tersedia?".';
+            }
+
             return 'Halo! Saya AI assistant di aplikasi ini. Kamu bisa tanya apa saja, misalnya pelajaran, ide, coding, ringkasan, atau hal terkait perpustakaan.';
         }
 
@@ -1156,7 +1175,25 @@
             try {
                 const raw = localStorage.getItem(chatbotStorageKey());
                 const parsed = raw ? JSON.parse(raw) : [];
-                return Array.isArray(parsed) ? parsed : [];
+                if (!Array.isArray(parsed)) {
+                    return [];
+                }
+
+                return parsed.map(function (item) {
+                    const bookResults = Array.isArray(item?.book_results)
+                        ? item.book_results.filter(function (book) {
+                            return book && typeof book === 'object' && book.id;
+                        })
+                        : [];
+
+                    return {
+                        role: item?.role === 'user' ? 'user' : 'bot',
+                        text: typeof item?.text === 'string' ? item.text : '',
+                        book_results: bookResults
+                    };
+                }).filter(function (item) {
+                    return item.text !== '' || item.book_results.length > 0;
+                });
             } catch (e) {
                 return [];
             }
@@ -1168,13 +1205,56 @@
             } catch (e) {}
         }
 
-        function appendChatbotBubble(role, text) {
+        function getChatbotBookStatusLabel(book) {
+            if (book.borrow_state === 'requested') return 'Menunggu petugas';
+            if (book.borrow_state === 'borrowed') return 'Sedang dipinjam';
+            if (book.borrow_state === 'sanctioned') return 'Akun disanksi';
+            if (book.borrow_state === 'available') return 'Tersedia';
+            return 'Tidak tersedia';
+        }
+
+        function appendChatbotBubble(role, text, options = {}) {
             if (!chatbotMessages) return;
             const bubble = document.createElement('div');
-            bubble.className = 'chatbot-bubble ' + (role === 'user' ? 'user' : 'bot');
-            bubble.textContent = text;
+            const bookResults = Array.isArray(options.bookResults) ? options.bookResults : [];
+            bubble.className = 'chatbot-bubble ' + (role === 'user' ? 'user' : 'bot') + (bookResults.length ? ' has-books' : '');
+
+            if (text) {
+                const textNode = document.createElement('div');
+                textNode.textContent = text;
+                bubble.appendChild(textNode);
+            }
+
+            if (role !== 'user' && bookResults.length) {
+                const list = document.createElement('div');
+                list.className = 'chatbot-book-results';
+
+                bookResults.forEach(function (book) {
+                    const statusLabel = getChatbotBookStatusLabel(book);
+                    const card = document.createElement('div');
+                    card.className = 'chatbot-book-card';
+                    card.innerHTML = '<div class="chatbot-book-top">'
+                        + '<div class="chatbot-book-name">' + escapeHtml(book.title || 'Judul buku') + '</div>'
+                        + '<div class="chatbot-book-chip' + (book.can_borrow ? '' : ' muted') + '">' + escapeHtml(statusLabel) + '</div>'
+                        + '</div>'
+                        + '<div class="chatbot-book-meta">'
+                        + escapeHtml(book.author || 'Penulis tidak tersedia')
+                        + '<br>Stok: ' + escapeHtml(String(book.stock ?? 0))
+                        + ' | ' + escapeHtml(book.category || 'Tanpa kategori')
+                        + '</div>'
+                        + '<button type="button" class="chatbot-book-action" data-chatbot-book=\'' + escapeHtml(JSON.stringify(book)) + '\'>' + (book.can_borrow ? 'Pinjam buku ini' : 'Lihat buku') + '</button>';
+                    list.appendChild(card);
+                });
+
+                bubble.appendChild(list);
+            }
+
             chatbotMessages.appendChild(bubble);
             chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
         }
 
         function renderChatbotHistory() {
@@ -1185,7 +1265,30 @@
                 appendChatbotBubble('bot', defaultChatbotGreeting());
                 return;
             }
-            history.forEach(item => appendChatbotBubble(item.role, item.text));
+            history.forEach(function (item) {
+                appendChatbotBubble(item.role, item.text, {
+                    bookResults: item.book_results || []
+                });
+            });
+        }
+
+        function openChatbotBorrowBook(book) {
+            if (!book || typeof openBorrowDrawer !== 'function') {
+                return;
+            }
+
+            const tempButton = document.createElement('button');
+            tempButton.dataset.id = String(book.id || '');
+            tempButton.dataset.title = book.title || 'Judul buku';
+            tempButton.dataset.author = book.author || 'Penulis tidak tersedia';
+            tempButton.dataset.category = book.category || 'Tanpa kategori';
+            tempButton.dataset.stock = String(book.stock ?? 0);
+            tempButton.dataset.coverUrl = book.cover_url || '';
+            tempButton.dataset.borrowedAt = book.borrowed_at || '';
+            tempButton.dataset.dueAt = book.due_at || '';
+            tempButton.dataset.borrowState = book.borrow_state || 'unavailable';
+            tempButton.dataset.canBorrow = book.can_borrow ? '1' : '0';
+            openBorrowDrawer(tempButton);
         }
 
         function setChatbotOpen(isOpen) {
@@ -1260,6 +1363,17 @@
                     setChatbotMenuOpen(false);
                 }
             }
+
+            const chatbotBookButton = event.target.closest('[data-chatbot-book]');
+            if (!chatbotBookButton) {
+                return;
+            }
+
+            try {
+                openChatbotBorrowBook(JSON.parse(chatbotBookButton.dataset.chatbotBook || '{}'));
+            } catch (error) {
+                console.error('Error opening chatbot book:', error);
+            }
         });
 
         if (chatbotForm) {
@@ -1296,13 +1410,14 @@
 
                     const data = await response.json().catch(() => ({}));
                     const reply = data.reply || 'Maaf, terjadi kesalahan.';
+                    const bookResults = Array.isArray(data.book_results) ? data.book_results : [];
 
                     if (typingNode) typingNode.remove();
 
                     const updated = loadChatbotHistory();
-                    updated.push({ role: 'bot', text: reply });
+                    updated.push({ role: 'bot', text: reply, book_results: bookResults });
                     saveChatbotHistory(updated);
-                    appendChatbotBubble('bot', reply);
+                    appendChatbotBubble('bot', reply, { bookResults });
                 } catch (error) {
                     if (typingNode) typingNode.remove();
                     const updated = loadChatbotHistory();

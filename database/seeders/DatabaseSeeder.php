@@ -69,7 +69,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::query()->whereIn('username', ['petugas', 'guru', 'admin'])->delete();
+        // User::query()->whereIn('username', ['petugas', 'guru', 'admin'])->delete();
 
         collect([
             ['key' => 'library_name', 'label' => 'Nama Perpustakaan', 'type' => 'text', 'value' => 'Perpustakaan Digital Sekolah'],

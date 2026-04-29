@@ -98,6 +98,58 @@
 
     <div id="loanPageWrap" class="loan-shell">
         <div class="loan-stack">
+            <!-- Section: Peminjaman Langsung -->
+            <div class="loan-card">
+                <div class="loan-card-header">
+                    <div>
+                        <h2 class="loan-card-title">Peminjaman Langsung</h2>
+                        <p class="loan-card-subtitle">Petugas bisa input peminjaman secara manual tanpa menunggu pengajuan peminjam.</p>
+                    </div>
+                </div>
+                <div class="loan-card-body">
+                    <form method="POST" action="{{ route('admin.loans.store') }}" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                        @csrf
+                        <div class="loan-field">
+                            <label class="loan-label">Pilih Buku</label>
+                            <select name="book_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
+                                <option value="">Pilih buku</option>
+                                @foreach ($books as $book)
+                                    <option value="{{ $book->id }}">
+                                        {{ $book->title }} - {{ $book->stock_available }} stok
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="loan-field">
+                            <label class="loan-label">Nama Peminjam</label>
+                            <input type="text" name="borrower_name" class="form-input px-4 py-3 text-sm rounded-xl" placeholder="Ketik nama peminjam..." required list="memberList">
+                            <datalist id="memberList">
+                                @foreach ($members as $member)
+                                    <option value="{{ $member->name }}">{{ $member->academicLabel() }}</option>
+                                @endforeach
+                            </datalist>
+                        </div>
+                        <div class="loan-input-group">
+                            <div class="loan-field">
+                                <label class="loan-label">Tanggal Pinjam</label>
+                                <input type="date" name="borrowed_at" id="directLoanBorrowedAt" class="form-input px-4 py-3 text-sm rounded-xl" value="{{ now()->toDateString() }}" required>
+                            </div>
+                            <div class="loan-field">
+                                <label class="loan-label">Tanggal Kembali</label>
+                                <input type="date" name="due_at" id="directLoanDueAt" class="form-input px-4 py-3 text-sm rounded-xl" value="{{ now()->addDay()->toDateString() }}" required>
+                            </div>
+                        </div>
+                        <div class="loan-field">
+                            <label class="loan-label">Catatan</label>
+                            <input type="text" name="notes" class="form-input px-4 py-3 text-sm rounded-xl" placeholder="Opsional, misal: input manual oleh petugas">
+                        </div>
+                        <button type="submit" class="btn-loan-submit">
+                            <i data-lucide="book-plus" class="w-4 h-4"></i> Simpan Peminjaman
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             <div id="loanRequestedPanel">
                 @include('admin.loans._requested-panel', ['requestedLoans' => $requestedLoans])
             </div>
@@ -191,8 +243,8 @@
                                     </td>
                                     <td>
                                         <div class="flex flex-col">
-                                            <span class="font-bold text-slate2-900">{{ $loan->member?->name ?? 'Peminjam' }}</span>
-                                            <span class="text-xs text-slate2-500 mt-0.5">{{ $loan->member?->academicLabel() ?? 'Anggota' }}</span>
+                                            <span class="font-bold text-slate2-900">{{ $loan->member?->name ?? $loan->borrower_name }}</span>
+                                            <span class="text-xs text-slate2-500 mt-0.5">{{ $loan->member?->academicLabel() ?? 'Peminjam Luar' }}</span>
                                         </div>
                                     </td>
                                     <td>
@@ -283,9 +335,9 @@
     let loanRequestedPanelSignature = null;
     let loanRequestedPanelBusy = false;
 
-    function syncLoanDueAt() {
-        const loanBorrowedAt = document.getElementById('loanBorrowedAt');
-        const loanDueAt = document.getElementById('loanDueAt');
+    function syncLoanDueAt(borrowedId, dueId) {
+        const loanBorrowedAt = document.getElementById(borrowedId);
+        const loanDueAt = document.getElementById(dueId);
 
         if (!loanBorrowedAt || !loanDueAt || !loanBorrowedAt.value) {
             return;
@@ -383,7 +435,11 @@
 
     document.addEventListener('change', function (event) {
         if (event.target && event.target.id === 'loanBorrowedAt') {
-            syncLoanDueAt();
+            syncLoanDueAt('loanBorrowedAt', 'loanDueAt');
+        }
+
+        if (event.target && event.target.id === 'directLoanBorrowedAt') {
+            syncLoanDueAt('directLoanBorrowedAt', 'directLoanDueAt');
         }
     });
 
@@ -423,7 +479,8 @@
     });
 
     function initLoanLivePage() {
-        syncLoanDueAt();
+        syncLoanDueAt('loanBorrowedAt', 'loanDueAt');
+        syncLoanDueAt('directLoanBorrowedAt', 'directLoanDueAt');
         syncRequestedLoanPanelSignature();
     }
 
@@ -431,7 +488,8 @@
         const selectors = event.detail?.selectors || [];
 
         if (selectors.includes('#loanPageWrap')) {
-            syncLoanDueAt();
+            syncLoanDueAt('loanBorrowedAt', 'loanDueAt');
+            syncLoanDueAt('directLoanBorrowedAt', 'directLoanDueAt');
         }
 
         if (selectors.includes('#loanPageWrap') || selectors.includes('#loanStatsWrap')) {

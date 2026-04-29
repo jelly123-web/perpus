@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function (): void {
 
     Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/users', [UserManagementController::class, 'index'])->middleware('permission:manage_users')->name('users.index');
+        Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->middleware('permission:manage_users')->name('users.edit');
         Route::post('/users', [UserManagementController::class, 'store'])->middleware('permission:manage_users')->name('users.store');
         Route::post('/users/import', [UserManagementController::class, 'import'])->middleware('permission:manage_users')->name('users.import');
         Route::get('/users/export', [UserManagementController::class, 'export'])->middleware('permission:manage_users')->name('users.export');
@@ -109,7 +110,8 @@ Route::middleware('auth')->group(function (): void {
         Route::put('/books/procurements/{procurement}/approve', [BookController::class, 'approveProcurement'])->middleware('permission:view_reports')->name('books.procurements.approve');
         Route::put('/books/procurements/{procurement}/reject', [BookController::class, 'rejectProcurement'])->middleware('permission:view_reports')->name('books.procurements.reject');
         Route::put('/books/{book}', [BookController::class, 'update'])->middleware('permission:manage_books')->name('books.update');
-        Route::delete('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
+        Route::get('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
+        Route::post('/books/search-by-image', [\App\Http\Controllers\Admin\BookSearchController::class, 'searchByImage'])->middleware('permission:search_books_by_image')->name('books.search-by-image');
 
         Route::get('/loans', [LoanController::class, 'index'])->middleware('permission:manage_loans')->name('loans.index');
         Route::get('/loans/live-snapshot', [LoanController::class, 'liveSnapshot'])->middleware('permission:manage_loans')->name('loans.live-snapshot');
