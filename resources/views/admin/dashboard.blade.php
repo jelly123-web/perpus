@@ -1049,6 +1049,34 @@
         const borrowerImageSearchSourceMenu = document.getElementById('borrowerImageSearchSourceMenu');
         const borrowerImageSearchCamera = document.getElementById('borrowerImageSearchCamera');
         const borrowerImageSearchGallery = document.getElementById('borrowerImageSearchGallery');
+        const borrowerImageSearchActionBtn = document.getElementById('borrowerImageSearchActionBtn');
+        const borrowerImageSearchClearBtn = document.getElementById('borrowerImageSearchClearBtn');
+
+        if (borrowerImageSearchActionBtn) {
+            borrowerImageSearchActionBtn.addEventListener('click', function () {
+                const file = borrowerImageSearchCameraInput && borrowerImageSearchCameraInput.files && borrowerImageSearchCameraInput.files[0]
+                    ? borrowerImageSearchCameraInput.files[0]
+                    : (borrowerImageSearchGalleryInput && borrowerImageSearchGalleryInput.files && borrowerImageSearchGalleryInput.files[0]
+                        ? borrowerImageSearchGalleryInput.files[0]
+                        : null);
+                if (file) {
+                    searchBorrowerBooksByImage(file);
+                }
+            });
+        }
+
+        if (borrowerImageSearchClearBtn) {
+            borrowerImageSearchClearBtn.addEventListener('click', function () {
+                if (borrowerImageSearchCameraInput) borrowerImageSearchCameraInput.value = '';
+                if (borrowerImageSearchGalleryInput) borrowerImageSearchGalleryInput.value = '';
+                setBorrowerImageSearchPreview(null);
+                const results = getBorrowerImageSearchResults();
+                const status = getBorrowerImageSearchStatus();
+                if (results) results.style.display = 'none';
+                if (status) status.textContent = '';
+            });
+        }
+
         if (borrowerImageSearchCameraInput) {
             borrowerImageSearchCameraInput.addEventListener('change', function () {
                 const file = borrowerImageSearchCameraInput.files && borrowerImageSearchCameraInput.files[0] ? borrowerImageSearchCameraInput.files[0] : null;
