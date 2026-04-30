@@ -131,6 +131,17 @@
 
                     <input type="file" id="borrowerImageSearchCameraInput" name="image" accept="image/*" capture="environment" style="display:none;">
                     <input type="file" id="borrowerImageSearchGalleryInput" name="image" accept="image/*" style="display:none;">
+
+                    <div id="borrowerCameraModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
+                        <video id="borrowerCameraVideo" autoplay playsinline style="width:100%;height:80%;object-fit:cover;"></video>
+                        <div style="height:20%;display:flex;align-items:center;justify-content:space-around;width:100%;padding:20px;">
+                            <button type="button" id="borrowerCameraCloseBtn" style="color:#fff;background:transparent;border:none;font-size:16px;padding:10px;">Batal</button>
+                            <button type="button" id="borrowerCameraCaptureBtn" style="width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #ccc;cursor:pointer;"></button>
+                            <div style="width:50px;"></div>
+                        </div>
+                        <canvas id="borrowerCameraCanvas" style="display:none;"></canvas>
+                    </div>
+
                     <div id="borrowerImageSearchPreviewWrap" style="display:none;align-items:center;justify-content:center;min-height:140px;margin-top:14px;border:1px dashed rgba(196,149,106,.22);border-radius:18px;background:#fff;overflow:hidden;">
                         <img id="borrowerImageSearchPreview" alt="Preview foto buku" style="max-width:100%;max-height:220px;object-fit:contain;">
                     </div>
@@ -1052,6 +1063,70 @@
         const borrowerImageSearchActionBtn = document.getElementById('borrowerImageSearchActionBtn');
         const borrowerImageSearchClearBtn = document.getElementById('borrowerImageSearchClearBtn');
 
+        let borrowerCameraStream = null;
+        const borrowerCameraModal = document.getElementById('borrowerCameraModal');
+        const borrowerCameraVideo = document.getElementById('borrowerCameraVideo');
+        const borrowerCameraCanvas = document.getElementById('borrowerCameraCanvas');
+        const borrowerCameraCloseBtn = document.getElementById('borrowerCameraCloseBtn');
+        const borrowerCameraCaptureBtn = document.getElementById('borrowerCameraCaptureBtn');
+
+        async function openBorrowerCamera() {
+            if (!borrowerCameraModal || !borrowerCameraVideo) return;
+            borrowerCameraModal.style.display = 'flex';
+            try {
+                borrowerCameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" }
+                });
+                borrowerCameraVideo.srcObject = borrowerCameraStream;
+            } catch (err) {
+                alert("Tidak dapat mengakses kamera: " + err.message);
+                closeBorrowerCamera();
+            }
+        }
+
+        function closeBorrowerCamera() {
+            if (!borrowerCameraModal) return;
+            borrowerCameraModal.style.display = 'none';
+            if (borrowerCameraStream) {
+                borrowerCameraStream.getTracks().forEach(track => track.stop());
+                borrowerCameraStream = null;
+            }
+            if (borrowerCameraVideo) borrowerCameraVideo.srcObject = null;
+        }
+
+        if (borrowerCameraCloseBtn) {
+            borrowerCameraCloseBtn.addEventListener('click', closeBorrowerCamera);
+        }
+
+        if (borrowerCameraCaptureBtn) {
+            borrowerCameraCaptureBtn.addEventListener('click', function() {
+                if (!borrowerCameraStream || !borrowerCameraVideo || !borrowerCameraCanvas) return;
+                
+                borrowerCameraCanvas.width = borrowerCameraVideo.videoWidth;
+                borrowerCameraCanvas.height = borrowerCameraVideo.videoHeight;
+                const ctx = borrowerCameraCanvas.getContext('2d');
+                ctx.drawImage(borrowerCameraVideo, 0, 0, borrowerCameraCanvas.width, borrowerCameraCanvas.height);
+                
+                borrowerCameraCanvas.toBlob(function(blob) {
+                    if (blob) {
+                        const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+                        
+                        if (borrowerImageSearchCameraInput) borrowerImageSearchCameraInput.value = '';
+                        if (borrowerImageSearchGalleryInput) borrowerImageSearchGalleryInput.value = '';
+                        
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        if (borrowerImageSearchCameraInput) {
+                            borrowerImageSearchCameraInput.files = dataTransfer.files;
+                        }
+                        
+                        setBorrowerImageSearchPreview(file);
+                    }
+                    closeBorrowerCamera();
+                }, 'image/jpeg', 0.8);
+            });
+        }
+
         if (borrowerImageSearchActionBtn) {
             borrowerImageSearchActionBtn.addEventListener('click', function () {
                 const file = borrowerImageSearchCameraInput && borrowerImageSearchCameraInput.files && borrowerImageSearchCameraInput.files[0]
@@ -1099,9 +1174,7 @@
 
         if (borrowerImageSearchCamera) {
             borrowerImageSearchCamera.addEventListener('click', function () {
-                if (borrowerImageSearchCameraInput) {
-                    borrowerImageSearchCameraInput.click();
-                }
+                openBorrowerCamera();
                 if (borrowerImageSearchSourceMenu) {
                     borrowerImageSearchSourceMenu.style.display = 'none';
                 }

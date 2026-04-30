@@ -206,7 +206,7 @@ class BookSearchController extends Controller
             return collect();
         }
 
-        $maxDistance = (int) round($signatureLength * 0.08);
+        $maxDistance = (int) round($signatureLength * 0.35); // Relax back to 0.35 since 16x16 signature is much stricter inherently
 
         if ($bestDistance > $maxDistance) {
             return collect();
@@ -276,7 +276,7 @@ class BookSearchController extends Controller
             }
         }
 
-        if (! $bestBook || $bestScore < 70) {
+        if (! $bestBook || $bestScore < 30) { // Reduced threshold from 40 to 30 to allow partial text matches (e.g. "Pendidikan Antikorupsi" finding "Pendidikan antikorupsi")
             return collect();
         }
 
@@ -325,7 +325,7 @@ class BookSearchController extends Controller
             $isCropped = false;
         }
 
-        $size = 8;
+        $size = 16; // Increased resolution from 8 to 16 to create a more distinct 256-bit signature instead of 64-bit, drastically reducing false positives
         $resized = imagecreatetruecolor($size, $size);
 
         if ($resized === false) {
@@ -445,7 +445,7 @@ class BookSearchController extends Controller
             return null;
         }
 
-        $threshold = 245;
+        $threshold = 230; // Reduced from 245 to catch slightly off-white backgrounds in screenshots
         $minX = $width;
         $minY = $height;
         $maxX = -1;
