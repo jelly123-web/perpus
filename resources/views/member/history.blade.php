@@ -14,11 +14,6 @@
     .history-stat-status.active{background:var(--teal-light);color:var(--teal)}
     .history-stat-status.sanctioned{background:var(--red-light);color:var(--red)}
     .history-alert{padding:16px 18px;border-radius:18px;border:1px solid rgba(196,69,54,.18);background:rgba(253,240,238,.9);color:#9f2d20}
-    .history-search-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border:1px solid rgba(196,149,106,.2);border-radius:20px;background:linear-gradient(135deg,rgba(255,250,244,.98),rgba(243,232,219,.84));box-shadow:var(--shadow-sm)}
-    .history-search-title{font-size:16px;font-weight:800;color:var(--fg)}
-    .history-search-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-top:5px}
-    .history-search-link{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:14px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
-    .history-search-link:hover{background:var(--accent-light);color:#fff}
     .history-list{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-sm);overflow:hidden}
     .history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid var(--border)}
     .history-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--fg)}
@@ -80,16 +75,6 @@
             Selama sanksi aktif, Anda belum bisa meminjam buku lagi.
         </div>
     @endif
-
-    <div class="history-search-banner">
-        <div>
-            <div class="history-search-title">Cari buku dari foto sampul</div>
-            <div class="history-search-sub">Kalau Anda memegang cover buku atau screenshot buku, upload fotonya lalu hasil yang mirip akan langsung muncul.</div>
-        </div>
-        <a href="{{ route('admin.books.search-by-image.page') }}" class="history-search-link">
-            Buka Pencarian Foto
-        </a>
-    </div>
 
     <section class="history-list">
         <div class="history-head">

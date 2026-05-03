@@ -106,11 +106,12 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/books', [BookController::class, 'store'])->middleware('permission:manage_books')->name('books.store');
         Route::post('/books/import', [BookController::class, 'import'])->middleware('permission:manage_books')->name('books.import');
         Route::get('/books/export', [BookController::class, 'export'])->middleware('permission:manage_books')->name('books.export');
+        Route::get('/books/live-snapshot', [BookController::class, 'liveSnapshot'])->middleware('permission:manage_books')->name('books.live-snapshot');
         Route::post('/books/procurements', [BookController::class, 'storeProcurement'])->middleware('permission:manage_books')->name('books.procurements.store');
         Route::put('/books/procurements/{procurement}/approve', [BookController::class, 'approveProcurement'])->middleware('permission:view_reports')->name('books.procurements.approve');
         Route::put('/books/procurements/{procurement}/reject', [BookController::class, 'rejectProcurement'])->middleware('permission:view_reports')->name('books.procurements.reject');
         Route::put('/books/{book}', [BookController::class, 'update'])->middleware('permission:manage_books')->name('books.update');
-        Route::get('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
+        Route::delete('/books/{book}', [BookController::class, 'destroy'])->middleware('permission:manage_books')->name('books.destroy');
         Route::get('/books/search-by-image', [\App\Http\Controllers\Admin\BookSearchController::class, 'show'])->name('books.search-by-image.page');
         Route::post('/books/search-by-image', [\App\Http\Controllers\Admin\BookSearchController::class, 'searchByImage'])->name('books.search-by-image');
 

@@ -87,15 +87,19 @@
             @endif
 
             <section class="dbx-card">
-                <div class="dbx-card-header">
-                    <h3 class="dbx-card-title">Cari, Lihat, dan Ajukan Pinjam Buku</h3>
+                <div class="dbx-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <h3 class="dbx-card-title">Cari Buku</h3>
+                    <div class="dbx-book-section-badge" style="margin-left:auto;">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        Cari di depan
+                    </div>
                 </div>
                 <div class="dbx-card-body">
                     @error('loan_request')
                         <div class="dbx-borrower-alert" style="margin-bottom:18px;">{{ $message }}</div>
                     @enderror
 
-                    <form method="GET" action="{{ route('dashboard') }}" class="dbx-book-filters" id="borrowerBookFilterForm" data-async="true" data-refresh-targets="#asyncDashboardWrap" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                    <form method="GET" action="{{ route('dashboard') }}" class="dbx-book-filters" id="borrowerBookFilterForm" data-async="true" data-refresh-targets="#asyncDashboardWrap" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;">
                         <input
                             type="text"
                             name="q"
@@ -106,27 +110,28 @@
                             placeholder="Cari judul atau penulis"
                             autocomplete="off"
                         >
-                        <select name="category" id="borrowerBookCategoryFilter" class="dbx-book-filter-field" style="flex:0 1 180px;min-width:160px;">
-                            style="flex:0 1 180px;min-width:160px;"
-                            <option value="">Semua kategori</option>
-                            @foreach ($borrowerCategories as $category)
-                                <option value="{{ $category->slug }}" @selected($bookFilters['category'] === $category->slug)>{{ $category->name }}</option>
-                            @endforeach
-                        </select>
-                        <select name="availability" id="borrowerBookAvailabilityFilter" class="dbx-book-filter-field" style="flex:0 0 140px;min-width:140px;">
-                            <option value="available" @selected($bookFilters['availability'] === 'available')>Tersedia</option>
-                            <option value="all" @selected($bookFilters['availability'] === 'all')>Semua buku</option>
-                        </select>
-                        <div style="position:relative;display:inline-flex;align-items:center;">
-                            <button type="button" id="borrowerImageSearchSourceBtn" class="dbx-book-filter-btn" style="width:48px;height:48px;padding:0;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;" aria-label="Pilih foto buku">
-                                <i data-lucide="camera" class="w-5 h-5"></i>
-                            </button>
-                            <div id="borrowerImageSearchSourceMenu" style="display:none;position:absolute;top:58px;right:0;z-index:20;min-width:210px;padding:10px;border:1px solid rgba(196,149,106,.18);border-radius:16px;background:#fff;box-shadow:0 16px 30px rgba(15,76,92,.12);">
-                                <button type="button" id="borrowerImageSearchCamera" class="dbx-book-filter-btn" style="width:100%;justify-content:flex-start;margin-bottom:8px;">Foto Langsung</button>
-                                <button type="button" id="borrowerImageSearchGallery" class="dbx-book-filter-btn" style="width:100%;justify-content:flex-start;">Dari File / Galeri</button>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                            <select name="category" id="borrowerBookCategoryFilter" class="dbx-book-filter-field" style="flex:0 1 180px;min-width:160px;">
+                                <option value="">Semua kategori</option>
+                                @foreach ($borrowerCategories as $category)
+                                    <option value="{{ $category->slug }}" @selected($bookFilters['category'] === $category->slug)>{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                            <select name="availability" id="borrowerBookAvailabilityFilter" class="dbx-book-filter-field" style="flex:0 0 140px;min-width:140px;">
+                                <option value="available" @selected($bookFilters['availability'] === 'available')>Tersedia</option>
+                                <option value="all" @selected($bookFilters['availability'] === 'all')>Semua buku</option>
+                            </select>
+                            <div style="position:relative;display:inline-flex;align-items:center;">
+                                <button type="button" id="borrowerImageSearchSourceBtn" class="dbx-book-filter-btn" style="width:48px;height:48px;padding:0;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;" aria-label="Pilih foto buku">
+                                    <i data-lucide="camera" class="w-5 h-5"></i>
+                                </button>
+                                <div id="borrowerImageSearchSourceMenu" style="display:none;position:absolute;top:58px;right:0;z-index:20;min-width:210px;padding:10px;border:1px solid rgba(196,149,106,.18);border-radius:16px;background:#fff;box-shadow:0 16px 30px rgba(15,76,92,.12);">
+                                    <button type="button" id="borrowerImageSearchCamera" class="dbx-book-filter-btn" style="width:100%;justify-content:flex-start;margin-bottom:8px;">Foto Langsung</button>
+                                    <button type="button" id="borrowerImageSearchGallery" class="dbx-book-filter-btn" style="width:100%;justify-content:flex-start;">Dari File / Galeri</button>
+                                </div>
                             </div>
+                            <button type="submit" class="dbx-book-filter-btn" style="min-width:96px;height:48px;padding:0 14px;white-space:nowrap;"><i data-lucide="search" class="w-4 h-4"></i>Cari</button>
                         </div>
-                        <button type="submit" class="dbx-book-filter-btn" style="min-width:96px;height:48px;padding:0 14px;white-space:nowrap;"><i data-lucide="search" class="w-4 h-4"></i>Cari</button>
                     </form>
 
                     <input type="file" id="borrowerImageSearchCameraInput" name="image" accept="image/*" capture="environment" style="display:none;">

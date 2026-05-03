@@ -817,6 +817,8 @@
 
         let loanPageLiveSignature = null;
         let loanPageLiveBusy = false;
+        let bookPageLiveSignature = null;
+        let bookPageLiveBusy = false;
 
         async function pollGlobalLoanPage() {
             const loanStatsWrap = document.getElementById('loanStatsWrap');
@@ -881,6 +883,72 @@
                 loanPageLiveSignature = data.signature || null;
             } catch (error) {
                 console.error('Error syncing loan page signature:', error);
+            }
+        }
+
+        async function pollGlobalBookPage() {
+            const bookStatsWrap = document.getElementById('bookStatsWrap');
+            const bookListWrap = document.getElementById('bookListWrap');
+
+            if (!bookStatsWrap || !bookListWrap || bookPageLiveBusy || window.__suspendGlobalPolling === true || document.hidden) {
+                return;
+            }
+
+            bookPageLiveBusy = true;
+
+            try {
+                const response = await fetch('{{ $adminRoute('admin.books.live-snapshot') }}?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const nextSignature = data.signature || null;
+
+                if (bookPageLiveSignature !== null && nextSignature && nextSignature !== bookPageLiveSignature) {
+                    await refreshAsyncTargets(['#bookStatsWrap', '#bookListWrap', '#procurementListWrap']);
+                }
+
+                bookPageLiveSignature = nextSignature;
+            } catch (error) {
+                console.error('Error polling book page:', error);
+            } finally {
+                bookPageLiveBusy = false;
+            }
+        }
+
+        async function syncGlobalBookPageSignature() {
+            const bookListWrap = document.getElementById('bookListWrap');
+
+            if (!bookListWrap) {
+                bookPageLiveSignature = null;
+                return;
+            }
+
+            try {
+                const response = await fetch('{{ $adminRoute('admin.books.live-snapshot') }}?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                bookPageLiveSignature = data.signature || null;
+            } catch (error) {
+                console.error('Error syncing book page signature:', error);
             }
         }
 
@@ -1456,6 +1524,7 @@
             if (!document.hidden) {
                 refreshGlobalNotifications(false);
                 pollGlobalLoanPage();
+                pollGlobalBookPage();
             }
         });
 
@@ -1476,6 +1545,10 @@
         window.setInterval(function () {
             pollGlobalLoanPage();
         }, 3000);
+        syncGlobalBookPageSignature();
+        window.setInterval(function () {
+            pollGlobalBookPage();
+        }, 4000);
     </script>
 </body>
 </html>

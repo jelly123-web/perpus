@@ -42,6 +42,35 @@ class BookController extends Controller
         return view('admin.books.index', compact('books', 'categories', 'bookStats', 'procurementSuggestions'));
     }
 
+    public function liveSnapshot(Request $request): JsonResponse
+    {
+        $bookMetrics = Book::query()
+            ->selectRaw('COUNT(*) as total, COALESCE(SUM(stock_total), 0) as stock_total, COALESCE(SUM(stock_available), 0) as stock_available, MAX(updated_at) as latest_updated_at')
+            ->first();
+        $categoryMetrics = Category::query()
+            ->selectRaw('COUNT(*) as total, MAX(updated_at) as latest_updated_at')
+            ->first();
+
+        $signature = sha1(json_encode([
+            'books_total' => (int) ($bookMetrics?->total ?? 0),
+            'books_stock_total' => (int) ($bookMetrics?->stock_total ?? 0),
+            'books_stock_available' => (int) ($bookMetrics?->stock_available ?? 0),
+            'books_updated_at' => strtotime((string) ($bookMetrics?->latest_updated_at ?? '')) ?: 0,
+            'categories_total' => (int) ($categoryMetrics?->total ?? 0),
+            'categories_updated_at' => strtotime((string) ($categoryMetrics?->latest_updated_at ?? '')) ?: 0,
+        ]));
+
+        return response()->json([
+            'signature' => $signature,
+            'stats' => [
+                'books_total' => (int) ($bookMetrics?->total ?? 0),
+                'books_stock_total' => (int) ($bookMetrics?->stock_total ?? 0),
+                'books_stock_available' => (int) ($bookMetrics?->stock_available ?? 0),
+                'categories_total' => (int) ($categoryMetrics?->total ?? 0),
+            ],
+        ]);
+    }
+
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $request->merge([
