@@ -1,10 +1,8 @@
-@extends('layouts.admin')
-
-@section('content')
-@php
+<?php $__env->startSection('content'); ?>
+<?php
     $title = 'Riwayat Peminjaman';
     $eyebrow = 'Akun Peminjam';
-@endphp
+?>
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -334,14 +332,14 @@
     }
 </style>
 
-@php
+<?php
     $statusLabels = [
         'requested' => 'Menunggu',
         'borrowed' => 'Dipinjam',
         'late' => 'Terlambat',
         'returned' => 'Dikembalikan',
     ];
-@endphp
+?>
 
 <div class="report-page">
     <div class="report-toolbar">
@@ -358,47 +356,48 @@
             <div class="report-stat-header">
                 <div class="report-stat-icon-box books"><i data-lucide="book-open-check" class="w-5 h-5"></i></div>
             </div>
-            <div class="report-stat-value">{{ $borrowerHistoryStats['active_loans'] }}</div>
+            <div class="report-stat-value"><?php echo e($borrowerHistoryStats['active_loans']); ?></div>
             <div class="report-stat-label">Buku sedang dipinjam</div>
         </div>
         <div class="report-stat-card loans-card">
             <div class="report-stat-header">
                 <div class="report-stat-icon-box loans"><i data-lucide="hourglass" class="w-5 h-5"></i></div>
             </div>
-            <div class="report-stat-value">{{ $borrowerHistoryStats['requested'] }}</div>
+            <div class="report-stat-value"><?php echo e($borrowerHistoryStats['requested']); ?></div>
             <div class="report-stat-label">Pengajuan menunggu</div>
         </div>
         <div class="report-stat-card returns-card">
             <div class="report-stat-header">
                 <div class="report-stat-icon-box returns"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
             </div>
-            <div class="report-stat-value">{{ $borrowerHistoryStats['returned'] }}</div>
+            <div class="report-stat-value"><?php echo e($borrowerHistoryStats['returned']); ?></div>
             <div class="report-stat-label">Riwayat selesai</div>
         </div>
         <div class="report-stat-card status-card">
             <div class="report-stat-header">
                 <div class="report-stat-icon-box status"><i data-lucide="user-check" class="w-5 h-5"></i></div>
             </div>
-            <div class="report-stat-value is-name">{{ auth()->user()?->name }}</div>
+            <div class="report-stat-value is-name"><?php echo e(auth()->user()?->name); ?></div>
             <div class="report-stat-label">Status Akun</div>
-            <div class="report-stat-footer {{ $borrowerActiveSanction ? 'footer-sanctioned' : 'footer-active' }}">
-                {{ $borrowerHistoryStats['account_status'] }}
+            <div class="report-stat-footer <?php echo e($borrowerActiveSanction ? 'footer-sanctioned' : 'footer-active'); ?>">
+                <?php echo e($borrowerHistoryStats['account_status']); ?>
+
             </div>
         </div>
     </section>
 
-    @if ($borrowerActiveSanction)
+    <?php if($borrowerActiveSanction): ?>
         <div class="history-alert">
             <i data-lucide="triangle-alert" class="w-5 h-5"></i>
             <div>
                 Akun Anda sedang kena sanksi.
-                @if ($borrowerActiveSanction->ends_at)
-                    Masa sanksi sampai {{ $borrowerActiveSanction->ends_at->translatedFormat('d M Y') }}.
-                @endif
+                <?php if($borrowerActiveSanction->ends_at): ?>
+                    Masa sanksi sampai <?php echo e($borrowerActiveSanction->ends_at->translatedFormat('d M Y')); ?>.
+                <?php endif; ?>
                 Selama sanksi aktif, Anda belum bisa meminjam buku lagi.
             </div>
         </div>
-    @endif
+    <?php endif; ?>
 
     <section class="report-section-card">
         <div class="report-section-header">
@@ -411,7 +410,7 @@
             </div>
         </div>
 
-        @if ($borrowerLoans->count())
+        <?php if($borrowerLoans->count()): ?>
             <div class="report-table-wrap">
                 <table class="report-table">
                     <thead>
@@ -423,70 +422,72 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($borrowerLoans as $loan)
-                            @php
+                        <?php $__currentLoopData = $borrowerLoans; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $loan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php
                                 $title = $loan->book?->title ?? 'Buku tidak ditemukan';
                                 $initials = collect(explode(' ', $title))
                                     ->filter()
                                     ->take(2)
                                     ->map(fn ($word) => strtoupper(mb_substr($word, 0, 1)))
                                     ->implode('');
-                            @endphp
+                            ?>
                             <tr>
                                 <td>
                                     <div class="report-book-info-cell">
-                                        <div class="report-book-cover">{{ $initials ?: 'BK' }}</div>
+                                        <div class="report-book-cover"><?php echo e($initials ?: 'BK'); ?></div>
                                         <div>
-                                            <span class="report-book-title">{{ $title }}</span>
-                                            <span class="report-book-author">{{ $loan->book?->author ?? 'Penulis tidak tersedia' }}</span>
+                                            <span class="report-book-title"><?php echo e($title); ?></span>
+                                            <span class="report-book-author"><?php echo e($loan->book?->author ?? 'Penulis tidak tersedia'); ?></span>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="report-pill-badge {{ $loan->status }}">
-                                        {{ $statusLabels[$loan->status] ?? ucfirst($loan->status) }}
+                                    <span class="report-pill-badge <?php echo e($loan->status); ?>">
+                                        <?php echo e($statusLabels[$loan->status] ?? ucfirst($loan->status)); ?>
+
                                     </span>
                                 </td>
                                 <td>
                                     <div class="report-meta-dates">
-                                        @if ($loan->status === 'returned')
+                                        <?php if($loan->status === 'returned'): ?>
                                             <span class="report-date-sub">Pinjam:</span>
-                                            <span class="report-date-main">{{ optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-' }}</span>
+                                            <span class="report-date-main"><?php echo e(optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-'); ?></span>
                                             <span class="report-date-sub" style="margin-top:4px;">Kembali:</span>
-                                            <span class="report-date-main text-green">{{ optional($loan->returned_at)->translatedFormat('d M Y') ?? '-' }}</span>
-                                        @else
+                                            <span class="report-date-main text-green"><?php echo e(optional($loan->returned_at)->translatedFormat('d M Y') ?? '-'); ?></span>
+                                        <?php else: ?>
                                             <span class="report-date-sub">Pinjam:</span>
-                                            <span class="report-date-main">{{ optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-' }}</span>
+                                            <span class="report-date-main"><?php echo e(optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-'); ?></span>
                                             <span class="report-date-sub" style="margin-top:4px;">Tenggat:</span>
-                                            <span class="report-date-main {{ $loan->status === 'late' ? 'text-red' : '' }}">{{ optional($loan->due_at)->translatedFormat('d M Y') ?? '-' }}</span>
-                                        @endif
+                                            <span class="report-date-main <?php echo e($loan->status === 'late' ? 'text-red' : ''); ?>"><?php echo e(optional($loan->due_at)->translatedFormat('d M Y') ?? '-'); ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="report-note">
-                                        <div>Petugas: {{ $loan->processor?->name ?? ($loan->status === 'requested' ? 'Menunggu petugas' : '-') }}</div>
-                                        <div class="report-note-sub {{ $loan->status === 'late' ? 'text-red' : ($loan->status === 'returned' ? 'text-green' : '') }}">
-                                            {{
-                                                $loan->notes
+                                        <div>Petugas: <?php echo e($loan->processor?->name ?? ($loan->status === 'requested' ? 'Menunggu petugas' : '-')); ?></div>
+                                        <div class="report-note-sub <?php echo e($loan->status === 'late' ? 'text-red' : ($loan->status === 'returned' ? 'text-green' : '')); ?>">
+                                            <?php echo e($loan->notes
                                                     ?: match ($loan->status) {
                                                         'late' => 'Harap segera dikembalikan',
                                                         'returned' => 'Tepat waktu',
                                                         default => '-',
-                                                    }
-                                            }}
+                                                    }); ?>
+
                                         </div>
                                     </div>
                                 </td>
                             </tr>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                 </table>
             </div>
 
-            <div class="report-pagination">{{ $borrowerLoans->links() }}</div>
-        @else
+            <div class="report-pagination"><?php echo e($borrowerLoans->links()); ?></div>
+        <?php else: ?>
             <div class="report-empty">Belum ada riwayat peminjaman di akun ini.</div>
-        @endif
+        <?php endif; ?>
     </section>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/member/history.blade.php ENDPATH**/ ?>

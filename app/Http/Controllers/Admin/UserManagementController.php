@@ -64,7 +64,6 @@ class UserManagementController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'nik' => ['nullable', 'string', 'max:32', 'unique:users,nik'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
@@ -72,8 +71,6 @@ class UserManagementController extends Controller
             'role_id' => ['required', 'exists:roles,id'],
             'password' => ['required', 'string', 'min:5'],
             'is_active' => ['nullable', 'boolean'],
-        ], [
-            'nik.unique' => 'NIK sudah dipakai akun lain.',
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
@@ -110,7 +107,6 @@ class UserManagementController extends Controller
             $rowData = $this->mapCsvRow($normalizedHeaders, $row);
             $name = trim((string) ($rowData['name'] ?? ''));
             $username = trim((string) ($rowData['username'] ?? ''));
-            $nik = trim((string) ($rowData['nik'] ?? ''));
             $email = trim((string) ($rowData['email'] ?? ''));
 
             if ($name === '' || $username === '' || $email === '') {
@@ -129,7 +125,6 @@ class UserManagementController extends Controller
             $payload = [
                 'name' => $name,
                 'username' => $username,
-                'nik' => $this->nullableText($nik),
                 'email' => $email,
                 'phone' => $this->nullableText($rowData['phone'] ?? null),
                 'kelas' => $this->nullableText($rowData['kelas'] ?? null),
@@ -170,7 +165,7 @@ class UserManagementController extends Controller
         $this->ensureAdminOrSuperAdmin();
 
         $fileName = 'backup-users-'.now()->format('Ymd-His').'.csv';
-        $columns = ['name', 'username', 'nik', 'email', 'phone', 'kelas', 'jurusan', 'role', 'is_active'];
+        $columns = ['name', 'username', 'email', 'phone', 'kelas', 'jurusan', 'role', 'is_active'];
 
         return response()->streamDownload(function () use ($columns): void {
             $handle = fopen('php://output', 'w');
@@ -185,7 +180,6 @@ class UserManagementController extends Controller
                         fputcsv($handle, [
                             $user->name,
                             $user->username,
-                            $user->nik,
                             $user->email,
                             $user->phone,
                             $user->kelas,
@@ -207,7 +201,6 @@ class UserManagementController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id],
-            'nik' => ['nullable', 'string', 'max:32', 'unique:users,nik,'.$user->id],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'kelas' => ['nullable', 'string', 'max:100'],
@@ -215,8 +208,6 @@ class UserManagementController extends Controller
             'role_id' => ['required', 'exists:roles,id'],
             'password' => ['nullable', 'string', 'min:5'],
             'is_active' => ['nullable', 'boolean'],
-        ], [
-            'nik.unique' => 'NIK sudah dipakai akun lain.',
         ]);
 
         $data['is_active'] = $request->boolean('is_active');

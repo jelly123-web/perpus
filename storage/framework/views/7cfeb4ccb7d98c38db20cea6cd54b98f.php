@@ -1,8 +1,6 @@
-@extends('layouts.admin')
-
-@section('content')
-@php($title = 'Kelola Akun Pengguna')
-@php($eyebrow = 'Khusus Superadmin')
+<?php $__env->startSection('content'); ?>
+<?php ($title = 'Kelola Akun Pengguna'); ?>
+<?php ($eyebrow = 'Khusus Superadmin'); ?>
 
 <style>
     .account-shell{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;width:100%}
@@ -93,22 +91,22 @@
     <section id="usersStats" class="report-usage-row" style="margin-bottom: 32px;">
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--accent);">Total Akun</div>
-            <div class="report-usage-number">{{ $accountStats['total'] }}</div>
+            <div class="report-usage-number"><?php echo e($accountStats['total']); ?></div>
             <div class="report-usage-desc">Pengguna terdaftar</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--gold);">Staf & Admin</div>
-            <div class="report-usage-number">{{ $accountStats['petugas'] }}</div>
+            <div class="report-usage-number"><?php echo e($accountStats['petugas']); ?></div>
             <div class="report-usage-desc">Petugas aktif</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--teal);">Peminjam</div>
-            <div class="report-usage-number">{{ $accountStats['peminjam'] }}</div>
+            <div class="report-usage-number"><?php echo e($accountStats['peminjam']); ?></div>
             <div class="report-usage-desc">Siswa & Guru</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--red);">Akun Aktif</div>
-            <div class="report-usage-number">{{ $accountStats['aktif'] }}</div>
+            <div class="report-usage-number"><?php echo e($accountStats['aktif']); ?></div>
             <div class="report-usage-desc">Status login aktif</div>
         </div>
     </section>
@@ -120,12 +118,12 @@
 
             <div class="account-section-block">
                 <div class="account-section-title">Import & Backup Pengguna</div>
-                <form method="POST" action="{{ route('admin.users.import') }}" enctype="multipart/form-data" class="space-y-3" data-async="true" data-reset-on-success="true" data-refresh-targets="#usersStats,#accountList">
-                    @csrf
+                <form method="POST" action="<?php echo e(route('admin.users.import')); ?>" enctype="multipart/form-data" class="space-y-3" data-async="true" data-reset-on-success="true" data-refresh-targets="#usersStats,#accountList">
+                    <?php echo csrf_field(); ?>
                     <input type="file" name="import_file" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" accept=".csv,text/csv" required>
                     <button type="submit" class="btn-account-glow w-full">Import CSV Pengguna</button>
                 </form>
-                <a href="{{ route('admin.users.export') }}" class="btn-account-glow w-full" style="display:flex;margin-top:12px;">Backup CSV Pengguna</a>
+                <a href="<?php echo e(route('admin.users.export')); ?>" class="btn-account-glow w-full" style="display:flex;margin-top:12px;">Backup CSV Pengguna</a>
             </div>
         </div>
 
@@ -136,7 +134,7 @@
                 </div>
                 <div class="flex items-center gap-3 flex-wrap">
                     <div class="account-total-pill">
-                        {{ $users->total() }} Total
+                        <?php echo e($users->total()); ?> Total
                     </div>
                     <button type="button" onclick="openCreateUserModal()" class="btn-account-glow primary">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah User
@@ -145,40 +143,42 @@
             </div>
 
             <div class="flex flex-col">
-                @forelse($users as $user)
+                <?php $__empty_1 = true; $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <div class="account-row">
                         <div class="account-row-main">
                             <div class="account-avatar-chip">
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                                <?php echo e(strtoupper(substr($user->name, 0, 1))); ?>
+
                             </div>
                             <div class="account-row-meta">
-                                <div class="account-row-title">{{ $user->name }}</div>
-                                <div class="account-row-sub">@<span>{{ $user->username }}</span> &bull; {{ $user->role?->name }}</div>
+                                <div class="account-row-title"><?php echo e($user->name); ?></div>
+                                <div class="account-row-sub">@<span><?php echo e($user->username); ?></span> &bull; <?php echo e($user->role?->name); ?></div>
                             </div>
                         </div>
                         <div class="account-actions">
-                            <button type="button" onclick="openEditDrawer({{ $user->id }})" class="btn-account-glow">
+                            <button type="button" onclick="openEditDrawer(<?php echo e($user->id); ?>)" class="btn-account-glow">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i> Edit
                             </button>
-                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" data-async="true" data-confirm="Hapus akun ini?" data-remove-closest=".account-row" data-refresh-targets="#usersStats,#accountList">
-                                @csrf
-                                @method('DELETE')
+                            <form method="POST" action="<?php echo e(route('admin.users.destroy', $user)); ?>" data-async="true" data-confirm="Hapus akun ini?" data-remove-closest=".account-row" data-refresh-targets="#usersStats,#accountList">
+                                <?php echo csrf_field(); ?>
+                                <?php echo method_field('DELETE'); ?>
                                 <button type="submit" class="btn-account-glow danger">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i> Hapus
                                 </button>
                             </form>
                         </div>
                     </div>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <div class="account-empty">
                         <i data-lucide="users"></i>
                         <p>Belum ada data pengguna.</p>
                     </div>
-                @endforelse
+                <?php endif; ?>
             </div>
 
             <div class="mt-8">
-                {{ $users->links() }}
+                <?php echo e($users->links()); ?>
+
             </div>
         </div>
     </div>
@@ -196,8 +196,8 @@
         </button>
     </div>
 
-    <form id="createUserForm" method="POST" action="{{ route('admin.users.store') }}" class="space-y-5" data-async="true" data-reset-on-success="true" data-success-call="closeCreateUserModal" data-refresh-targets="#usersStats,#accountList">
-        @csrf
+    <form id="createUserForm" method="POST" action="<?php echo e(route('admin.users.store')); ?>" class="space-y-5" data-async="true" data-reset-on-success="true" data-success-call="closeCreateUserModal" data-refresh-targets="#usersStats,#accountList">
+        <?php echo csrf_field(); ?>
         <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Nama Lengkap</label>
             <input name="name" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Nama lengkap..." required>
@@ -233,9 +233,9 @@
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peran (Role)</label>
             <select name="role_id" class="form-select w-full px-4 py-3.5 text-sm rounded-xl" required onchange="toggleAcademicFields(this, '#academicFieldsStore')">
                 <option value="">Pilih Role...</option>
-                @foreach($roles as $role)
-                    <option value="{{ $role->id }}" data-name="{{ $role->name }}">{{ $role->label ?: $role->name }}</option>
-                @endforeach
+                <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($role->id); ?>" data-name="<?php echo e($role->name); ?>"><?php echo e($role->label ?: $role->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
         </div>
         <div id="academicFieldsStore" style="display: none;" class="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -343,4 +343,6 @@
         }
     });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/users/index.blade.php ENDPATH**/ ?>

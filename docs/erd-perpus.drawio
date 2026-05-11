@@ -1,0 +1,154 @@
+<mxfile host="app.diagrams.net" modified="2026-05-09T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="erd-perpus" name="ERD Perpus">
+    <mxGraphModel dx="1920" dy="1080" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="ERD Perpustakaan Sekolah" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="20" width="360" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="Versi print: fokus tabel inti, PK/FK sesuai database" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="30" y="50" width="340" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend" value="Keterangan: PK = Primary Key, FK = Foreign Key, UK = Unique Key" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#b3b3b3;fillColor=#f5f5f5;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="20" width="400" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="roles" value="roles&#xa;----------------&#xa;PK id&#xa;UK name&#xa;label" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#6c8ebf;fillColor=#dae8fc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="160" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="permissions" value="permissions&#xa;----------------&#xa;PK id&#xa;UK name&#xa;label" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#6c8ebf;fillColor=#dae8fc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="280" width="160" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="permission_role" value="permission_role&#xa;----------------&#xa;PK id&#xa;FK role_id&#xa;FK permission_id" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#9673a6;fillColor=#e1d5e7;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="190" width="180" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="users" value="users&#xa;----------------&#xa;PK id&#xa;name&#xa;UK username&#xa;UK nik&#xa;email&#xa;email_verified_at&#xa;password&#xa;phone&#xa;kelas&#xa;jurusan&#xa;profile_photo&#xa;UK google_id&#xa;FK role_id&#xa;is_active&#xa;remember_token" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#82b366;fillColor=#d5e8d4;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="70" width="210" height="270" as="geometry"/>
+        </mxCell>
+        <mxCell id="categories" value="categories&#xa;----------------&#xa;PK id&#xa;UK name&#xa;UK slug&#xa;description" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#d79b00;fillColor=#ffe6a3;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="810" y="80" width="170" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="books" value="books&#xa;----------------&#xa;PK id&#xa;title&#xa;author&#xa;UK isbn&#xa;cover_image&#xa;FK category_id&#xa;publisher&#xa;place_of_publication&#xa;edition&#xa;published_year&#xa;page_count&#xa;stock_total&#xa;stock_available&#xa;status&#xa;description" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#d79b00;fillColor=#fff2cc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="60" width="220" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="loans" value="loans&#xa;----------------&#xa;PK id&#xa;FK book_id&#xa;FK member_id&#xa;borrower_name&#xa;FK processed_by&#xa;borrowed_at&#xa;due_at&#xa;returned_at&#xa;status&#xa;fine_amount&#xa;notes" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#b85450;fillColor=#f8cecc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="420" width="200" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="sanctions" value="sanctions&#xa;----------------&#xa;PK id&#xa;FK loan_id&#xa;FK member_id&#xa;FK processed_by&#xa;type&#xa;status&#xa;reason&#xa;duration_days&#xa;starts_at&#xa;ends_at&#xa;notes" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#b85450;fillColor=#f8cecc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="420" width="200" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="book_procurements" value="book_procurements&#xa;----------------&#xa;PK id&#xa;title&#xa;author&#xa;isbn&#xa;publisher&#xa;published_year&#xa;quantity&#xa;notes&#xa;FK category_id&#xa;status&#xa;FK proposed_by&#xa;FK approved_by&#xa;approved_at&#xa;FK rejected_by&#xa;rejected_at" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#a68064;fillColor=#f5e6cc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="770" y="400" width="230" height="250" as="geometry"/>
+        </mxCell>
+        <mxCell id="settings" value="settings&#xa;----------------&#xa;PK id&#xa;UK key&#xa;label&#xa;type&#xa;value" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#666666;fillColor=#f5f5f5;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="500" width="160" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="activity_logs" value="activity_logs&#xa;----------------&#xa;PK id&#xa;FK user_id&#xa;module&#xa;action&#xa;description&#xa;properties" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#666666;fillColor=#f5f5f5;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="500" width="180" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="backups" value="backups&#xa;----------------&#xa;PK id&#xa;file_name&#xa;file_path&#xa;size_bytes&#xa;FK created_by" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#666666;fillColor=#f5f5f5;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="500" width="170" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="login_otp_tokens" value="login_otp_tokens&#xa;----------------&#xa;PK, FK user_id&#xa;token&#xa;created_at" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;strokeColor=#666666;fillColor=#f5f5f5;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="380" width="180" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit_note" value="Kolom audit `created_at`, `updated_at`, `delete`, `deleted_at`, `deleted_by`, `deleted_ip` ada di banyak tabel, tapi tidak semua ditampilkan di diagram agar lebih rapi saat diprint." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=16;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="80" width="270" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="db_note" value="Catatan database: `users.email` tidak unique, `books.barcode` sudah dihapus, `loans.member_id` nullable." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=16;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="230" width="270" height="110" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="edge_roles_users" value="role_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="roles" target="users">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_roles_permission_role" value="role_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="roles" target="permission_role">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_permissions_permission_role" value="permission_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="permissions" target="permission_role">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_categories_books" value="category_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="categories" target="books">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_books_loans" value="book_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="books" target="loans">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_users_loans_member" value="member_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="loans">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="250"/>
+              <mxPoint x="760" y="470"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_users_loans_processed" value="processed_by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="loans">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="740" y="280"/>
+              <mxPoint x="740" y="560"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_loans_sanctions" value="loan_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="loans" target="sanctions">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_users_sanctions_member" value="member_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="sanctions">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="300"/>
+              <mxPoint x="700" y="690"/>
+              <mxPoint x="1320" y="690"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_users_sanctions_processed" value="processed_by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="sanctions">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="320"/>
+              <mxPoint x="680" y="730"/>
+              <mxPoint x="1340" y="730"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_categories_procurements" value="category_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="categories" target="book_procurements">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_users_procurements_proposed" value="proposed_by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="book_procurements">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="220"/>
+              <mxPoint x="750" y="430"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_users_procurements_approved" value="approved_by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="book_procurements">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="730" y="240"/>
+              <mxPoint x="730" y="470"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_users_procurements_rejected" value="rejected_by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="book_procurements">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="710" y="260"/>
+              <mxPoint x="710" y="510"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_users_logs" value="user_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="activity_logs">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_users_backups" value="created_by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="backups">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_users_login_otp" value="user_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeWidth=1.5;" edge="1" parent="1" source="users" target="login_otp_tokens">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

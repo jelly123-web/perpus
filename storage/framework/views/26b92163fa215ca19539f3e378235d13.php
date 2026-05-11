@@ -1,8 +1,6 @@
-@extends('layouts.admin')
-
-@section('content')
-@php($title = 'Peminjaman Buku')
-@php($eyebrow = 'Petugas Perpustakaan')
+<?php $__env->startSection('content'); ?>
+<?php ($title = 'Peminjaman Buku'); ?>
+<?php ($eyebrow = 'Petugas Perpustakaan'); ?>
 
 <style>
     .loan-shell{display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,1.5fr);gap:24px;width:100%}
@@ -88,27 +86,27 @@
     <section id="loanStatsWrap" class="report-usage-row" style="margin-bottom: 32px;">
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--accent);">Pengajuan Baru</div>
-            <div class="report-usage-number" id="loanRequestedStat">{{ $loanStats['requested'] }}</div>
+            <div class="report-usage-number" id="loanRequestedStat"><?php echo e($loanStats['requested']); ?></div>
             <div class="report-usage-desc">Menunggu proses</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--gold);">Total Pinjam</div>
-            <div class="report-usage-number">{{ $loanStats['total'] }}</div>
+            <div class="report-usage-number"><?php echo e($loanStats['total']); ?></div>
             <div class="report-usage-desc">Semua transaksi</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--teal);">Sedang Dipinjam</div>
-            <div class="report-usage-number">{{ $loanStats['borrowed'] }}</div>
+            <div class="report-usage-number"><?php echo e($loanStats['borrowed']); ?></div>
             <div class="report-usage-desc">Buku di luar</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--accent-dark);">Sudah Kembali</div>
-            <div class="report-usage-number">{{ $loanStats['returned'] }}</div>
+            <div class="report-usage-number"><?php echo e($loanStats['returned']); ?></div>
             <div class="report-usage-desc">Selesai pinjam</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag" style="color: var(--red);">Terlambat</div>
-            <div class="report-usage-number">{{ $loanStats['late'] }}</div>
+            <div class="report-usage-number"><?php echo e($loanStats['late']); ?></div>
             <div class="report-usage-desc">Perlu tindakan</div>
         </div>
     </section>
@@ -124,36 +122,36 @@
                     </div>
                 </div>
                 <div class="loan-card-body">
-                    <form method="POST" action="{{ route('admin.loans.store') }}" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                        @csrf
+                    <form method="POST" action="<?php echo e(route('admin.loans.store')); ?>" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                        <?php echo csrf_field(); ?>
                         <div class="loan-field">
                             <label class="loan-label">Pilih Buku</label>
                             <select name="book_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
                                 <option value="">Pilih buku</option>
-                                @foreach ($books as $book)
-                                    <option value="{{ $book->id }}">
-                                        {{ $book->title }} - {{ $book->stock_available }} stok
+                                <?php $__currentLoopData = $books; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $book): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($book->id); ?>">
+                                        <?php echo e($book->title); ?> - <?php echo e($book->stock_available); ?> stok
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="loan-field">
                             <label class="loan-label">Nama Peminjam</label>
                             <input type="text" name="borrower_name" class="form-input px-4 py-3 text-sm rounded-xl" placeholder="Ketik nama peminjam..." required list="memberList">
                             <datalist id="memberList">
-                                @foreach ($members as $member)
-                                    <option value="{{ $member->name }}">{{ $member->academicLabel() }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = $members; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $member): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($member->name); ?>"><?php echo e($member->academicLabel()); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </datalist>
                         </div>
                         <div class="loan-input-group">
                             <div class="loan-field">
                                 <label class="loan-label">Tanggal Pinjam</label>
-                                <input type="date" name="borrowed_at" id="directLoanBorrowedAt" class="form-input px-4 py-3 text-sm rounded-xl" value="{{ now()->toDateString() }}" required>
+                                <input type="date" name="borrowed_at" id="directLoanBorrowedAt" class="form-input px-4 py-3 text-sm rounded-xl" value="<?php echo e(now()->toDateString()); ?>" required>
                             </div>
                             <div class="loan-field">
                                 <label class="loan-label">Tanggal Kembali</label>
-                                <input type="date" name="due_at" id="directLoanDueAt" class="form-input px-4 py-3 text-sm rounded-xl" value="{{ now()->addDay()->toDateString() }}" required>
+                                <input type="date" name="due_at" id="directLoanDueAt" class="form-input px-4 py-3 text-sm rounded-xl" value="<?php echo e(now()->addDay()->toDateString()); ?>" required>
                             </div>
                         </div>
                         <div class="loan-field">
@@ -168,7 +166,7 @@
             </div>
 
             <div id="loanRequestedPanel">
-                @include('admin.loans._requested-panel', ['requestedLoans' => $requestedLoans])
+                <?php echo $__env->make('admin.loans._requested-panel', ['requestedLoans' => $requestedLoans], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             </div>
 
             <!-- Section: Kunci Akun Peminjam -->
@@ -180,17 +178,18 @@
                     </div>
                 </div>
                 <div class="loan-card-body">
-                    <form method="POST" action="{{ route('admin.loans.borrower-status.update') }}" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                        @csrf
+                    <form method="POST" action="<?php echo e(route('admin.loans.borrower-status.update')); ?>" class="loan-form-grid" data-async="true" data-reset-on-success="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                        <?php echo csrf_field(); ?>
                         <div class="loan-field">
                             <label class="loan-label">Pilih Peminjam</label>
                             <select name="member_id" class="form-select px-4 py-3 text-sm rounded-xl" required>
                                 <option value="">Pilih peminjam</option>
-                                @foreach ($memberStatuses as $member)
-                                    <option value="{{ $member->id }}">
-                                        {{ $member->name }} - {{ $member->borrower_status === 'sanctioned' ? '(Terkunci)' : 'Aktif' }}
+                                <?php $__currentLoopData = $memberStatuses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $member): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($member->id); ?>">
+                                        <?php echo e($member->name); ?> - <?php echo e($member->borrower_status === 'sanctioned' ? '(Terkunci)' : 'Aktif'); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="loan-input-group">
@@ -227,7 +226,7 @@
                         <p class="loan-card-subtitle">Semua riwayat transaksi perpustakaan.</p>
                     </div>
                     <div class="btn-report-action" style="cursor: default; pointer-events: none;">
-                        <i data-lucide="history" class="w-4 h-4"></i> {{ $loans->total() }} Transaksi
+                        <i data-lucide="history" class="w-4 h-4"></i> <?php echo e($loans->total()); ?> Transaksi
                     </div>
                 </div>
                 <div class="loan-table-wrap">
@@ -241,57 +240,58 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($loans as $loan)
+                            <?php $__currentLoopData = $loans; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $loan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td>
                                         <div class="loan-book-box">
                                             <div class="loan-book-cover-mini">
-                                                @if($loan->book?->cover_image)
-                                                    <img src="{{ asset('storage/' . $loan->book->cover_image) }}" alt="{{ $loan->book?->title }}">
-                                                @else
+                                                <?php if($loan->book?->cover_image): ?>
+                                                    <img src="<?php echo e(asset('storage/' . $loan->book->cover_image)); ?>" alt="<?php echo e($loan->book?->title); ?>">
+                                                <?php else: ?>
                                                     <i data-lucide="book-image" class="w-5 h-5"></i>
-                                                @endif
+                                                <?php endif; ?>
                                             </div>
                                             <div>
-                                                <div class="loan-book-title-text">{{ $loan->book?->title ?? 'Buku tidak ditemukan' }}</div>
-                                                <div class="loan-book-author-text">{{ $loan->book?->author ?? '-' }}</div>
+                                                <div class="loan-book-title-text"><?php echo e($loan->book?->title ?? 'Buku tidak ditemukan'); ?></div>
+                                                <div class="loan-book-author-text"><?php echo e($loan->book?->author ?? '-'); ?></div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="flex flex-col">
-                                            <span class="font-bold text-slate2-900">{{ $loan->member?->name ?? $loan->borrower_name }}</span>
-                                            <span class="text-xs text-slate2-500 mt-0.5">{{ $loan->member?->academicLabel() ?? 'Peminjam Luar' }}</span>
+                                            <span class="font-bold text-slate2-900"><?php echo e($loan->member?->name ?? $loan->borrower_name); ?></span>
+                                            <span class="text-xs text-slate2-500 mt-0.5"><?php echo e($loan->member?->academicLabel() ?? 'Peminjam Luar'); ?></span>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="flex flex-col">
-                                            <span class="font-bold text-slate2-800 text-sm">{{ optional($loan->borrowed_at)->translatedFormat('d M Y') }}</span>
-                                            <span class="text-[10px] text-slate2-400 uppercase tracking-wider font-black mt-1">Hingga {{ optional($loan->returned_at ?? $loan->due_at)->translatedFormat('d M Y') }}</span>
+                                            <span class="font-bold text-slate2-800 text-sm"><?php echo e(optional($loan->borrowed_at)->translatedFormat('d M Y')); ?></span>
+                                            <span class="text-[10px] text-slate2-400 uppercase tracking-wider font-black mt-1">Hingga <?php echo e(optional($loan->returned_at ?? $loan->due_at)->translatedFormat('d M Y')); ?></span>
                                         </div>
                                     </td>
                                     <td>
-                                        <form method="POST" action="{{ route('admin.loans.update', $loan) }}" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                                            @csrf
-                                            @method('PUT')
+                                        <form method="POST" action="<?php echo e(route('admin.loans.update', $loan)); ?>" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                                            <?php echo csrf_field(); ?>
+                                            <?php echo method_field('PUT'); ?>
                                             <select name="status" class="loan-status-select" data-loan-status-select>
-                                                <option value="requested" @selected($loan->status === 'requested')>Menunggu</option>
-                                                <option value="borrowed" @selected($loan->status === 'borrowed')>Dipinjam</option>
-                                                <option value="late" @selected($loan->status === 'late')>Terlambat</option>
-                                                <option value="returned" @selected($loan->status === 'returned')>Selesai</option>
+                                                <option value="requested" <?php if($loan->status === 'requested'): echo 'selected'; endif; ?>>Menunggu</option>
+                                                <option value="borrowed" <?php if($loan->status === 'borrowed'): echo 'selected'; endif; ?>>Dipinjam</option>
+                                                <option value="late" <?php if($loan->status === 'late'): echo 'selected'; endif; ?>>Terlambat</option>
+                                                <option value="returned" <?php if($loan->status === 'returned'): echo 'selected'; endif; ?>>Selesai</option>
                                             </select>
                                         </form>
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
-                @if($loans->hasPages())
+                <?php if($loans->hasPages()): ?>
                     <div class="p-6 border-t border-slate2-100">
-                        {{ $loans->links() }}
+                        <?php echo e($loans->links()); ?>
+
                     </div>
-                @endif
+                <?php endif; ?>
             </div>
 
             <!-- Section: Monitoring Sanksi -->
@@ -304,43 +304,46 @@
                 </div>
                 <div class="loan-card-body">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @forelse ($sanctionMonitoring as $monitoring)
+                        <?php $__empty_1 = true; $__currentLoopData = $sanctionMonitoring; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $monitoring): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <div class="loan-item-card">
                                 <div class="loan-item-head">
                                     <div>
-                                        <div class="loan-item-name">{{ $monitoring->member?->name ?? 'Peminjam' }}</div>
+                                        <div class="loan-item-name"><?php echo e($monitoring->member?->name ?? 'Peminjam'); ?></div>
                                         <div class="loan-item-info mt-1 text-red-600 font-bold">
-                                            {{ $monitoring->reason }}
+                                            <?php echo e($monitoring->reason); ?>
+
                                         </div>
                                     </div>
-                                    <span class="loan-item-badge {{ $monitoring->monitoring_state === 'active' ? 'active' : 'done' }}">
-                                        {{ $monitoring->monitoring_state === 'active' ? 'Disanksi' : 'Selesai' }}
+                                    <span class="loan-item-badge <?php echo e($monitoring->monitoring_state === 'active' ? 'active' : 'done'); ?>">
+                                        <?php echo e($monitoring->monitoring_state === 'active' ? 'Disanksi' : 'Selesai'); ?>
+
                                     </span>
                                 </div>
                                 <div class="loan-item-info">
-                                    @if($monitoring->ends_at)
-                                        Berakhir: {{ optional($monitoring->ends_at)->translatedFormat('d M Y') }}
-                                    @else
-                                        Durasi: {{ $monitoring->duration_days }} hari
-                                    @endif
+                                    <?php if($monitoring->ends_at): ?>
+                                        Berakhir: <?php echo e(optional($monitoring->ends_at)->translatedFormat('d M Y')); ?>
+
+                                    <?php else: ?>
+                                        Durasi: <?php echo e($monitoring->duration_days); ?> hari
+                                    <?php endif; ?>
                                 </div>
-                                @if ($monitoring->monitoring_state !== 'completed')
-                                    <form method="POST" action="{{ route('admin.loans.sanctions.update', $monitoring) }}" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
-                                        @csrf
-                                        @method('PUT')
+                                <?php if($monitoring->monitoring_state !== 'completed'): ?>
+                                    <form method="POST" action="<?php echo e(route('admin.loans.sanctions.update', $monitoring)); ?>" data-async="true" data-refresh-targets="#loanStatsWrap,#loanPageWrap">
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('PUT'); ?>
                                         <input type="hidden" name="status" value="completed">
                                         <button class="btn-report-action w-full mt-2" type="submit" style="font-size: 11px; height: 36px;">
                                             Tandai Aktif Kembali
                                         </button>
                                     </form>
-                                @endif
+                                <?php endif; ?>
                             </div>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <div class="col-span-full report-empty-state">
                                 <div class="report-empty-icon"><i data-lucide="shield-check"></i></div>
                                 <p class="report-empty-text">Tidak ada sanksi aktif saat ini.</p>
                             </div>
-                        @endforelse
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -387,7 +390,7 @@
         }
 
         try {
-            const response = await fetch('{{ route('admin.loans.requested-panel') }}?_t=' + Date.now(), {
+            const response = await fetch('<?php echo e(route('admin.loans.requested-panel')); ?>?_t=' + Date.now(), {
                 cache: 'no-store',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -417,7 +420,7 @@
         loanRequestedPanelBusy = true;
 
         try {
-            const response = await fetch('{{ route('admin.loans.requested-panel') }}?_t=' + Date.now(), {
+            const response = await fetch('<?php echo e(route('admin.loans.requested-panel')); ?>?_t=' + Date.now(), {
                 cache: 'no-store',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -534,4 +537,6 @@
         pollRequestedLoanPanel();
     }, 3000);
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/loans/index.blade.php ENDPATH**/ ?>

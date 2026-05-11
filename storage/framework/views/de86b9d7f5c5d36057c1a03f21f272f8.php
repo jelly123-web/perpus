@@ -1,10 +1,8 @@
-@extends('layouts.admin')
-
-@section('content')
-@php($title = 'Backup & Restore Data')
-@php($eyebrow = 'Keamanan Sistem')
-@php($totalBackupSizeKb = number_format((int) $backups->sum('size_bytes') / 1024, 0))
-@php($latestBackupLabel = $backups->first()?->created_at?->diffForHumans() ?? '-')
+<?php $__env->startSection('content'); ?>
+<?php ($title = 'Backup & Restore Data'); ?>
+<?php ($eyebrow = 'Keamanan Sistem'); ?>
+<?php ($totalBackupSizeKb = number_format((int) $backups->sum('size_bytes') / 1024, 0)); ?>
+<?php ($latestBackupLabel = $backups->first()?->created_at?->diffForHumans() ?? '-'); ?>
 
 <style>
     .backup-page{display:flex;flex-direction:column;gap:24px}
@@ -40,22 +38,22 @@
                 <h1 class="font-display member-title">Backup & Restore Data</h1>
                 <p class="member-subtitle" style="margin-top:4px;">Buat snapshot data dan restore database dengan mudah.</p>
             </div>
-            <div class="member-badge"><i data-lucide="database-backup" class="w-3.5 h-3.5"></i> {{ $backups->total() }} backup tersimpan</div>
+            <div class="member-badge"><i data-lucide="database-backup" class="w-3.5 h-3.5"></i> <?php echo e($backups->total()); ?> backup tersimpan</div>
         </div>
     </div>
 
     <section id="backupStats" class="member-mini-stats">
         <div class="member-mini-stat">
             <div class="member-mini-icon" style="background:var(--dbx-primary-light, #fff7ed);color:var(--dbx-primary, #f97316);"><i data-lucide="database" class="w-5 h-5"></i></div>
-            <div><div class="member-mini-value">{{ $backups->total() }}</div><div class="member-mini-label">Total Backup</div></div>
+            <div><div class="member-mini-value"><?php echo e($backups->total()); ?></div><div class="member-mini-label">Total Backup</div></div>
         </div>
         <div class="member-mini-stat">
             <div class="member-mini-icon" style="background:#fef3c7;color:#eab308;"><i data-lucide="hard-drive-download" class="w-5 h-5"></i></div>
-            <div><div class="member-mini-value">{{ $totalBackupSizeKb }} KB</div><div class="member-mini-label">Ukuran Total</div></div>
+            <div><div class="member-mini-value"><?php echo e($totalBackupSizeKb); ?> KB</div><div class="member-mini-label">Ukuran Total</div></div>
         </div>
         <div class="member-mini-stat">
             <div class="member-mini-icon" style="background:#dcfce7;color:#22c55e;"><i data-lucide="clock-3" class="w-5 h-5"></i></div>
-            <div><div class="member-mini-value">{{ $latestBackupLabel }}</div><div class="member-mini-label">Backup Terakhir</div></div>
+            <div><div class="member-mini-value"><?php echo e($latestBackupLabel); ?></div><div class="member-mini-label">Backup Terakhir</div></div>
         </div>
     </section>
 
@@ -64,8 +62,8 @@
             <h3 class="backup-card-title">Buat Backup Baru</h3>
             <p class="backup-card-sub">Snapshot data akan disimpan dalam format JSON dan bisa diunduh sebagai SQL database.</p>
 
-            <form method="POST" action="{{ route('admin.backups.store') }}" data-async="true" data-refresh-targets="#backupStats,#backupList">
-                @csrf
+            <form method="POST" action="<?php echo e(route('admin.backups.store')); ?>" data-async="true" data-refresh-targets="#backupStats,#backupList">
+                <?php echo csrf_field(); ?>
                 <button class="btn-backup-primary" style="width:100%;" type="submit">
                     <i data-lucide="plus" class="w-4 h-4"></i> Buat Backup Sekarang
                 </button>
@@ -79,42 +77,46 @@
         <div id="backupList" class="backup-list-card">
             <h3 class="backup-list-title">Riwayat Backup</h3>
             <div>
-                @forelse ($backups as $backup)
+                <?php $__empty_1 = true; $__currentLoopData = $backups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $backup): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <div class="backup-item">
                         <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;">
                             <div>
-                                <div class="backup-item-title">{{ $backup->file_name }}</div>
-                                <div class="backup-item-path">{{ $backup->file_path }}</div>
+                                <div class="backup-item-title"><?php echo e($backup->file_name); ?></div>
+                                <div class="backup-item-path"><?php echo e($backup->file_path); ?></div>
                                 <div class="backup-item-meta">
-                                    Dibuat {{ $backup->created_at?->translatedFormat('d M Y H:i') ?? '-' }}
-                                    | Oleh {{ $backup->creator?->name ?? 'Sistem' }}
+                                    Dibuat <?php echo e($backup->created_at?->translatedFormat('d M Y H:i') ?? '-'); ?>
+
+                                    | Oleh <?php echo e($backup->creator?->name ?? 'Sistem'); ?>
+
                                 </div>
                             </div>
                             <div class="backup-size-badge">
-                                {{ number_format(((int) $backup->size_bytes) / 1024, 1) }} KB
+                                <?php echo e(number_format(((int) $backup->size_bytes) / 1024, 1)); ?> KB
                             </div>
                         </div>
                         <div class="backup-item-actions">
-                            <a href="{{ route('admin.backups.download', $backup) }}" class="btn-backup-secondary">
+                            <a href="<?php echo e(route('admin.backups.download', $backup)); ?>" class="btn-backup-secondary">
                                 <i data-lucide="download" class="w-4 h-4"></i> Unduh SQL
                             </a>
-                            <form method="POST" action="{{ route('admin.backups.restore', $backup) }}" data-async="true" data-confirm="Restore backup ini ke database? Sistem akan update/merge data, bukan replace total." data-refresh-targets="#backupStats,#backupList">
-                                @csrf
+                            <form method="POST" action="<?php echo e(route('admin.backups.restore', $backup)); ?>" data-async="true" data-confirm="Restore backup ini ke database? Sistem akan update/merge data, bukan replace total." data-refresh-targets="#backupStats,#backupList">
+                                <?php echo csrf_field(); ?>
                                 <button type="submit" class="btn-backup-primary">
                                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restore
                                 </button>
                             </form>
                         </div>
                     </div>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <div class="backup-empty">
                         Belum ada backup. Tekan tombol di kiri untuk membuat snapshot pertama.
                     </div>
-                @endforelse
+                <?php endif; ?>
             </div>
 
-            <div style="margin-top:16px;">{{ $backups->links() }}</div>
+            <div style="margin-top:16px;"><?php echo e($backups->links()); ?></div>
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/backups/index.blade.php ENDPATH**/ ?>

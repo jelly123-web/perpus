@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    @php
+    <?php
         $user = auth()->user();
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
         $appNameColor = \App\Models\Setting::valueOr('app_name_color', '#21323a');
@@ -135,16 +135,16 @@
             ->take(6)
             ->values();
         $headerNotificationCount = $headerNotifications->count();
-    @endphp
+    ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Admin' }} - {{ $appName }}</title>
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo e($title ?? 'Admin'); ?> - <?php echo e($appName); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    @if ($appLogo)
-        <link rel="icon" type="image/png" href="{{ asset($appLogo) }}">
-    @endif
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <?php if($appLogo): ?>
+        <link rel="icon" type="image/png" href="<?php echo e(asset($appLogo)); ?>">
+    <?php endif; ?>
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
     <style>
         :root{
             --bg:#f8fafc;--bg-raised:#ffffff;--bg-card:#ffffff;--bg-soft:#fff7ed;--fg:#1e293b;--muted:#64748b;--dim:#94a3b8;
@@ -272,7 +272,7 @@
         @media(max-width:640px){
             .user-chip div:last-child{display:none}
         }
-        @if (!request()->routeIs('dashboard'))
+        <?php if(!request()->routeIs('dashboard')): ?>
         .member-page{display:flex;flex-direction:column;gap:24px}
         .member-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
         .member-title{font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--fg)}
@@ -298,7 +298,7 @@
         .member-item:hover{box-shadow:var(--shadow-md);border-color:var(--border-light)!important}
         @media (max-width:1024px){.member-mini-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
         @media (max-width:768px){.member-form-grid,.member-mini-stats{grid-template-columns:1fr}.member-card-head{flex-direction:column}.member-title{font-size:24px}}
-        @endif
+        <?php endif; ?>
 
         /* Dashboard Styles - Globalized */
         .dbx{position:relative;min-height:100%;padding:4px 0 8px}
@@ -752,29 +752,29 @@
         <aside id="lightSide" class="sidebar" aria-hidden="true">
             <div class="sidebar-logo">
                 <div class="flex items-center gap-3">
-                    <div class="sidebar-brand-mark{{ $appLogo ? ' has-image' : '' }}">
-                        @if ($appLogo)
-                            <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
-                        @else
+                    <div class="sidebar-brand-mark<?php echo e($appLogo ? ' has-image' : ''); ?>">
+                        <?php if($appLogo): ?>
+                            <img src="<?php echo e(asset($appLogo)); ?>" alt="<?php echo e($appName); ?>">
+                        <?php else: ?>
                             <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    @if ($showAppName)
-                        <div class="font-display text-xl font-bold tracking-tight text-slate-800">{{ $appName }}</div>
-                    @endif
+                    <?php if($showAppName): ?>
+                        <div class="font-display text-xl font-bold tracking-tight text-slate-800"><?php echo e($appName); ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <nav class="sidebar-nav">
-                @foreach ($sidebarSections as $section)
-                    <div class="nav-section">{{ $section['title'] }}</div>
-                    @foreach ($section['items'] as $item)
-                        <a href="{{ $adminRoute($item['route']) }}" class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" data-async="true">
-                            <i data-lucide="{{ $item['icon'] }}" class="nav-icon"></i>
-                            <span>{{ $item['label'] }}</span>
+                <?php $__currentLoopData = $sidebarSections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div class="nav-section"><?php echo e($section['title']); ?></div>
+                    <?php $__currentLoopData = $section['items']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <a href="<?php echo e($adminRoute($item['route'])); ?>" class="nav-link <?php echo e(request()->routeIs($item['match']) ? 'active' : ''); ?>" data-async="true">
+                            <i data-lucide="<?php echo e($item['icon']); ?>" class="nav-icon"></i>
+                            <span><?php echo e($item['label']); ?></span>
                         </a>
-                    @endforeach
-                @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </nav>
         </aside>
 
@@ -792,18 +792,18 @@
                             onclick="toggleSide()"
                         >=</button>
                         <div class="topbar-brand">
-                            <div class="topbar-brand-mark{{ $appLogo ? ' has-image' : '' }}">
-                                @if ($appLogo)
-                                    <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
-                                @else
+                            <div class="topbar-brand-mark<?php echo e($appLogo ? ' has-image' : ''); ?>">
+                                <?php if($appLogo): ?>
+                                    <img src="<?php echo e(asset($appLogo)); ?>" alt="<?php echo e($appName); ?>">
+                                <?php else: ?>
                                     <i data-lucide="book-open" style="width:18px;height:18px;color:#7A5A28;"></i>
-                                @endif
+                                <?php endif; ?>
                             </div>
-                            @if ($showAppName)
+                            <?php if($showAppName): ?>
                                 <div class="topbar-brand-text">
-                                    <div class="topbar-brand-title font-display" style="color: {{ $appNameColor }}">{{ $appName }}</div>
+                                    <div class="topbar-brand-title font-display" style="color: <?php echo e($appNameColor); ?>"><?php echo e($appName); ?></div>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -818,8 +818,9 @@
                                 onclick="toggleNotifPanel()"
                             >
                                 <i data-lucide="bell" class="w-5 h-5"></i>
-                                <span id="headerNotifBadge" class="notif-badge" style="{{ $headerNotificationCount > 0 ? '' : 'display:none;' }}">
-                                    {{ min($headerNotificationCount, 9) }}
+                                <span id="headerNotifBadge" class="notif-badge" style="<?php echo e($headerNotificationCount > 0 ? '' : 'display:none;'); ?>">
+                                    <?php echo e(min($headerNotificationCount, 9)); ?>
+
                                 </span>
                             </button>
 
@@ -827,39 +828,39 @@
                                 <div class="notif-head">
                                     <div>
                                         <div class="notif-head-title">Notifikasi</div>
-                                        <div id="headerNotifSub" class="notif-head-sub">{{ $headerNotificationCount }} update terbaru dari database</div>
+                                        <div id="headerNotifSub" class="notif-head-sub"><?php echo e($headerNotificationCount); ?> update terbaru dari database</div>
                                     </div>
                                 </div>
                                 <div id="headerNotifList" class="notif-list">
-                                    @forelse ($headerNotifications as $notification)
-                                        <a href="{{ $notification['href'] ?? '#' }}" class="notif-item" data-async="true">
-                                            <div class="notif-icon {{ $notification['tone'] }}">
-                                                <i data-lucide="{{ $notification['icon'] ?? 'info' }}" class="w-4 h-4"></i>
+                                    <?php $__empty_1 = true; $__currentLoopData = $headerNotifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                        <a href="<?php echo e($notification['href'] ?? '#'); ?>" class="notif-item" data-async="true">
+                                            <div class="notif-icon <?php echo e($notification['tone']); ?>">
+                                                <i data-lucide="<?php echo e($notification['icon'] ?? 'info'); ?>" class="w-4 h-4"></i>
                                             </div>
                                             <div class="notif-body">
-                                                <div class="notif-title">{{ $notification['title'] }}</div>
-                                                <div class="notif-text">{{ $notification['body'] }}</div>
-                                                <div class="notif-time">{{ $notification['time'] ?? 'Baru saja' }}</div>
+                                                <div class="notif-title"><?php echo e($notification['title']); ?></div>
+                                                <div class="notif-text"><?php echo e($notification['body']); ?></div>
+                                                <div class="notif-time"><?php echo e($notification['time'] ?? 'Baru saja'); ?></div>
                                             </div>
                                         </a>
-                                    @empty
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                         <div class="notif-empty">Belum ada notifikasi terbaru.</div>
-                                    @endforelse
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
-                        <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
-                        <a href="{{ $adminRoute('profile.show') }}" class="user-chip" style="text-decoration:none;" data-async="true">
+                        <form method="POST" action="<?php echo e(route('logout')); ?>"><?php echo csrf_field(); ?><button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
+                        <a href="<?php echo e($adminRoute('profile.show')); ?>" class="user-chip" style="text-decoration:none;" data-async="true">
                             <div class="avatar js-global-profile-avatar" style="overflow:hidden;">
-                                @if (auth()->user()?->profile_photo_url)
-                                    <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" class="js-global-profile-photo" style="width:100%;height:100%;object-fit:cover;">
-                                @else
-                                    <span class="js-global-profile-fallback">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
-                                @endif
+                                <?php if(auth()->user()?->profile_photo_url): ?>
+                                    <img src="<?php echo e(auth()->user()->profile_photo_url); ?>" alt="<?php echo e(auth()->user()->name); ?>" class="js-global-profile-photo" style="width:100%;height:100%;object-fit:cover;">
+                                <?php else: ?>
+                                    <span class="js-global-profile-fallback"><?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?></span>
+                                <?php endif; ?>
                             </div>
                             <div>
-                                <div style="font-size:12px;font-weight:700;color:var(--fg);line-height:1.2;">{{ auth()->user()->name }}</div>
-                                <div style="font-size:10px;color:var(--dim);line-height:1.2;">{{ auth()->user()->role?->label ?? 'Tanpa role' }}</div>
+                                <div style="font-size:12px;font-weight:700;color:var(--fg);line-height:1.2;"><?php echo e(auth()->user()->name); ?></div>
+                                <div style="font-size:10px;color:var(--dim);line-height:1.2;"><?php echo e(auth()->user()->role?->label ?? 'Tanpa role'); ?></div>
                             </div>
                         </a>
                     </div>
@@ -872,14 +873,14 @@
                     <div id="asyncPageLoaderBar" style="width:100%;height:100%;transform:translateX(-100%);background:linear-gradient(90deg,var(--accent),var(--accent-light));transition:transform .35s ease;"></div>
                 </div>
                 <div id="asyncPageContent">
-                    @if (session('status'))
-                        <div class="alert-box alert-success">{{ session('status') }}</div>
-                    @endif
-                    @if ($errors->any())
-                        <div class="alert-box alert-error">{{ $errors->first() }}</div>
-                    @endif
+                    <?php if(session('status')): ?>
+                        <div class="alert-box alert-success"><?php echo e(session('status')); ?></div>
+                    <?php endif; ?>
+                    <?php if($errors->any()): ?>
+                        <div class="alert-box alert-error"><?php echo e($errors->first()); ?></div>
+                    <?php endif; ?>
 
-                    @yield('content')
+                    <?php echo $__env->yieldContent('content'); ?>
                 </div>
             </main>
         </div>
@@ -887,9 +888,9 @@
 
     <div
         id="chatbotRoot"
-        data-user-id="{{ auth()->id() }}"
-        data-endpoint="{{ $adminRoute('chatbot.respond') }}"
-        data-is-borrower="{{ auth()->user()?->hasPermission('view_borrower_history') ? '1' : '0' }}"
+        data-user-id="<?php echo e(auth()->id()); ?>"
+        data-endpoint="<?php echo e($adminRoute('chatbot.respond')); ?>"
+        data-is-borrower="<?php echo e(auth()->user()?->hasPermission('view_borrower_history') ? '1' : '0'); ?>"
     >
         <button id="chatbotFab" class="chatbot-fab" type="button" aria-label="Chatbot" aria-expanded="false">
             <i data-lucide="message-circle" class="w-5 h-5"></i>
@@ -979,14 +980,14 @@
         }
 
         async function refreshGlobalNotifications(isInitialLoad) {
-            @php
+            <?php
                 $canPoll = $user?->hasAnyPermission(['view_borrower_history', 'manage_loans', 'view_reports']) || $user?->role?->name === 'kepsek' || $user?->isSuperAdmin();
-            @endphp
-            const canPoll = @json($canPoll);
+            ?>
+            const canPoll = <?php echo json_encode($canPoll, 15, 512) ?>;
             if (!canPoll || window.__suspendGlobalPolling === true) return;
 
             try {
-                const response = await fetch('{{ $adminRoute('borrower.notifications') }}?_t=' + Date.now(), {
+                const response = await fetch('<?php echo e($adminRoute('borrower.notifications')); ?>?_t=' + Date.now(), {
                     cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1074,7 +1075,7 @@
             loanPageLiveBusy = true;
 
             try {
-                const response = await fetch('{{ $adminRoute('admin.loans.live-snapshot') }}?_t=' + Date.now(), {
+                const response = await fetch('<?php echo e($adminRoute('admin.loans.live-snapshot')); ?>?_t=' + Date.now(), {
                     cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1110,7 +1111,7 @@
             }
 
             try {
-                const response = await fetch('{{ $adminRoute('admin.loans.live-snapshot') }}?_t=' + Date.now(), {
+                const response = await fetch('<?php echo e($adminRoute('admin.loans.live-snapshot')); ?>?_t=' + Date.now(), {
                     cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1140,7 +1141,7 @@
             bookPageLiveBusy = true;
 
             try {
-                const response = await fetch('{{ $adminRoute('admin.books.live-snapshot') }}?_t=' + Date.now(), {
+                const response = await fetch('<?php echo e($adminRoute('admin.books.live-snapshot')); ?>?_t=' + Date.now(), {
                     cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1176,7 +1177,7 @@
             }
 
             try {
-                const response = await fetch('{{ $adminRoute('admin.books.live-snapshot') }}?_t=' + Date.now(), {
+                const response = await fetch('<?php echo e($adminRoute('admin.books.live-snapshot')); ?>?_t=' + Date.now(), {
                     cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1972,19 +1973,19 @@
         });
 
         // Initialize Global Notifications
-        @php
+        <?php
             $notificationPollInterval = $user?->hasPermission('manage_loans')
                 || $user?->hasPermission('view_borrower_history')
                 || $user?->role?->name === 'kepsek'
                 || $user?->isSuperAdmin()
                 ? 5000
                 : 15000;
-        @endphp
+        ?>
         refreshGlobalNotifications(true);
         syncAsyncNavState(window.location.pathname);
         window.setInterval(function () {
             refreshGlobalNotifications(false);
-        }, @json($notificationPollInterval));
+        }, <?php echo json_encode($notificationPollInterval, 15, 512) ?>);
         syncGlobalLoanPageSignature();
         window.setInterval(function () {
             pollGlobalLoanPage();
@@ -1996,3 +1997,4 @@
     </script>
 </body>
 </html>
+<?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/layouts/admin.blade.php ENDPATH**/ ?>

@@ -1,7 +1,5 @@
-@extends('layouts.admin')
-
-@section('content')
-@php($title = 'Profil Saya')
+<?php $__env->startSection('content'); ?>
+<?php ($title = 'Profil Saya'); ?>
 
 <style>
     .profile-shell{display:grid;grid-template-columns:360px 1fr;gap:24px}
@@ -79,30 +77,30 @@
 
                 <div style="margin-top:20px;display:flex;justify-content:center;">
                 <div class="profile-photo is-editable" id="profileActivePhoto" title="Klik untuk atur ukuran foto">
-                    @if ($user->profile_photo_url)
-                        <img src="{{ $user->profile_photo_url }}" alt="{{ $user->name }}" id="profileActivePhotoImage">
-                    @else
-                        <span id="profileActivePhotoFallback">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
-                    @endif
+                    <?php if($user->profile_photo_url): ?>
+                        <img src="<?php echo e($user->profile_photo_url); ?>" alt="<?php echo e($user->name); ?>" id="profileActivePhotoImage">
+                    <?php else: ?>
+                        <span id="profileActivePhotoFallback"><?php echo e(strtoupper(substr($user->name, 0, 1))); ?></span>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="profile-meta">
                 <div class="profile-box">
                     <div class="profile-box-label">Nama</div>
-                    <div class="profile-box-value">{{ $user->name }}</div>
+                    <div class="profile-box-value"><?php echo e($user->name); ?></div>
                 </div>
                 <div class="profile-box">
                     <div class="profile-box-label">Role</div>
-                    <div class="profile-box-value">{{ $user->role?->label ?? 'Tanpa role' }}</div>
+                    <div class="profile-box-value"><?php echo e($user->role?->label ?? 'Tanpa role'); ?></div>
                 </div>
                 <div class="profile-box">
                     <div class="profile-box-label">Username</div>
-                    <div class="profile-box-value">{{ $user->username }}</div>
+                    <div class="profile-box-value"><?php echo e($user->username); ?></div>
                 </div>
                 <div class="profile-box">
                     <div class="profile-box-label">Email</div>
-                    <div class="profile-box-value">{{ $user->email ?: 'Belum diisi' }}</div>
+                    <div class="profile-box-value"><?php echo e($user->email ?: 'Belum diisi'); ?></div>
                 </div>
             </div>
         </aside>
@@ -111,23 +109,23 @@
             <div class="profile-title">Edit Profil</div>
             <div class="profile-sub">Ubah data pribadi atau ganti foto profil.</div>
 
-            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-3 mt-6" data-async="true" data-loading-label="Menyimpan foto..." data-success-call="handleProfileUpdateSuccess">
-                @csrf
-                @method('PUT')
+            <form method="POST" action="<?php echo e(route('profile.update')); ?>" enctype="multipart/form-data" class="space-y-3 mt-6" data-async="true" data-loading-label="Menyimpan foto..." data-success-call="handleProfileUpdateSuccess">
+                <?php echo csrf_field(); ?>
+                <?php echo method_field('PUT'); ?>
 
                 <div class="profile-form-grid">
-                    <input name="name" value="{{ old('name', $user->name) }}" class="form-input px-3 py-3 text-sm" placeholder="Nama lengkap" required>
-                    <input name="username" value="{{ old('username', $user->username) }}" class="form-input px-3 py-3 text-sm" placeholder="Username" required>
+                    <input name="name" value="<?php echo e(old('name', $user->name)); ?>" class="form-input px-3 py-3 text-sm" placeholder="Nama lengkap" required>
+                    <input name="username" value="<?php echo e(old('username', $user->username)); ?>" class="form-input px-3 py-3 text-sm" placeholder="Username" required>
                 </div>
 
                 <div class="profile-form-grid">
-                    <input type="email" name="email" value="{{ old('email', $user->email) }}" class="form-input px-3 py-3 text-sm" placeholder="Email" required>
-                    <input name="phone" value="{{ old('phone', $user->phone) }}" class="form-input px-3 py-3 text-sm" placeholder="No HP">
+                    <input type="email" name="email" value="<?php echo e(old('email', $user->email)); ?>" class="form-input px-3 py-3 text-sm" placeholder="Email" required>
+                    <input name="phone" value="<?php echo e(old('phone', $user->phone)); ?>" class="form-input px-3 py-3 text-sm" placeholder="No HP">
                 </div>
 
                 <div class="profile-form-grid">
-                    <input name="kelas" value="{{ old('kelas', $user->kelas) }}" class="form-input px-3 py-3 text-sm" placeholder="Kelas">
-                    <input name="jurusan" value="{{ old('jurusan', $user->jurusan) }}" class="form-input px-3 py-3 text-sm" placeholder="Jurusan">
+                    <input name="kelas" value="<?php echo e(old('kelas', $user->kelas)); ?>" class="form-input px-3 py-3 text-sm" placeholder="Kelas">
+                    <input name="jurusan" value="<?php echo e(old('jurusan', $user->jurusan)); ?>" class="form-input px-3 py-3 text-sm" placeholder="Jurusan">
                 </div>
 
                 <div class="profile-upload" id="profileUploadRoot">
@@ -282,7 +280,7 @@
             if (!image) {
                 image = document.createElement('img');
                 image.id = 'profileActivePhotoImage';
-                image.alt = '{{ $user->name }}';
+                image.alt = '<?php echo e($user->name); ?>';
                 activePhoto.appendChild(image);
             }
 
@@ -304,7 +302,7 @@
                 if (!image) {
                     image = document.createElement('img');
                     image.className = 'js-global-profile-photo';
-                    image.alt = '{{ $user->name }}';
+                    image.alt = '<?php echo e($user->name); ?>';
                     image.style.width = '100%';
                     image.style.height = '100%';
                     image.style.objectFit = 'cover';
@@ -653,16 +651,18 @@
             }
         });
 
-        @if ($user->profile_photo_url)
+        <?php if($user->profile_photo_url): ?>
             profilePreview.classList.add('show');
-            profilePreviewImage.src = '{{ $user->profile_photo_url }}';
+            profilePreviewImage.src = '<?php echo e($user->profile_photo_url); ?>';
             profilePhotoName.textContent = 'Foto profil saat ini';
             profilePhotoName.classList.remove('is-empty');
-        @endif
+        <?php endif; ?>
 
         if (window.lucide) {
             window.lucide.createIcons();
         }
     });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/profile/show.blade.php ENDPATH**/ ?>

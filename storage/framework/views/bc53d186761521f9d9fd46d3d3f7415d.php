@@ -1,9 +1,7 @@
-@extends('layouts.admin')
-
-@section('content')
-@php($title = 'Table Access')
-@php($eyebrow = 'Role dan Permission')
-@php($visiblePermissions = $permissions->reject(fn ($permission) => $permission->name === 'scan_books')->values())
+<?php $__env->startSection('content'); ?>
+<?php ($title = 'Table Access'); ?>
+<?php ($eyebrow = 'Role dan Permission'); ?>
+<?php ($visiblePermissions = $permissions->reject(fn ($permission) => $permission->name === 'scan_books')->values()); ?>
 
 <style>
     .access-page{display:flex;flex-direction:column;gap:24px}
@@ -95,32 +93,32 @@
             <h1 class="font-display member-title">Table Access</h1>
             <p class="member-subtitle">Checklist hak akses tiap role dalam satu tabel. Semua perubahan disimpan ke database pivot permission.</p>
         </div>
-        <div class="member-badge"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> {{ $roles->count() }} role aktif</div>
+        <div class="member-badge"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> <?php echo e($roles->count()); ?> role aktif</div>
     </div>
 
     <section id="roleStats" class="member-mini-stats">
         <div class="member-mini-stat">
             <div class="member-mini-icon" style="background:var(--dbx-primary-light, #fff7ed);color:var(--dbx-primary, #f97316);"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $roles->count() }}</div><div class="member-mini-label">Total Role</div></div>
+            <div><div class="member-mini-value"><?php echo e($roles->count()); ?></div><div class="member-mini-label">Total Role</div></div>
         </div>
         <div class="member-mini-stat">
             <div class="member-mini-icon" style="background:var(--gold-light);color:var(--gold);"><i data-lucide="key-round" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $visiblePermissions->count() }}</div><div class="member-mini-label">Permission Tersedia</div></div>
+            <div><div class="member-mini-value"><?php echo e($visiblePermissions->count()); ?></div><div class="member-mini-label">Permission Tersedia</div></div>
         </div>
         <div class="member-mini-stat">
             <div class="member-mini-icon" style="background:var(--teal-light);color:var(--teal);"><i data-lucide="users-round" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $roles->sum(fn($role) => $role->users->count()) }}</div><div class="member-mini-label">User Dalam Semua Role</div></div>
+            <div><div class="member-mini-value"><?php echo e($roles->sum(fn($role) => $role->users->count())); ?></div><div class="member-mini-label">User Dalam Semua Role</div></div>
         </div>
         <div class="member-mini-stat">
             <div class="member-mini-icon" style="background:var(--orange-light);color:var(--orange);"><i data-lucide="list-checks" class="w-4 h-4"></i></div>
-            <div><div class="member-mini-value">{{ $roles->sum(fn($role) => $role->permissions->where('name', '!=', 'scan_books')->count()) }}</div><div class="member-mini-label">Permission Terpasang</div></div>
+            <div><div class="member-mini-value"><?php echo e($roles->sum(fn($role) => $role->permissions->where('name', '!=', 'scan_books')->count())); ?></div><div class="member-mini-label">Permission Terpasang</div></div>
         </div>
     </section>
 
     <div id="roleAccessShell" class="access-shell">
-        <form method="POST" action="{{ route('admin.roles.matrix.update') }}" class="access-card" data-async="true" data-refresh-targets="#roleStats,#roleAccessShell">
-            @csrf
-            @method('PUT')
+        <form method="POST" action="<?php echo e(route('admin.roles.matrix.update')); ?>" class="access-card" data-async="true" data-refresh-targets="#roleStats,#roleAccessShell">
+            <?php echo csrf_field(); ?>
+            <?php echo method_field('PUT'); ?>
 
             <div class="access-card-head">
                 <div>
@@ -136,34 +134,34 @@
                         <thead>
                             <tr>
                                 <th>Permission</th>
-                                @foreach ($roles as $role)
+                                <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <th class="access-role-head">
-                                        <div class="access-role-label">{{ $role->label }}</div>
-                                        <div class="access-role-sub">{{ $role->name }}</div>
+                                        <div class="access-role-label"><?php echo e($role->label); ?></div>
+                                        <div class="access-role-sub"><?php echo e($role->name); ?></div>
                                     </th>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($visiblePermissions as $permission)
+                            <?php $__currentLoopData = $visiblePermissions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $permission): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td>
-                                        <div class="access-permission-title">{{ $permission->label }}</div>
-                                        <div class="access-permission-name">{{ $permission->name }}</div>
+                                        <div class="access-permission-title"><?php echo e($permission->label); ?></div>
+                                        <div class="access-permission-name"><?php echo e($permission->name); ?></div>
                                     </td>
-                                    @foreach ($roles as $role)
+                                    <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <td class="access-check">
                                             <input
                                                 type="checkbox"
-                                                name="permissions[{{ $role->id }}][]"
-                                                value="{{ $permission->id }}"
-                                                @checked($role->permissions->contains($permission->id))
-                                                aria-label="{{ $role->label }} - {{ $permission->label }}"
+                                                name="permissions[<?php echo e($role->id); ?>][]"
+                                                value="<?php echo e($permission->id); ?>"
+                                                <?php if($role->permissions->contains($permission->id)): echo 'checked'; endif; ?>
+                                                aria-label="<?php echo e($role->label); ?> - <?php echo e($permission->label); ?>"
                                             >
                                         </td>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
@@ -190,14 +188,14 @@
                             <div class="access-summary-label">Role dengan akses admin</div>
                             <div class="access-summary-sub">Role yang punya minimal satu permission panel admin.</div>
                         </div>
-                        <div class="access-summary-value">{{ $roles->filter(fn($role) => $role->permissions->isNotEmpty())->count() }}</div>
+                        <div class="access-summary-value"><?php echo e($roles->filter(fn($role) => $role->permissions->isNotEmpty())->count()); ?></div>
                     </div>
                     <div class="access-summary-item">
                         <div>
                             <div class="access-summary-label">Role tanpa akses panel</div>
                             <div class="access-summary-sub">Cocok untuk user umum seperti siswa atau guru.</div>
                         </div>
-                        <div class="access-summary-value">{{ $roles->filter(fn($role) => $role->permissions->isEmpty())->count() }}</div>
+                        <div class="access-summary-value"><?php echo e($roles->filter(fn($role) => $role->permissions->isEmpty())->count()); ?></div>
                     </div>
                 </div>
             </div>
@@ -211,31 +209,33 @@
                 </div>
                 <div class="access-card-body">
                     <div class="access-role-list">
-                        @foreach ($roles as $role)
+                        <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <div class="access-role-item">
                                 <div class="access-role-item-head">
                                     <div>
-                                        <div class="access-role-item-title">{{ $role->label }}</div>
-                                        <div class="access-role-item-sub">{{ $role->name }}</div>
+                                        <div class="access-role-item-title"><?php echo e($role->label); ?></div>
+                                        <div class="access-role-item-sub"><?php echo e($role->name); ?></div>
                                     </div>
-                                    <div class="access-role-pill">{{ $role->permissions->where('name', '!=', 'scan_books')->count() }} akses</div>
+                                    <div class="access-role-pill"><?php echo e($role->permissions->where('name', '!=', 'scan_books')->count()); ?> akses</div>
                                 </div>
                                 <div class="access-role-meta">
                                     <div class="access-role-meta-box">
                                         <div class="access-role-meta-label">Jumlah User</div>
-                                        <div class="access-role-meta-value">{{ $role->users->count() }}</div>
+                                        <div class="access-role-meta-value"><?php echo e($role->users->count()); ?></div>
                                     </div>
                                     <div class="access-role-meta-box">
                                         <div class="access-role-meta-label">Permission</div>
-                                        <div class="access-role-meta-value">{{ $role->permissions->where('name', '!=', 'scan_books')->count() }}</div>
+                                        <div class="access-role-meta-value"><?php echo e($role->permissions->where('name', '!=', 'scan_books')->count()); ?></div>
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/roles/index.blade.php ENDPATH**/ ?>

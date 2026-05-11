@@ -1,11 +1,9 @@
-@extends('layouts.admin')
+<?php ($appName = \App\Models\Setting::valueOr('app_name', config('app.name', 'Laravel'))); ?>
+<?php ($appColor = \App\Models\Setting::valueOr('app_color', '#FAFAFA')); ?>
 
-@php($appName = \App\Models\Setting::valueOr('app_name', config('app.name', 'Laravel')))
-@php($appColor = \App\Models\Setting::valueOr('app_color', '#FAFAFA'))
-
-@section('content')
-@php($title = 'Laporan')
-@php($eyebrow = 'Analitik & Rekapitulasi')
+<?php $__env->startSection('content'); ?>
+<?php ($title = 'Laporan'); ?>
+<?php ($eyebrow = 'Analitik & Rekapitulasi'); ?>
 
 <style>
     .report-page{display:flex;flex-direction:column;gap:32px;padding-bottom:80px;width:100%}
@@ -572,18 +570,18 @@
     <div class="report-print-head">
         <div class="report-print-header-content">
             <div class="report-print-logo">
-                @php($appLogo = \App\Models\Setting::appLogoPath())
-                @if ($appLogo)
-                    <img src="{{ asset($appLogo) }}" alt="{{ $appName }}">
-                @else
-                    <div class="report-print-logo-fallback">{{ substr($appName, 0, 1) }}</div>
-                @endif
+                <?php ($appLogo = \App\Models\Setting::appLogoPath()); ?>
+                <?php if($appLogo): ?>
+                    <img src="<?php echo e(asset($appLogo)); ?>" alt="<?php echo e($appName); ?>">
+                <?php else: ?>
+                    <div class="report-print-logo-fallback"><?php echo e(substr($appName, 0, 1)); ?></div>
+                <?php endif; ?>
             </div>
             <div class="report-print-info">
-                <h1>{{ $appName }}</h1>
+                <h1><?php echo e($appName); ?></h1>
                 <p>Laporan Operasional Perpustakaan</p>
-                <p style="font-weight: bold; margin-top: 8px;">Periode: {{ $reportMeta['range_label'] }}</p>
-                <p>Dicetak: {{ $reportMeta['printed_at'] }}</p>
+                <p style="font-weight: bold; margin-top: 8px;">Periode: <?php echo e($reportMeta['range_label']); ?></p>
+                <p>Dicetak: <?php echo e($reportMeta['printed_at']); ?></p>
             </div>
         </div>
     </div>
@@ -597,27 +595,27 @@
         <tbody>
             <tr>
                 <td style="font-weight: bold; background: #f9f9f9; width: 25%;">Total Data Buku</td>
-                <td style="width: 25%;">{{ number_format($reportStats['books']) }} Judul</td>
+                <td style="width: 25%;"><?php echo e(number_format($reportStats['books'])); ?> Judul</td>
                 <td style="font-weight: bold; background: #f9f9f9; width: 25%;">Peminjam Aktif</td>
-                <td style="width: 25%;">{{ number_format($usageStats['unique_borrowers']) }} Anggota</td>
+                <td style="width: 25%;"><?php echo e(number_format($usageStats['unique_borrowers'])); ?> Anggota</td>
             </tr>
             <tr>
                 <td style="font-weight: bold; background: #f9f9f9;">Total Peminjaman</td>
-                <td>{{ number_format($reportStats['loans']) }} Transaksi</td>
+                <td><?php echo e(number_format($reportStats['loans'])); ?> Transaksi</td>
                 <td style="font-weight: bold; background: #f9f9f9;">Buku Sedang Beredar</td>
-                <td>{{ number_format($usageStats['books_in_circulation']) }} Buku</td>
+                <td><?php echo e(number_format($usageStats['books_in_circulation'])); ?> Buku</td>
             </tr>
             <tr>
                 <td style="font-weight: bold; background: #f9f9f9;">Total Pengembalian</td>
-                <td>{{ number_format($reportStats['returns']) }} Transaksi</td>
+                <td><?php echo e(number_format($reportStats['returns'])); ?> Transaksi</td>
                 <td style="font-weight: bold; background: #f9f9f9;">Favorit (Kategori)</td>
-                <td>{{ $usageStats['top_category'] }}</td>
+                <td><?php echo e($usageStats['top_category']); ?></td>
             </tr>
             <tr>
                 <td style="font-weight: bold; background: #f9f9f9;">Peminjaman Aktif</td>
-                <td>{{ $reportStats['active_loans'] }} Masih dipinjam</td>
+                <td><?php echo e($reportStats['active_loans']); ?> Masih dipinjam</td>
                 <td style="font-weight: bold; background: #f9f9f9;">Buku Terpopuler</td>
-                <td>{{ $usageStats['top_book'] }}</td>
+                <td><?php echo e($usageStats['top_book']); ?></td>
             </tr>
         </tbody>
     </table>
@@ -633,10 +631,10 @@
             <button type="button" class="btn-report-action" onclick="window.print()">
                 <i data-lucide="printer" class="w-4 h-4"></i> Cetak
             </button>
-            <a href="{{ route('admin.reports.export', array_merge(request()->query(), ['format' => 'excel']), false) }}" class="btn-report-action">
+            <a href="<?php echo e(route('admin.reports.export', array_merge(request()->query(), ['format' => 'excel']), false)); ?>" class="btn-report-action">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Unduh Excel
             </a>
-            <a href="{{ route('admin.reports.export', array_merge(request()->query(), ['format' => 'pdf']), false) }}" class="btn-report-action">
+            <a href="<?php echo e(route('admin.reports.export', array_merge(request()->query(), ['format' => 'pdf']), false)); ?>" class="btn-report-action">
                 <i data-lucide="file-text" class="w-4 h-4"></i> Unduh PDF
             </a>
         </div>
@@ -645,55 +643,55 @@
     <section class="report-tabs">
         <button
             type="button"
-            class="report-tab {{ $filters['type'] !== 'loans' && $filters['period'] === 'monthly' ? 'active' : '' }}"
-            onclick="navigateAsyncPage('{{ route('admin.reports.index', ['period' => 'monthly', 'type' => 'all'], false) }}')"
+            class="report-tab <?php echo e($filters['type'] !== 'loans' && $filters['period'] === 'monthly' ? 'active' : ''); ?>"
+            onclick="navigateAsyncPage('<?php echo e(route('admin.reports.index', ['period' => 'monthly', 'type' => 'all'], false)); ?>')"
         >
             Laporan Bulanan
         </button>
         <button
             type="button"
-            class="report-tab {{ $filters['type'] !== 'loans' && $filters['period'] === 'yearly' ? 'active' : '' }}"
-            onclick="navigateAsyncPage('{{ route('admin.reports.index', ['period' => 'yearly', 'type' => 'all'], false) }}')"
+            class="report-tab <?php echo e($filters['type'] !== 'loans' && $filters['period'] === 'yearly' ? 'active' : ''); ?>"
+            onclick="navigateAsyncPage('<?php echo e(route('admin.reports.index', ['period' => 'yearly', 'type' => 'all'], false)); ?>')"
         >
             Laporan Tahunan
         </button>
         <button
             type="button"
-            class="report-tab {{ $filters['type'] === 'loans' ? 'active' : '' }}"
-            onclick="navigateAsyncPage('{{ route('admin.reports.index', ['period' => $filters['period'] ?: 'monthly', 'type' => 'loans'], false) }}')"
+            class="report-tab <?php echo e($filters['type'] === 'loans' ? 'active' : ''); ?>"
+            onclick="navigateAsyncPage('<?php echo e(route('admin.reports.index', ['period' => $filters['period'] ?: 'monthly', 'type' => 'loans'], false)); ?>')"
         >
             Statistik Penggunaan
         </button>
     </section>
 
-    <form method="GET" action="{{ route('admin.reports.index', [], false) }}" class="report-filter-card" data-async="true" data-refresh-targets="#asyncPageContent">
+    <form method="GET" action="<?php echo e(route('admin.reports.index', [], false)); ?>" class="report-filter-card" data-async="true" data-refresh-targets="#asyncPageContent">
         <div class="report-filter-grid">
             <div class="flex flex-col gap-2">
                 <label class="report-micro">Jenis Laporan</label>
                 <select name="type" class="form-select px-4 py-3 text-sm rounded-xl" onchange="this.form.requestSubmit()">
-                    <option value="all" @selected($filters['type'] === 'all')>Semua laporan</option>
-                    <option value="books" @selected($filters['type'] === 'books')>Data buku</option>
-                    <option value="loans" @selected($filters['type'] === 'loans')>Data peminjaman</option>
-                    <option value="returns" @selected($filters['type'] === 'returns')>Data pengembalian</option>
+                    <option value="all" <?php if($filters['type'] === 'all'): echo 'selected'; endif; ?>>Semua laporan</option>
+                    <option value="books" <?php if($filters['type'] === 'books'): echo 'selected'; endif; ?>>Data buku</option>
+                    <option value="loans" <?php if($filters['type'] === 'loans'): echo 'selected'; endif; ?>>Data peminjaman</option>
+                    <option value="returns" <?php if($filters['type'] === 'returns'): echo 'selected'; endif; ?>>Data pengembalian</option>
                 </select>
             </div>
             <div class="flex flex-col gap-2">
                 <label class="report-micro">Periode</label>
                 <select name="period" id="reportPeriod" class="form-select px-4 py-3 text-sm rounded-xl" onchange="this.form.requestSubmit()">
-                    <option value="daily" @selected($filters['period'] === 'daily')>Harian</option>
-                    <option value="weekly" @selected($filters['period'] === 'weekly')>Mingguan</option>
-                    <option value="monthly" @selected($filters['period'] === 'monthly')>Bulanan</option>
-                    <option value="yearly" @selected($filters['period'] === 'yearly')>Tahunan</option>
-                    <option value="custom" @selected($filters['period'] === 'custom')>Custom</option>
+                    <option value="daily" <?php if($filters['period'] === 'daily'): echo 'selected'; endif; ?>>Harian</option>
+                    <option value="weekly" <?php if($filters['period'] === 'weekly'): echo 'selected'; endif; ?>>Mingguan</option>
+                    <option value="monthly" <?php if($filters['period'] === 'monthly'): echo 'selected'; endif; ?>>Bulanan</option>
+                    <option value="yearly" <?php if($filters['period'] === 'yearly'): echo 'selected'; endif; ?>>Tahunan</option>
+                    <option value="custom" <?php if($filters['period'] === 'custom'): echo 'selected'; endif; ?>>Custom</option>
                 </select>
             </div>
             <div class="js-custom-date flex flex-col gap-2">
                 <label class="report-micro">Dari Tanggal</label>
-                <input type="date" name="start_date" value="{{ $filters['start_date'] }}" class="form-input px-4 py-3 text-sm rounded-xl" onchange="this.form.requestSubmit()">
+                <input type="date" name="start_date" value="<?php echo e($filters['start_date']); ?>" class="form-input px-4 py-3 text-sm rounded-xl" onchange="this.form.requestSubmit()">
             </div>
             <div class="js-custom-date flex flex-col gap-2">
                 <label class="report-micro">Sampai Tanggal</label>
-                <input type="date" name="end_date" value="{{ $filters['end_date'] }}" class="form-input px-4 py-3 text-sm rounded-xl" onchange="this.form.requestSubmit()">
+                <input type="date" name="end_date" value="<?php echo e($filters['end_date']); ?>" class="form-input px-4 py-3 text-sm rounded-xl" onchange="this.form.requestSubmit()">
             </div>
             <button type="submit" class="btn-apply">Tampilkan</button>
         </div>
@@ -703,30 +701,30 @@
         <div class="report-stat-card">
             <div class="report-stat-header">
                 <div class="report-stat-icon-box books"><i data-lucide="book"></i></div>
-                <div class="report-stat-footer"><i data-lucide="calendar"></i> {{ $reportMeta['range_label'] }}</div>
+                <div class="report-stat-footer"><i data-lucide="calendar"></i> <?php echo e($reportMeta['range_label']); ?></div>
             </div>
             <div class="report-stat-content">
-                <div class="report-stat-value">{{ number_format($reportStats['books']) }}</div>
+                <div class="report-stat-value"><?php echo e(number_format($reportStats['books'])); ?></div>
                 <div class="report-stat-label">Total Data Buku</div>
             </div>
         </div>
         <div class="report-stat-card">
             <div class="report-stat-header">
                 <div class="report-stat-icon-box loans"><i data-lucide="book-up-2"></i></div>
-                <div class="report-stat-footer"><i data-lucide="info"></i> {{ $reportStats['active_loans'] }} masih aktif</div>
+                <div class="report-stat-footer"><i data-lucide="info"></i> <?php echo e($reportStats['active_loans']); ?> masih aktif</div>
             </div>
             <div class="report-stat-content">
-                <div class="report-stat-value">{{ number_format($reportStats['loans']) }}</div>
+                <div class="report-stat-value"><?php echo e(number_format($reportStats['loans'])); ?></div>
                 <div class="report-stat-label">Total Peminjaman</div>
             </div>
         </div>
         <div class="report-stat-card">
             <div class="report-stat-header">
                 <div class="report-stat-icon-box returns"><i data-lucide="book-down"></i></div>
-                <div class="report-stat-footer"><i data-lucide="alert-circle"></i> {{ $reportStats['returned_late'] }} terlambat</div>
+                <div class="report-stat-footer"><i data-lucide="alert-circle"></i> <?php echo e($reportStats['returned_late']); ?> terlambat</div>
             </div>
             <div class="report-stat-content">
-                <div class="report-stat-value">{{ number_format($reportStats['returns']) }}</div>
+                <div class="report-stat-value"><?php echo e(number_format($reportStats['returns'])); ?></div>
                 <div class="report-stat-label">Total Pengembalian</div>
             </div>
         </div>
@@ -735,32 +733,32 @@
     <section class="report-usage-row">
         <div class="report-usage-widget">
             <div class="report-usage-tag">Peminjam Aktif</div>
-            <div class="report-usage-number">{{ number_format($usageStats['unique_borrowers']) }}</div>
+            <div class="report-usage-number"><?php echo e(number_format($usageStats['unique_borrowers'])); ?></div>
             <div class="report-usage-desc">Anggota unik</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag">Buku Dipakai</div>
-            <div class="report-usage-number">{{ number_format($usageStats['books_in_circulation']) }}</div>
+            <div class="report-usage-number"><?php echo e(number_format($usageStats['books_in_circulation'])); ?></div>
             <div class="report-usage-desc">Sedang beredar</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag">Selesai</div>
-            <div class="report-usage-number">{{ number_format($usageStats['completed_returns']) }}</div>
+            <div class="report-usage-number"><?php echo e(number_format($usageStats['completed_returns'])); ?></div>
             <div class="report-usage-desc">Pengembalian</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag">Terpopuler</div>
-            <div class="report-usage-number" style="font-size: 16px; line-height: 1.4">{{ $usageStats['top_book'] }}</div>
+            <div class="report-usage-number" style="font-size: 16px; line-height: 1.4"><?php echo e($usageStats['top_book']); ?></div>
             <div class="report-usage-desc">Judul buku</div>
         </div>
         <div class="report-usage-widget">
             <div class="report-usage-tag">Favorit</div>
-            <div class="report-usage-number" style="font-size: 16px; line-height: 1.4">{{ $usageStats['top_category'] }}</div>
+            <div class="report-usage-number" style="font-size: 16px; line-height: 1.4"><?php echo e($usageStats['top_category']); ?></div>
             <div class="report-usage-desc">Kategori</div>
         </div>
     </section>
 
-    @if (in_array($filters['type'], ['all', 'books'], true))
+    <?php if(in_array($filters['type'], ['all', 'books'], true)): ?>
         <section class="report-section-card">
             <div class="report-section-header">
                 <div class="report-section-info">
@@ -771,9 +769,9 @@
                         <div class="report-print-section-note">Laporan data buku perpustakaan.</div>
                     </div>
                 </div>
-                <div class="report-section-count">{{ $bookReport->count() }} Judul</div>
+                <div class="report-section-count"><?php echo e($bookReport->count()); ?> Judul</div>
             </div>
-            @if ($bookReport->count())
+            <?php if($bookReport->count()): ?>
                 <div class="report-table-wrap">
                     <table class="report-table">
                         <thead>
@@ -786,67 +784,70 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($bookReport as $book)
+                            <?php $__currentLoopData = $bookReport; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $book): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td>
                                         <div class="report-book-info-cell">
                                             <div class="report-book-cover">
-                                                @if($book->cover_image)
+                                                <?php if($book->cover_image): ?>
                                                     <img
-                                                        src="{{ asset('storage/' . $book->cover_image) }}"
-                                                        alt="{{ $book->title }}"
+                                                        src="<?php echo e(asset('storage/' . $book->cover_image)); ?>"
+                                                        alt="<?php echo e($book->title); ?>"
                                                         loading="lazy"
                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                                                     >
                                                     <span class="report-book-cover-fallback" style="display:none;">
-                                                        {{ strtoupper(substr($book->title, 0, 2)) }}
+                                                        <?php echo e(strtoupper(substr($book->title, 0, 2))); ?>
+
                                                     </span>
-                                                @else
+                                                <?php else: ?>
                                                     <span class="report-book-cover-fallback">
-                                                        {{ strtoupper(substr($book->title, 0, 2)) }}
+                                                        <?php echo e(strtoupper(substr($book->title, 0, 2))); ?>
+
                                                     </span>
-                                                @endif
+                                                <?php endif; ?>
                                             </div>
                                             <div class="flex flex-col">
-                                                <span class="report-book-title">{{ $book->title }}</span>
-                                                <span class="report-book-author">{{ $book->author }}</span>
+                                                <span class="report-book-title"><?php echo e($book->title); ?></span>
+                                                <span class="report-book-author"><?php echo e($book->author); ?></span>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <span class="report-category-badge">
-                                            {{ $book->category?->name ?? 'Umum' }}
+                                            <?php echo e($book->category?->name ?? 'Umum'); ?>
+
                                         </span>
                                     </td>
-                                    <td class="report-isbn">{{ $book->isbn ?: '-' }}</td>
+                                    <td class="report-isbn"><?php echo e($book->isbn ?: '-'); ?></td>
                                     <td>
                                         <div class="flex items-center gap-2">
-                                            <span class="report-stock-available {{ $book->stock_available > 0 ? '' : 'low' }}">{{ $book->stock_available }}</span>
+                                            <span class="report-stock-available <?php echo e($book->stock_available > 0 ? '' : 'low'); ?>"><?php echo e($book->stock_available); ?></span>
                                             <span class="report-stock-divider">/</span>
-                                            <span class="report-stock-total">{{ $book->stock_total }}</span>
+                                            <span class="report-stock-total"><?php echo e($book->stock_total); ?></span>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="report-pop-row">
                                             <i data-lucide="star" class="w-3.5 h-3.5 fill-current"></i>
-                                            <span class="report-pop-count">{{ $book->loans_count }}x</span>
+                                            <span class="report-pop-count"><?php echo e($book->loans_count); ?>x</span>
                                         </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
-            @else
+            <?php else: ?>
                 <div class="report-empty-state">
                     <div class="report-empty-icon"><i data-lucide="book-x" class="w-10 h-10"></i></div>
                     <p class="report-empty-text">Tidak ada data buku pada periode ini.</p>
                 </div>
-            @endif
+            <?php endif; ?>
         </section>
-    @endif
+    <?php endif; ?>
 
-    @if (in_array($filters['type'], ['all', 'loans'], true))
+    <?php if(in_array($filters['type'], ['all', 'loans'], true)): ?>
         <section class="report-section-card">
             <div class="report-section-header">
                 <div class="report-section-info">
@@ -857,9 +858,9 @@
                         <div class="report-print-section-note">Laporan transaksi peminjaman buku.</div>
                     </div>
                 </div>
-                <div class="report-section-count">{{ $loanReport->count() }} Transaksi</div>
+                <div class="report-section-count"><?php echo e($loanReport->count()); ?> Transaksi</div>
             </div>
-            @if ($loanReport->count())
+            <?php if($loanReport->count()): ?>
                 <div class="report-table-wrap">
                     <table class="report-table">
                         <thead>
@@ -872,79 +873,84 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($loanReport as $loan)
+                            <?php $__currentLoopData = $loanReport; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $loan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td>
                                         <div class="report-book-info-cell">
                                             <div class="report-book-cover">
-                                                @if($loan->book?->cover_image)
+                                                <?php if($loan->book?->cover_image): ?>
                                                     <img
-                                                        src="{{ asset('storage/' . $loan->book->cover_image) }}"
-                                                        alt="{{ $loan->book->title }}"
+                                                        src="<?php echo e(asset('storage/' . $loan->book->cover_image)); ?>"
+                                                        alt="<?php echo e($loan->book->title); ?>"
                                                         loading="lazy"
                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                                                     >
                                                     <span class="report-book-cover-fallback" style="display:none;">
-                                                        {{ strtoupper(substr($loan->book?->title ?? 'BK', 0, 2)) }}
+                                                        <?php echo e(strtoupper(substr($loan->book?->title ?? 'BK', 0, 2))); ?>
+
                                                     </span>
-                                                @else
+                                                <?php else: ?>
                                                     <span class="report-book-cover-fallback">
-                                                        {{ strtoupper(substr($loan->book?->title ?? 'BK', 0, 2)) }}
+                                                        <?php echo e(strtoupper(substr($loan->book?->title ?? 'BK', 0, 2))); ?>
+
                                                     </span>
-                                                @endif
+                                                <?php endif; ?>
                                             </div>
                                             <div class="flex flex-col gap-2">
                                                 <div class="flex flex-col">
-                                                    <span class="report-book-title line-clamp-1">{{ $loan->book?->title ?? 'Buku tidak ditemukan' }}</span>
-                                                    <span class="report-book-author">{{ $loan->book?->author ?? '-' }}</span>
+                                                    <span class="report-book-title line-clamp-1"><?php echo e($loan->book?->title ?? 'Buku tidak ditemukan'); ?></span>
+                                                    <span class="report-book-author"><?php echo e($loan->book?->author ?? '-'); ?></span>
                                                 </div>
                                                 <div class="report-member-row">
                                                     <div class="report-member-avatar">
-                                                        {{ strtoupper(substr($loan->member?->name ?? 'P', 0, 1)) }}
+                                                        <?php echo e(strtoupper(substr($loan->member?->name ?? 'P', 0, 1))); ?>
+
                                                     </div>
-                                                    <span class="report-member-name">{{ $loan->member?->name ?? 'Peminjam' }}</span>
+                                                    <span class="report-member-name"><?php echo e($loan->member?->name ?? 'Peminjam'); ?></span>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="flex flex-col">
-                                            <span class="report-date-main">{{ optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-' }}</span>
+                                            <span class="report-date-main"><?php echo e(optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-'); ?></span>
                                             <span class="report-date-label">Tanggal Pinjam</span>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="flex flex-col">
-                                            <span class="report-date-due">{{ optional($loan->due_at)->translatedFormat('d M Y') ?? '-' }}</span>
+                                            <span class="report-date-due"><?php echo e(optional($loan->due_at)->translatedFormat('d M Y') ?? '-'); ?></span>
                                             <span class="report-date-label">Harus Kembali</span>
                                         </div>
                                     </td>
                                     <td>
                                         <span class="report-staff-badge">
-                                            {{ $loan->processor?->name ?? '-' }}
+                                            <?php echo e($loan->processor?->name ?? '-'); ?>
+
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="report-pill-badge {{ $loan->status }}">
-                                            <i data-lucide="{{ $loan->status === 'returned' ? 'check-circle' : ($loan->status === 'late' ? 'alert-triangle' : 'clock') }}" class="w-3.5 h-3.5"></i>
-                                            {{ $loan->status === 'late' ? 'Terlambat' : ($loan->status === 'returned' ? 'Selesai' : 'Dipinjam') }}
+                                        <span class="report-pill-badge <?php echo e($loan->status); ?>">
+                                            <i data-lucide="<?php echo e($loan->status === 'returned' ? 'check-circle' : ($loan->status === 'late' ? 'alert-triangle' : 'clock')); ?>" class="w-3.5 h-3.5"></i>
+                                            <?php echo e($loan->status === 'late' ? 'Terlambat' : ($loan->status === 'returned' ? 'Selesai' : 'Dipinjam')); ?>
+
                                         </span>
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
-            @else
+            <?php else: ?>
                 <div class="report-empty-state">
                     <div class="report-empty-icon"><i data-lucide="file-warning" class="w-10 h-10"></i></div>
                     <p class="report-empty-text">Tidak ada data peminjaman pada periode ini.</p>
                 </div>
-            @endif
+            <?php endif; ?>
         </section>
-    @endif
+    <?php endif; ?>
 
-    @if (in_array($filters['type'], ['all', 'returns'], true))
+    <?php if(in_array($filters['type'], ['all', 'returns'], true)): ?>
         <section class="report-section-card">
             <div class="report-section-header">
                 <div class="report-section-info">
@@ -955,9 +961,9 @@
                         <div class="report-print-section-note">Laporan transaksi pengembalian buku.</div>
                     </div>
                 </div>
-                <div class="report-section-count">{{ $returnReport->count() }} Pengembalian</div>
+                <div class="report-section-count"><?php echo e($returnReport->count()); ?> Pengembalian</div>
             </div>
-            @if ($returnReport->count())
+            <?php if($returnReport->count()): ?>
                 <div class="report-table-wrap">
                     <table class="report-table">
                         <thead>
@@ -969,34 +975,36 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($returnReport as $loan)
+                            <?php $__currentLoopData = $returnReport; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $loan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td>
                                         <div class="report-book-info-cell">
                                             <div class="report-book-cover">
-                                                @if($loan->book?->cover_image)
+                                                <?php if($loan->book?->cover_image): ?>
                                                     <img
-                                                        src="{{ asset('storage/' . $loan->book->cover_image) }}"
-                                                        alt="{{ $loan->book->title }}"
+                                                        src="<?php echo e(asset('storage/' . $loan->book->cover_image)); ?>"
+                                                        alt="<?php echo e($loan->book->title); ?>"
                                                         loading="lazy"
                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                                                     >
                                                     <span class="report-book-cover-fallback" style="display:none;">
-                                                        {{ strtoupper(substr($loan->book?->title ?? 'BK', 0, 2)) }}
+                                                        <?php echo e(strtoupper(substr($loan->book?->title ?? 'BK', 0, 2))); ?>
+
                                                     </span>
-                                                @else
+                                                <?php else: ?>
                                                     <span class="report-book-cover-fallback">
-                                                        {{ strtoupper(substr($loan->book?->title ?? 'BK', 0, 2)) }}
+                                                        <?php echo e(strtoupper(substr($loan->book?->title ?? 'BK', 0, 2))); ?>
+
                                                     </span>
-                                                @endif
+                                                <?php endif; ?>
                                             </div>
                                             <div class="flex flex-col gap-2">
                                                 <div class="flex flex-col">
-                                                    <span class="report-book-title line-clamp-1">{{ $loan->book?->title ?? 'Buku tidak ditemukan' }}</span>
-                                                    <span class="report-book-author">{{ $loan->book?->author ?? '-' }}</span>
+                                                    <span class="report-book-title line-clamp-1"><?php echo e($loan->book?->title ?? 'Buku tidak ditemukan'); ?></span>
+                                                    <span class="report-book-author"><?php echo e($loan->book?->author ?? '-'); ?></span>
                                                 </div>
                                                 <div class="report-member-row">
-                                                    <span class="report-member-name">{{ $loan->member?->name ?? 'Peminjam' }}</span>
+                                                    <span class="report-member-name"><?php echo e($loan->member?->name ?? 'Peminjam'); ?></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1004,34 +1012,35 @@
                                     <td>
                                         <div class="report-return-row">
                                             <i data-lucide="calendar-check" class="w-4 h-4"></i>
-                                            <span class="report-return-value">{{ optional($loan->returned_at)->translatedFormat('d M Y') ?? '-' }}</span>
+                                            <span class="report-return-value"><?php echo e(optional($loan->returned_at)->translatedFormat('d M Y') ?? '-'); ?></span>
                                         </div>
                                     </td>
                                     <td>
                                         <span class="report-staff-badge">
-                                            {{ $loan->processor?->name ?? '-' }}
+                                            <?php echo e($loan->processor?->name ?? '-'); ?>
+
                                         </span>
                                     </td>
                                     <td>
-                                        @if($loan->status === 'late')
+                                        <?php if($loan->status === 'late'): ?>
                                             <span class="report-note-late">Dikembalikan Terlambat</span>
-                                        @else
+                                        <?php else: ?>
                                             <span class="report-note-ok">Tepat Waktu</span>
-                                        @endif
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
-            @else
+            <?php else: ?>
                 <div class="report-empty-state">
                     <div class="report-empty-icon"><i data-lucide="clipboard-x" class="w-10 h-10"></i></div>
                     <p class="report-empty-text">Tidak ada data pengembalian pada periode ini.</p>
                 </div>
-            @endif
+            <?php endif; ?>
         </section>
-    @endif
+    <?php endif; ?>
 </div>
 
 <script>
@@ -1056,4 +1065,6 @@
         }
     });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/reports/index.blade.php ENDPATH**/ ?>

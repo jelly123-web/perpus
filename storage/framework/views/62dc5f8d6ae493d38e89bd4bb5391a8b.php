@@ -1,8 +1,6 @@
-@extends('layouts.admin')
-
-@section('content')
-@php($title = 'Dashboard')
-@php($eyebrow = 'Ringkasan Sistem')
+<?php $__env->startSection('content'); ?>
+<?php ($title = 'Dashboard'); ?>
+<?php ($eyebrow = 'Ringkasan Sistem'); ?>
 
 <style>
     #asyncDashboardWrap[data-dashboard-role="borrower"]{background-color:var(--dbx-bg, #f8fafc);position:relative;min-height:100vh;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;color:var(--dbx-text, #1e293b)}
@@ -80,39 +78,39 @@
 <div
     id="asyncDashboardWrap"
     class="dbx"
-    data-dashboard-role="{{ $isPrincipalDashboard ? 'principal' : ($isBorrowerDashboard ? 'borrower' : 'other') }}"
-    data-principal-signatures="{{ $isPrincipalDashboard ? $principalProcurements->map(fn ($procurement) => 'principal-procurement-'.$procurement->id.'-'.$procurement->status)->implode('|') : '' }}"
-    data-borrower-signatures="{{ $isBorrowerDashboard ? $borrowerNotifications->pluck('signature')->filter()->implode('|') : '' }}"
-    data-borrower-state-signature="{{ $isBorrowerDashboard ? ($borrowerSnapshot['signature'] ?? '') : '' }}"
+    data-dashboard-role="<?php echo e($isPrincipalDashboard ? 'principal' : ($isBorrowerDashboard ? 'borrower' : 'other')); ?>"
+    data-principal-signatures="<?php echo e($isPrincipalDashboard ? $principalProcurements->map(fn ($procurement) => 'principal-procurement-'.$procurement->id.'-'.$procurement->status)->implode('|') : ''); ?>"
+    data-borrower-signatures="<?php echo e($isBorrowerDashboard ? $borrowerNotifications->pluck('signature')->filter()->implode('|') : ''); ?>"
+    data-borrower-state-signature="<?php echo e($isBorrowerDashboard ? ($borrowerSnapshot['signature'] ?? '') : ''); ?>"
 >
     <div class="dbx-pattern"></div>
     <div class="dbx-body">
         <section class="dbx-welcome">
             <div>
                 <div class="dbx-welcome-badge"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Dashboard</div>
-                <div class="dbx-welcome-title">Hello, {{ auth()->user()?->name ?? 'Pengguna' }}</div>
+                <div class="dbx-welcome-title">Hello, <?php echo e(auth()->user()?->name ?? 'Pengguna'); ?></div>
                 <div class="dbx-welcome-sub">
-                    @if ($isBorrowerDashboard)
-                        {{ $dashboardMeta['today_label'] }}. Berikut daftar buku yang saat ini tersedia untuk dipinjam.
-                    @else
-                        {{ $dashboardMeta['today_label'] }}. Semoga aktivitas perpustakaan hari ini lancar.
-                    @endif
+                    <?php if($isBorrowerDashboard): ?>
+                        <?php echo e($dashboardMeta['today_label']); ?>. Berikut daftar buku yang saat ini tersedia untuk dipinjam.
+                    <?php else: ?>
+                        <?php echo e($dashboardMeta['today_label']); ?>. Semoga aktivitas perpustakaan hari ini lancar.
+                    <?php endif; ?>
                 </div>
             </div>
         </section>
 
-        @if ($isBorrowerDashboard)
+        <?php if($isBorrowerDashboard): ?>
             <section class="dbx-borrower-stats">
                 <article class="dbx-borrower-stat">
-                    <div class="dbx-borrower-stat-value" id="stat-requested">{{ $borrowerLoanStats['requested'] }}</div>
+                    <div class="dbx-borrower-stat-value" id="stat-requested"><?php echo e($borrowerLoanStats['requested']); ?></div>
                     <div class="dbx-borrower-stat-label">Pengajuan menunggu petugas</div>
                 </article>
                 <article class="dbx-borrower-stat">
-                    <div class="dbx-borrower-stat-value" id="stat-borrowed">{{ $borrowerLoanStats['borrowed'] }}</div>
+                    <div class="dbx-borrower-stat-value" id="stat-borrowed"><?php echo e($borrowerLoanStats['borrowed']); ?></div>
                     <div class="dbx-borrower-stat-label">Buku sedang dipinjam</div>
                 </article>
                 <article class="dbx-borrower-stat">
-                    <div class="dbx-borrower-stat-value" id="stat-returned">{{ $borrowerLoanStats['returned'] }}</div>
+                    <div class="dbx-borrower-stat-value" id="stat-returned"><?php echo e($borrowerLoanStats['returned']); ?></div>
                     <div class="dbx-borrower-stat-label">Riwayat selesai</div>
                 </article>
             </section>
@@ -120,44 +118,46 @@
             <section class="dbx-borrower-profile">
                 <article class="dbx-borrower-panel">
                     <div class="dbx-borrower-panel-title">Identitas Peminjam</div>
-                    <div class="dbx-borrower-panel-value">{{ auth()->user()?->name ?? 'Peminjam' }}</div>
+                    <div class="dbx-borrower-panel-value"><?php echo e(auth()->user()?->name ?? 'Peminjam'); ?></div>
                     <div class="dbx-borrower-panel-sub">
-                        {{ auth()->user()?->role?->label ?? 'Anggota' }}
-                        @if (auth()->user()?->academicLabel())
-                            | {{ auth()->user()->academicLabel() }}
-                        @endif
+                        <?php echo e(auth()->user()?->role?->label ?? 'Anggota'); ?>
+
+                        <?php if(auth()->user()?->academicLabel()): ?>
+                            | <?php echo e(auth()->user()->academicLabel()); ?>
+
+                        <?php endif; ?>
                     </div>
                     <div class="dbx-borrower-panel-sub" id="borrowerAccountStatus">
                         Status akun:
-                        <strong>{{ $borrowerActiveSanction ? 'Sedang kena sanksi' : 'Aktif' }}</strong>
+                        <strong><?php echo e($borrowerActiveSanction ? 'Sedang kena sanksi' : 'Aktif'); ?></strong>
                     </div>
                 </article>
             </section>
 
-            @if ($borrowerActiveSanction)
+            <?php if($borrowerActiveSanction): ?>
                 <div class="dbx-borrower-alert" id="borrowerSanctionAlert">
                     Akun Anda sedang disanksi dan belum bisa mengajukan pinjam.
-                    @if ($borrowerActiveSanction->ends_at)
-                        Masa sanksi sampai {{ $borrowerActiveSanction->ends_at->translatedFormat('d M Y') }}.
-                    @endif
+                    <?php if($borrowerActiveSanction->ends_at): ?>
+                        Masa sanksi sampai <?php echo e($borrowerActiveSanction->ends_at->translatedFormat('d M Y')); ?>.
+                    <?php endif; ?>
                     Anda harus menunggu sampai masa sanksi selesai sebelum bisa pinjam lagi.
                 </div>
-            @else
+            <?php else: ?>
                 <div class="dbx-borrower-alert" id="borrowerSanctionAlert" style="display:none;"></div>
-            @endif
+            <?php endif; ?>
 
-            @if ($borrowerNotifications->isNotEmpty())
+            <?php if($borrowerNotifications->isNotEmpty()): ?>
                 <section class="dbx-notif-list" id="borrowerNotificationList">
-                    @foreach ($borrowerNotifications as $notification)
-                        <article class="dbx-notif-item {{ $notification['tone'] }}" data-signature="{{ $notification['signature'] }}">
-                            <div class="dbx-notif-title">{{ $notification['title'] }}</div>
-                            <div class="dbx-notif-body">{{ $notification['body'] }}</div>
+                    <?php $__currentLoopData = $borrowerNotifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <article class="dbx-notif-item <?php echo e($notification['tone']); ?>" data-signature="<?php echo e($notification['signature']); ?>">
+                            <div class="dbx-notif-title"><?php echo e($notification['title']); ?></div>
+                            <div class="dbx-notif-body"><?php echo e($notification['body']); ?></div>
                         </article>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </section>
-            @else
+            <?php else: ?>
                 <section class="dbx-notif-list" id="borrowerNotificationList" style="display:none;"></section>
-            @endif
+            <?php endif; ?>
 
             <section class="dbx-card">
                 <div class="dbx-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
@@ -168,31 +168,38 @@
                     </div>
                 </div>
                 <div class="dbx-card-body">
-                    @error('loan_request')
-                        <div class="dbx-borrower-alert" style="margin-bottom:18px;">{{ $message }}</div>
-                    @enderror
+                    <?php $__errorArgs = ['loan_request'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <div class="dbx-borrower-alert" style="margin-bottom:18px;"><?php echo e($message); ?></div>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
 
-                    <form method="GET" action="{{ route('dashboard') }}" class="dbx-book-filters" id="borrowerBookFilterForm" data-async="true" data-refresh-targets="#asyncDashboardWrap" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;">
+                    <form method="GET" action="<?php echo e(route('dashboard')); ?>" class="dbx-book-filters" id="borrowerBookFilterForm" data-async="true" data-refresh-targets="#asyncDashboardWrap" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;">
                         <input
                             type="text"
                             name="q"
                             id="borrowerBookKeyword"
                             class="dbx-book-filter-field"
                             style="flex:1 1 260px;min-width:220px;"
-                            value="{{ $bookFilters['keyword'] }}"
+                            value="<?php echo e($bookFilters['keyword']); ?>"
                             placeholder="Cari judul atau penulis"
                             autocomplete="off"
                         >
                         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                             <select name="category" id="borrowerBookCategoryFilter" class="dbx-book-filter-field" style="flex:0 1 180px;min-width:160px;">
                                 <option value="">Semua kategori</option>
-                                @foreach ($borrowerCategories as $category)
-                                    <option value="{{ $category->slug }}" @selected($bookFilters['category'] === $category->slug)>{{ $category->name }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = $borrowerCategories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($category->slug); ?>" <?php if($bookFilters['category'] === $category->slug): echo 'selected'; endif; ?>><?php echo e($category->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                             <select name="availability" id="borrowerBookAvailabilityFilter" class="dbx-book-filter-field" style="flex:0 0 140px;min-width:140px;">
-                                <option value="available" @selected($bookFilters['availability'] === 'available')>Tersedia</option>
-                                <option value="all" @selected($bookFilters['availability'] === 'all')>Semua buku</option>
+                                <option value="available" <?php if($bookFilters['availability'] === 'available'): echo 'selected'; endif; ?>>Tersedia</option>
+                                <option value="all" <?php if($bookFilters['availability'] === 'all'): echo 'selected'; endif; ?>>Semua buku</option>
                             </select>
                             <div style="position:relative;display:inline-flex;align-items:center;">
                                 <button type="button" id="borrowerImageSearchSourceBtn" class="dbx-book-filter-btn" style="width:48px;height:48px;padding:0;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;" aria-label="Pilih foto buku">
@@ -247,46 +254,45 @@
                     <div class="dbx-book-showcase">
                         <div class="dbx-book-grid-wrap">
                             <div class="dbx-book-grid" id="borrowerBookGrid">
-                                @forelse ($borrowerBooks as $book)
+                                <?php $__empty_1 = true; $__currentLoopData = $borrowerBooks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $book): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                     <article
                                         class="dbx-book-card js-borrow-book"
                                         role="button"
                                         tabindex="0"
-                                        data-id="{{ $book->id }}"
-                                        data-title="{{ $book->title }}"
-                                        data-author="{{ $book->author ?? 'Penulis tidak tersedia' }}"
-                                        data-category="{{ $book->category?->name ?? 'Tanpa kategori' }}"
-                                        data-stock="{{ $book->stock_available }}"
-                                        data-cover-url="{{ $book->cover_image ? asset('storage/'.$book->cover_image) : '' }}"
-                                        data-borrowed-at="{{ now()->toDateString() }}"
-                                        data-due-at="{{ now()->addDay()->toDateString() }}"
-                                        data-borrow-state="{{ $book->borrow_state ?? ($borrowerActiveSanction ? 'sanctioned' : ($book->stock_available > 0 ? 'available' : 'unavailable')) }}"
-                                        data-can-borrow="{{ ($book->can_borrow ?? ($book->stock_available > 0 && ! $borrowerActiveSanction)) ? '1' : '0' }}"
+                                        data-id="<?php echo e($book->id); ?>"
+                                        data-title="<?php echo e($book->title); ?>"
+                                        data-author="<?php echo e($book->author ?? 'Penulis tidak tersedia'); ?>"
+                                        data-category="<?php echo e($book->category?->name ?? 'Tanpa kategori'); ?>"
+                                        data-stock="<?php echo e($book->stock_available); ?>"
+                                        data-cover-url="<?php echo e($book->cover_image ? asset('storage/'.$book->cover_image) : ''); ?>"
+                                        data-borrowed-at="<?php echo e(now()->toDateString()); ?>"
+                                        data-due-at="<?php echo e(now()->addDay()->toDateString()); ?>"
+                                        data-borrow-state="<?php echo e($book->borrow_state ?? ($borrowerActiveSanction ? 'sanctioned' : ($book->stock_available > 0 ? 'available' : 'unavailable'))); ?>"
+                                        data-can-borrow="<?php echo e(($book->can_borrow ?? ($book->stock_available > 0 && ! $borrowerActiveSanction)) ? '1' : '0'); ?>"
                                     >
                                         <div class="dbx-book-thumb">
-                                            @if ($book->cover_image)
-                                                <img src="{{ asset('storage/'.$book->cover_image) }}" alt="{{ $book->title }}">
-                                            @else
-                                                <div class="dbx-book-fallback">{{ strtoupper(substr($book->title, 0, 1)) }}</div>
-                                            @endif
+                                            <?php if($book->cover_image): ?>
+                                                <img src="<?php echo e(asset('storage/'.$book->cover_image)); ?>" alt="<?php echo e($book->title); ?>">
+                                            <?php else: ?>
+                                                <div class="dbx-book-fallback"><?php echo e(strtoupper(substr($book->title, 0, 1))); ?></div>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="dbx-book-body">
-                                            <div class="dbx-book-chip {{ ($book->borrow_state ?? '') !== 'available' ? 'unavailable' : '' }}">
-                                                {{
-                                                    ($book->borrow_state ?? null) === 'requested'
+                                            <div class="dbx-book-chip <?php echo e(($book->borrow_state ?? '') !== 'available' ? 'unavailable' : ''); ?>">
+                                                <?php echo e(($book->borrow_state ?? null) === 'requested'
                                                         ? 'Menunggu petugas'
                                                         : (($book->borrow_state ?? null) === 'borrowed'
                                                             ? 'Sedang dipinjam'
                                                         : (($book->borrow_state ?? null) === 'sanctioned'
                                                             ? 'Akun disanksi'
-                                                            : (($book->borrow_state ?? null) === 'available' ? 'Tersedia' : 'Habis')))
-                                                }}
+                                                            : (($book->borrow_state ?? null) === 'available' ? 'Tersedia' : 'Habis')))); ?>
+
                                             </div>
-                                            <div class="dbx-book-name">{{ $book->title }}</div>
-                                            <div class="dbx-book-author">{{ $book->author ?? 'Penulis tidak tersedia' }}</div>
+                                            <div class="dbx-book-name"><?php echo e($book->title); ?></div>
+                                            <div class="dbx-book-author"><?php echo e($book->author ?? 'Penulis tidak tersedia'); ?></div>
                                             <div class="dbx-book-meta">
-                                                <span class="dbx-book-stock">{{ $book->stock_available }} stok</span>
-                                                <span>{{ $book->category?->name ?? 'Umum' }}</span>
+                                                <span class="dbx-book-stock"><?php echo e($book->stock_available); ?> stok</span>
+                                                <span><?php echo e($book->category?->name ?? 'Umum'); ?></span>
                                             </div>
                                             <div class="dbx-book-open">
                                                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
@@ -294,40 +300,40 @@
                                             </div>
                                         </div>
                                     </article>
-                                @empty
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <div class="text-sm text-slate2-400" id="borrowerBookEmpty">Buku yang dicari belum ditemukan.</div>
-                                @endforelse
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-        @elseif ($isPrincipalDashboard)
+        <?php elseif($isPrincipalDashboard): ?>
         <section class="dbx-stats">
             <article class="dbx-stat members">
                 <div class="dbx-stat-icon"><i data-lucide="users"></i></div>
-                <div class="dbx-stat-value">{{ number_format($principalMetrics['petugas_active_today']) }}</div>
+                <div class="dbx-stat-value"><?php echo e(number_format($principalMetrics['petugas_active_today'])); ?></div>
                 <div class="dbx-stat-label">Petugas Aktif Hari Ini</div>
-                <div class="dbx-stat-trend up"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i>{{ $principalMetrics['petugas_actions_today'] }} aktivitas tercatat</div>
+                <div class="dbx-stat-trend up"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i><?php echo e($principalMetrics['petugas_actions_today']); ?> aktivitas tercatat</div>
             </article>
             <article class="dbx-stat books">
                 <div class="dbx-stat-icon"><i data-lucide="library-big"></i></div>
-                <div class="dbx-stat-value">{{ number_format($principalMetrics['books_growth']) }}</div>
+                <div class="dbx-stat-value"><?php echo e(number_format($principalMetrics['books_growth'])); ?></div>
                 <div class="dbx-stat-label">Buku Baru 30 Hari</div>
                 <div class="dbx-stat-trend up"><i data-lucide="book-plus" class="w-3.5 h-3.5"></i>Perkembangan koleksi perpustakaan</div>
             </article>
             <article class="dbx-stat borrowed">
                 <div class="dbx-stat-icon"><i data-lucide="book-up-2"></i></div>
-                <div class="dbx-stat-value">{{ number_format($principalMetrics['loans_growth']) }}</div>
+                <div class="dbx-stat-value"><?php echo e(number_format($principalMetrics['loans_growth'])); ?></div>
                 <div class="dbx-stat-label">Transaksi 30 Hari</div>
                 <div class="dbx-stat-trend up"><i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>Aktivitas layanan perpustakaan</div>
             </article>
             <article class="dbx-stat overdue">
                 <div class="dbx-stat-icon"><i data-lucide="activity"></i></div>
-                <div class="dbx-stat-value">{{ number_format($principalMetrics['service_score']) }}</div>
+                <div class="dbx-stat-value"><?php echo e(number_format($principalMetrics['service_score'])); ?></div>
                 <div class="dbx-stat-label">Skor Layanan</div>
-                <div class="dbx-stat-trend {{ $principalMetrics['service_score'] >= 80 ? 'up' : 'down' }}"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>Cek apakah layanan berjalan baik</div>
+                <div class="dbx-stat-trend <?php echo e($principalMetrics['service_score'] >= 80 ? 'up' : 'down'); ?>"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>Cek apakah layanan berjalan baik</div>
             </article>
         </section>
 
@@ -340,18 +346,18 @@
                     <div class="grid md:grid-cols-3 gap-4">
                         <div class="rounded-2xl border border-slate2-100 bg-white p-4">
                             <div class="text-sm font-semibold text-slate2-900">Melihat aktivitas petugas</div>
-                            <div class="mt-2 text-3xl font-bold text-slate2-900">{{ number_format($principalMetrics['petugas_actions_today']) }}</div>
+                            <div class="mt-2 text-3xl font-bold text-slate2-900"><?php echo e(number_format($principalMetrics['petugas_actions_today'])); ?></div>
                             <div class="mt-2 text-sm text-slate2-600">Aktivitas petugas hari ini tercatat dari setiap aksi input, update, dan proses layanan.</div>
                         </div>
                         <div class="rounded-2xl border border-slate2-100 bg-white p-4">
                             <div class="text-sm font-semibold text-slate2-900">Melihat perkembangan perpustakaan</div>
-                            <div class="mt-2 text-3xl font-bold text-slate2-900">{{ number_format($principalMetrics['books_growth']) }}</div>
-                            <div class="mt-2 text-sm text-slate2-600">Penambahan koleksi dalam 30 hari terakhir dan {{ number_format($principalMetrics['loans_growth']) }} transaksi layanan berjalan.</div>
+                            <div class="mt-2 text-3xl font-bold text-slate2-900"><?php echo e(number_format($principalMetrics['books_growth'])); ?></div>
+                            <div class="mt-2 text-sm text-slate2-600">Penambahan koleksi dalam 30 hari terakhir dan <?php echo e(number_format($principalMetrics['loans_growth'])); ?> transaksi layanan berjalan.</div>
                         </div>
                         <div class="rounded-2xl border border-slate2-100 bg-white p-4">
                             <div class="text-sm font-semibold text-slate2-900">Cek apakah layanan berjalan baik</div>
-                            <div class="mt-2 text-3xl font-bold text-slate2-900">{{ number_format($principalMetrics['returned_today']) }}</div>
-                            <div class="mt-2 text-sm text-slate2-600">Buku kembali hari ini {{ $principalMetrics['returned_today'] }}, permintaan menunggu {{ $principalMetrics['pending_requests'] }}, terlambat {{ $principalMetrics['late_loans'] }}.</div>
+                            <div class="mt-2 text-3xl font-bold text-slate2-900"><?php echo e(number_format($principalMetrics['returned_today'])); ?></div>
+                            <div class="mt-2 text-sm text-slate2-600">Buku kembali hari ini <?php echo e($principalMetrics['returned_today']); ?>, permintaan menunggu <?php echo e($principalMetrics['pending_requests']); ?>, terlambat <?php echo e($principalMetrics['late_loans']); ?>.</div>
                         </div>
                     </div>
                 </div>
@@ -363,22 +369,22 @@
                         <h3 class="dbx-card-title">Aktivitas Petugas</h3>
                     </div>
                     <div class="dbx-card-body">
-                        @forelse ($principalActivityLogs as $activity)
+                        <?php $__empty_1 = true; $__currentLoopData = $principalActivityLogs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $activity): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <div class="dbx-activity-item">
                                 <div class="dbx-activity-icon"><i data-lucide="briefcase-business"></i></div>
                                 <div class="dbx-activity-content">
-                                    <h4>{{ $activity->user?->name ?? 'Petugas' }}</h4>
-                                    <p>{{ $activity->description }}</p>
+                                    <h4><?php echo e($activity->user?->name ?? 'Petugas'); ?></h4>
+                                    <p><?php echo e($activity->description); ?></p>
                                     <div class="dbx-activity-meta">
-                                        <span class="dbx-activity-badge update">{{ ucfirst($activity->action) }}</span>
-                                        <span class="dbx-activity-module">{{ str_replace('_', ' ', $activity->module) }}</span>
+                                        <span class="dbx-activity-badge update"><?php echo e(ucfirst($activity->action)); ?></span>
+                                        <span class="dbx-activity-module"><?php echo e(str_replace('_', ' ', $activity->module)); ?></span>
                                     </div>
-                                    <span>{{ $activity->created_at->diffForHumans() }}</span>
+                                    <span><?php echo e($activity->created_at->diffForHumans()); ?></span>
                                 </div>
                             </div>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <p class="text-sm text-slate2-400">Belum ada aktivitas petugas yang tercatat hari ini.</p>
-                        @endforelse
+                        <?php endif; ?>
                     </div>
                 </article>
 
@@ -390,12 +396,12 @@
                         <div class="space-y-4">
                             <div class="rounded-2xl border border-slate2-100 bg-white p-4">
                                 <div class="text-sm font-semibold text-slate2-900">Permintaan Menunggu</div>
-                                <div class="mt-2 text-2xl font-bold text-slate2-900">{{ $principalMetrics['pending_requests'] }}</div>
+                                <div class="mt-2 text-2xl font-bold text-slate2-900"><?php echo e($principalMetrics['pending_requests']); ?></div>
                                 <div class="mt-2 text-sm text-slate2-600">Semakin kecil angka ini, semakin cepat layanan petugas diproses.</div>
                             </div>
                             <div class="rounded-2xl border border-slate2-100 bg-white p-4">
                                 <div class="text-sm font-semibold text-slate2-900">Keterlambatan Aktif</div>
-                                <div class="mt-2 text-2xl font-bold text-slate2-900">{{ $principalMetrics['late_loans'] }}</div>
+                                <div class="mt-2 text-2xl font-bold text-slate2-900"><?php echo e($principalMetrics['late_loans']); ?></div>
                                 <div class="mt-2 text-sm text-slate2-600">Dipakai untuk melihat apakah layanan pengembalian dan pengawasan berjalan baik.</div>
                             </div>
                         </div>
@@ -409,40 +415,43 @@
                     <div class="dbx-card-body">
                         <div class="rounded-2xl border border-slate2-100 bg-white p-4 mb-4">
                             <div class="text-sm font-semibold text-slate2-900">Usulan Menunggu</div>
-                            <div class="mt-2 text-2xl font-bold text-slate2-900">{{ $principalMetrics['pending_procurements'] }}</div>
+                            <div class="mt-2 text-2xl font-bold text-slate2-900"><?php echo e($principalMetrics['pending_procurements']); ?></div>
                             <div class="mt-2 text-sm text-slate2-600">Melihat usulan buku baru dan menyetujui pembelian atau penambahan koleksi.</div>
                         </div>
 
                         <div class="space-y-4">
-                            @forelse ($principalProcurements as $procurement)
+                            <?php $__empty_1 = true; $__currentLoopData = $principalProcurements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $procurement): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                 <div class="rounded-2xl border border-slate2-100 bg-white p-4 js-principal-procurement-card">
-                                    <div class="text-sm font-semibold text-slate2-900">{{ $procurement->title }}</div>
-                                    <div class="mt-1 text-sm text-slate2-600">{{ $procurement->author }} | Jumlah {{ $procurement->quantity }}</div>
+                                    <div class="text-sm font-semibold text-slate2-900"><?php echo e($procurement->title); ?></div>
+                                    <div class="mt-1 text-sm text-slate2-600"><?php echo e($procurement->author); ?> | Jumlah <?php echo e($procurement->quantity); ?></div>
                                     <div class="mt-2 text-sm text-slate2-600">
-                                        Pengusul {{ $procurement->proposer?->name ?? 'Petugas' }}
-                                        @if ($procurement->category?->name)
-                                            | {{ $procurement->category->name }}
-                                        @endif
-                                        @if ($procurement->notes)
-                                            | {{ $procurement->notes }}
-                                        @endif
+                                        Pengusul <?php echo e($procurement->proposer?->name ?? 'Petugas'); ?>
+
+                                        <?php if($procurement->category?->name): ?>
+                                            | <?php echo e($procurement->category->name); ?>
+
+                                        <?php endif; ?>
+                                        <?php if($procurement->notes): ?>
+                                            | <?php echo e($procurement->notes); ?>
+
+                                        <?php endif; ?>
                                     </div>
                                     <div class="mt-3 flex flex-wrap gap-2">
-                                        <form method="POST" action="{{ route('admin.books.procurements.approve', $procurement) }}" data-async="true" data-remove-closest=".js-principal-procurement-card" data-refresh-targets="#asyncDashboardWrap">
-                                            @csrf
-                                            @method('PUT')
+                                        <form method="POST" action="<?php echo e(route('admin.books.procurements.approve', $procurement)); ?>" data-async="true" data-remove-closest=".js-principal-procurement-card" data-refresh-targets="#asyncDashboardWrap">
+                                            <?php echo csrf_field(); ?>
+                                            <?php echo method_field('PUT'); ?>
                                             <button class="btn-primary rounded-xl px-4 py-2 text-sm font-semibold" type="submit">Setujui Pengadaan</button>
                                         </form>
-                                        <form method="POST" action="{{ route('admin.books.procurements.reject', $procurement) }}" data-async="true" data-remove-closest=".js-principal-procurement-card" data-refresh-targets="#asyncDashboardWrap">
-                                            @csrf
-                                            @method('PUT')
+                                        <form method="POST" action="<?php echo e(route('admin.books.procurements.reject', $procurement)); ?>" data-async="true" data-remove-closest=".js-principal-procurement-card" data-refresh-targets="#asyncDashboardWrap">
+                                            <?php echo csrf_field(); ?>
+                                            <?php echo method_field('PUT'); ?>
                                             <button class="btn-soft rounded-xl px-4 py-2 text-sm font-semibold" type="submit">Tolak</button>
                                         </form>
                                     </div>
                                 </div>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <p class="text-sm text-slate2-400">Belum ada usulan buku baru yang menunggu persetujuan.</p>
-                            @endforelse
+                            <?php endif; ?>
                         </div>
                     </div>
                 </article>
@@ -450,29 +459,29 @@
 
             </div>
         </section>
-        @else
+        <?php else: ?>
         <section class="dbx-stats">
             <article class="dbx-stat books">
                 <div class="dbx-stat-icon"><i data-lucide="book-open"></i></div>
-                <div class="dbx-stat-value">{{ number_format($stats['books']) }}</div>
+                <div class="dbx-stat-value"><?php echo e(number_format($stats['books'])); ?></div>
                 <div class="dbx-stat-label">Total Koleksi Buku</div>
                 <div class="dbx-stat-trend up"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i>Data katalog aktif</div>
             </article>
             <article class="dbx-stat members">
                 <div class="dbx-stat-icon"><i data-lucide="users"></i></div>
-                <div class="dbx-stat-value">{{ number_format($stats['members']) }}</div>
+                <div class="dbx-stat-value"><?php echo e(number_format($stats['members'])); ?></div>
                 <div class="dbx-stat-label">Anggota Aktif</div>
                 <div class="dbx-stat-trend up"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i>Role peminjam aktif</div>
             </article>
             <article class="dbx-stat borrowed">
                 <div class="dbx-stat-icon"><i data-lucide="book-up-2"></i></div>
-                <div class="dbx-stat-value">{{ number_format($stats['borrowed']) }}</div>
+                <div class="dbx-stat-value"><?php echo e(number_format($stats['borrowed'])); ?></div>
                 <div class="dbx-stat-label">Sedang Dipinjam</div>
                 <div class="dbx-stat-trend up"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i>Transaksi berjalan</div>
             </article>
             <article class="dbx-stat overdue">
                 <div class="dbx-stat-icon"><i data-lucide="triangle-alert"></i></div>
-                <div class="dbx-stat-value">{{ number_format($stats['late']) }}</div>
+                <div class="dbx-stat-value"><?php echo e(number_format($stats['late'])); ?></div>
                 <div class="dbx-stat-label">Terlambat Kembali</div>
                 <div class="dbx-stat-trend down"><i data-lucide="trending-down" class="w-3.5 h-3.5"></i>Perlu tindak lanjut</div>
             </article>
@@ -482,7 +491,7 @@
             <article class="dbx-card">
                 <div class="dbx-card-header">
                     <h3 class="dbx-card-title">Peminjaman Terbaru</h3>
-                    <a href="{{ route('admin.loans.index') }}" class="dbx-card-action">Lihat Semua</a>
+                    <a href="<?php echo e(route('admin.loans.index')); ?>" class="dbx-card-action">Lihat Semua</a>
                 </div>
                 <div class="dbx-table-wrap">
                     <table class="dbx-table">
@@ -495,48 +504,51 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($recentLoans as $loan)
-                                @php($status = $loan->status === 'late' ? 'overdue' : ($loan->status === 'returned' ? 'pending' : 'active'))
-                                @php($memberName = $loan->member?->name ?? 'Anggota tidak ditemukan')
+                            <?php $__empty_1 = true; $__currentLoopData = $recentLoans; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $loan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <?php ($status = $loan->status === 'late' ? 'overdue' : ($loan->status === 'returned' ? 'pending' : 'active')); ?>
+                                <?php ($memberName = $loan->member?->name ?? 'Anggota tidak ditemukan'); ?>
                                 <tr>
                                     <td>
                                         <div class="dbx-book-info">
                                             <div class="dbx-book-cover">
-                                                @if ($loan->book?->cover_image)
-                                                    <img src="{{ asset('storage/'.$loan->book->cover_image) }}" alt="{{ $loan->book?->title }}" style="width:100%;height:100%;object-fit:cover;">
-                                                @else
-                                                    {{ strtoupper(substr($loan->book?->title ?? 'B', 0, 1)) }}
-                                                @endif
+                                                <?php if($loan->book?->cover_image): ?>
+                                                    <img src="<?php echo e(asset('storage/'.$loan->book->cover_image)); ?>" alt="<?php echo e($loan->book?->title); ?>" style="width:100%;height:100%;object-fit:cover;">
+                                                <?php else: ?>
+                                                    <?php echo e(strtoupper(substr($loan->book?->title ?? 'B', 0, 1))); ?>
+
+                                                <?php endif; ?>
                                             </div>
                                             <div class="dbx-book-details">
-                                                <h4>{{ $loan->book?->title ?? 'Buku tidak ditemukan' }}</h4>
-                                                <span>{{ $loan->book?->author ?? 'Penulis tidak tersedia' }}</span>
+                                                <h4><?php echo e($loan->book?->title ?? 'Buku tidak ditemukan'); ?></h4>
+                                                <span><?php echo e($loan->book?->author ?? 'Penulis tidak tersedia'); ?></span>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="dbx-member-info">
-                                            <div class="dbx-member-avatar">{{ strtoupper(substr($memberName, 0, 2)) }}</div>
+                                            <div class="dbx-member-avatar"><?php echo e(strtoupper(substr($memberName, 0, 2))); ?></div>
                                             <div>
-                                                <div class="dbx-member-name">{{ $memberName }}</div>
+                                                <div class="dbx-member-name"><?php echo e($memberName); ?></div>
                                                 <div class="dbx-member-meta">
-                                                    {{ $loan->member?->academicLabel() ?: ($loan->member?->email ?? 'Tanpa email') }}
+                                                    <?php echo e($loan->member?->academicLabel() ?: ($loan->member?->email ?? 'Tanpa email')); ?>
+
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{{ optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-' }}</td>
+                                    <td><?php echo e(optional($loan->borrowed_at)->translatedFormat('d M Y') ?? '-'); ?></td>
                                     <td>
-                                        <span class="dbx-status {{ $status }}">
-                                            {{ $loan->status === 'late' ? 'Terlambat' : ($loan->status === 'returned' ? 'Dikembalikan' : 'Dipinjam') }}
+                                        <span class="dbx-status <?php echo e($status); ?>">
+                                            <?php echo e($loan->status === 'late' ? 'Terlambat' : ($loan->status === 'returned' ? 'Dikembalikan' : 'Dipinjam')); ?>
+
                                         </span>
                                     </td>
                                 </tr>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>
                                     <td colspan="4" class="text-center text-slate2-400">Belum ada data peminjaman.</td>
                                 </tr>
-                            @endforelse
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -546,96 +558,98 @@
                 <article class="dbx-card">
                     <div class="dbx-card-header">
                         <h3 class="dbx-card-title">Buku Terpopuler</h3>
-                        <a href="{{ route('admin.books.index') }}" class="dbx-card-action">Lihat Semua</a>
+                        <a href="<?php echo e(route('admin.books.index')); ?>" class="dbx-card-action">Lihat Semua</a>
                     </div>
                     <div class="dbx-card-body">
-                        @forelse ($popularBooks as $index => $book)
+                        <?php $__empty_1 = true; $__currentLoopData = $popularBooks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $book): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <div class="dbx-popular-item">
-                                <div class="dbx-rank {{ $index < 3 ? 'top' : '' }}">{{ $index + 1 }}</div>
-                                <div class="dbx-popular-cover" style="background:linear-gradient(135deg,hsl({{ 180 + ($index * 20) }},40%,35%),hsl({{ 180 + ($index * 20) }},40%,45%));">
-                                    @if ($book->cover_image)
-                                        <img src="{{ asset('storage/'.$book->cover_image) }}" alt="{{ $book->title }}" style="width:100%;height:100%;object-fit:cover;">
-                                    @endif
+                                <div class="dbx-rank <?php echo e($index < 3 ? 'top' : ''); ?>"><?php echo e($index + 1); ?></div>
+                                <div class="dbx-popular-cover" style="background:linear-gradient(135deg,hsl(<?php echo e(180 + ($index * 20)); ?>,40%,35%),hsl(<?php echo e(180 + ($index * 20)); ?>,40%,45%));">
+                                    <?php if($book->cover_image): ?>
+                                        <img src="<?php echo e(asset('storage/'.$book->cover_image)); ?>" alt="<?php echo e($book->title); ?>" style="width:100%;height:100%;object-fit:cover;">
+                                    <?php endif; ?>
                                 </div>
                                 <div class="dbx-popular-info">
-                                    <h4>{{ $book->title }}</h4>
-                                    <span>{{ $book->author ?? 'Penulis tidak tersedia' }}</span>
+                                    <h4><?php echo e($book->title); ?></h4>
+                                    <span><?php echo e($book->author ?? 'Penulis tidak tersedia'); ?></span>
                                 </div>
-                                <div class="dbx-borrow-count">{{ number_format($book->loans_count) }}x</div>
+                                <div class="dbx-borrow-count"><?php echo e(number_format($book->loans_count)); ?>x</div>
                             </div>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <p class="text-sm text-slate2-400">Belum ada buku populer. Data akan muncul setelah ada peminjaman.</p>
-                        @endforelse
+                        <?php endif; ?>
                     </div>
                 </article>
 
-                @if ($canViewActivityLog)
+                <?php if($canViewActivityLog): ?>
                     <article class="dbx-card">
                         <div class="dbx-card-header">
                             <h3 class="dbx-card-title">Aktivitas Terbaru</h3>
                         </div>
                         <div class="dbx-card-body">
-                            @forelse ($recentActivities as $activity)
-                                @php($actionLabels = ['create' => 'Tambah', 'update' => 'Ubah', 'delete' => 'Hapus'])
-                                @php($actionIcons = ['create' => 'plus', 'update' => 'pencil', 'delete' => 'trash-2'])
+                            <?php $__empty_1 = true; $__currentLoopData = $recentActivities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $activity): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <?php ($actionLabels = ['create' => 'Tambah', 'update' => 'Ubah', 'delete' => 'Hapus']); ?>
+                                <?php ($actionIcons = ['create' => 'plus', 'update' => 'pencil', 'delete' => 'trash-2']); ?>
                                 <div class="dbx-activity-item">
-                                    <div class="dbx-activity-icon"><i data-lucide="{{ $actionIcons[$activity->action] ?? 'history' }}"></i></div>
+                                    <div class="dbx-activity-icon"><i data-lucide="<?php echo e($actionIcons[$activity->action] ?? 'history'); ?>"></i></div>
                                     <div class="dbx-activity-content">
-                                        <h4>{{ $activity->user?->name ?? 'Sistem' }}</h4>
-                                        <p>{{ $activity->description }}</p>
+                                        <h4><?php echo e($activity->user?->name ?? 'Sistem'); ?></h4>
+                                        <p><?php echo e($activity->description); ?></p>
                                         <div class="dbx-activity-meta">
-                                            <span class="dbx-activity-badge {{ $activity->action }}">{{ $actionLabels[$activity->action] ?? ucfirst($activity->action) }}</span>
-                                            <span class="dbx-activity-module">{{ str_replace('_', ' ', $activity->module) }}</span>
+                                            <span class="dbx-activity-badge <?php echo e($activity->action); ?>"><?php echo e($actionLabels[$activity->action] ?? ucfirst($activity->action)); ?></span>
+                                            <span class="dbx-activity-module"><?php echo e(str_replace('_', ' ', $activity->module)); ?></span>
                                         </div>
-                                        <span>{{ $activity->created_at->diffForHumans() }}</span>
+                                        <span><?php echo e($activity->created_at->diffForHumans()); ?></span>
                                     </div>
                                 </div>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <p class="text-sm text-slate2-400">Belum ada aktivitas super admin seperti tambah, ubah, atau hapus data.</p>
-                            @endforelse
+                            <?php endif; ?>
                         </div>
                     </article>
-                @endif
+                <?php endif; ?>
 
-                @if ($isSuperAdminDashboard)
+                <?php if($isSuperAdminDashboard): ?>
                     <article class="dbx-card">
                         <div class="dbx-card-header">
                             <h3 class="dbx-card-title">Hasil Pengadaan Buku</h3>
                         </div>
                         <div class="dbx-card-body">
-                            @forelse ($superAdminProcurementUpdates as $procurement)
-                                @php($isRejected = $procurement->status === 'rejected')
+                            <?php $__empty_1 = true; $__currentLoopData = $superAdminProcurementUpdates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $procurement): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <?php ($isRejected = $procurement->status === 'rejected'); ?>
                                 <div class="dbx-activity-item">
                                     <div class="dbx-activity-icon">
-                                        <i data-lucide="{{ $isRejected ? 'circle-x' : 'badge-check' }}"></i>
+                                        <i data-lucide="<?php echo e($isRejected ? 'circle-x' : 'badge-check'); ?>"></i>
                                     </div>
                                     <div class="dbx-activity-content">
-                                        <h4>{{ $procurement->title }}</h4>
+                                        <h4><?php echo e($procurement->title); ?></h4>
                                         <p>
-                                            Usulan dari {{ $procurement->proposer?->name ?? 'Petugas' }}
-                                            {{ $isRejected ? 'ditolak' : 'disetujui' }}
-                                            oleh {{ $isRejected ? ($procurement->rejector?->name ?? 'Pemeriksa') : ($procurement->approver?->name ?? 'Pemeriksa') }}.
+                                            Usulan dari <?php echo e($procurement->proposer?->name ?? 'Petugas'); ?>
+
+                                            <?php echo e($isRejected ? 'ditolak' : 'disetujui'); ?>
+
+                                            oleh <?php echo e($isRejected ? ($procurement->rejector?->name ?? 'Pemeriksa') : ($procurement->approver?->name ?? 'Pemeriksa')); ?>.
                                         </p>
                                         <div class="dbx-activity-meta">
-                                            <span class="dbx-activity-badge {{ $isRejected ? 'delete' : 'create' }}">{{ $isRejected ? 'Ditolak' : 'Disetujui' }}</span>
-                                            <span class="dbx-activity-module">{{ $procurement->category?->name ?? 'Tanpa kategori' }}</span>
+                                            <span class="dbx-activity-badge <?php echo e($isRejected ? 'delete' : 'create'); ?>"><?php echo e($isRejected ? 'Ditolak' : 'Disetujui'); ?></span>
+                                            <span class="dbx-activity-module"><?php echo e($procurement->category?->name ?? 'Tanpa kategori'); ?></span>
                                         </div>
-                                        <span>{{ optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->diffForHumans() ?? $procurement->updated_at->diffForHumans() }}</span>
+                                        <span><?php echo e(optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->diffForHumans() ?? $procurement->updated_at->diffForHumans()); ?></span>
                                     </div>
                                 </div>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <p class="text-sm text-slate2-400">Belum ada hasil pengadaan buku yang diproses.</p>
-                            @endforelse
+                            <?php endif; ?>
                         </div>
                     </article>
-                @endif
+                <?php endif; ?>
             </div>
         </section>
-        @endif
+        <?php endif; ?>
     </div>
 </div>
 
-@if ($isBorrowerDashboard)
+<?php if($isBorrowerDashboard): ?>
     <div id="borrowDrawerMask" class="dbx-drawer-mask"></div>
 
     <aside id="borrowDrawer" class="dbx-drawer" aria-hidden="true">
@@ -679,12 +693,12 @@
                     <span>PENTING: Batas waktu peminjaman buku ini adalah <strong>1 hari</strong> saja.</span>
                 </div>
 
-                <form method="POST" action="{{ route('loan-requests.store') }}" class="dbx-book-form" id="borrowerLoanForm">
-                    @csrf
+                <form method="POST" action="<?php echo e(route('loan-requests.store')); ?>" class="dbx-book-form" id="borrowerLoanForm">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="book_id" id="borrowDrawerBookId">
                     <div class="dbx-book-form-grid">
-                        <input type="date" name="borrowed_at" id="borrowDrawerBorrowedAt" class="dbx-book-filter-field" value="{{ now()->toDateString() }}" required>
-                        <input type="date" name="due_at" id="borrowDrawerDueAt" class="dbx-book-filter-field" value="{{ now()->addDay()->toDateString() }}" required readonly>
+                        <input type="date" name="borrowed_at" id="borrowDrawerBorrowedAt" class="dbx-book-filter-field" value="<?php echo e(now()->toDateString()); ?>" required>
+                        <input type="date" name="due_at" id="borrowDrawerDueAt" class="dbx-book-filter-field" value="<?php echo e(now()->addDay()->toDateString()); ?>" required readonly>
                     </div>
                     <textarea name="notes" class="dbx-book-note" placeholder="Catatan untuk petugas, misalnya ingin ambil langsung di perpustakaan."></textarea>
                     <button type="submit" class="dbx-book-submit" id="borrowDrawerSubmit">
@@ -695,7 +709,7 @@
             </div>
         </div>
     </aside>
-@endif
+<?php endif; ?>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -995,7 +1009,7 @@
             }
 
             const formData = new FormData();
-            formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}');
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.content || '<?php echo e(csrf_token()); ?>');
             formData.append('image', file);
 
             status.textContent = 'Mencari dari foto...';
@@ -1003,7 +1017,7 @@
             results.innerHTML = '<div class="text-sm text-slate2-400">Sedang mencari buku...</div>';
 
             try {
-                const response = await fetch('{{ route('admin.books.search-by-image') }}', {
+                const response = await fetch('<?php echo e(route('admin.books.search-by-image')); ?>', {
                     method: 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1066,7 +1080,7 @@
             });
 
             try {
-                const response = await fetch('{{ route('borrower.books') }}?' + params.toString(), {
+                const response = await fetch('<?php echo e(route('borrower.books')); ?>?' + params.toString(), {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
@@ -1616,4 +1630,6 @@
         }
     });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/dashboard.blade.php ENDPATH**/ ?>

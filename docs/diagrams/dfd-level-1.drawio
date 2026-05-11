@@ -1,0 +1,57 @@
+<mxfile host="app.diagrams.net" modified="2026-05-08T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="dfd1-page" name="DFD Level 1">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="d1e1" value="Siswa / Guru" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="40" y="340" width="160" height="70" as="geometry"/></mxCell>
+        <mxCell id="d1e2" value="Admin / Petugas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="40" y="130" width="160" height="70" as="geometry"/></mxCell>
+        <mxCell id="d1e3" value="Kepala Sekolah" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="40" y="560" width="160" height="70" as="geometry"/></mxCell>
+        <mxCell id="d1p1" value="1.0&#xa;Autentikasi &amp;&#xa;Registrasi" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="300" y="110" width="180" height="100" as="geometry"/></mxCell>
+        <mxCell id="d1p2" value="2.0&#xa;Kelola Data Master&#xa;(User, Role, Kategori, Buku, Setting)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="560" y="90" width="240" height="120" as="geometry"/></mxCell>
+        <mxCell id="d1p3" value="3.0&#xa;Kelola Transaksi&#xa;(Peminjaman, Pengembalian, Sanksi, Pengadaan)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="520" y="320" width="300" height="120" as="geometry"/></mxCell>
+        <mxCell id="d1p4" value="4.0&#xa;Laporan, Backup&#xa;dan Restore" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="560" y="560" width="220" height="110" as="geometry"/></mxCell>
+        <mxCell id="d1p5" value="5.0&#xa;Dashboard, Profil&#xa;dan Riwayat Peminjam" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="300" y="320" width="180" height="110" as="geometry"/></mxCell>
+        <mxCell id="d1s1" value="D1 Users" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="980" y="70" width="150" height="80" as="geometry"/></mxCell>
+        <mxCell id="d1s2" value="D2 Roles &amp;&#xa;Permissions" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1180" y="70" width="170" height="90" as="geometry"/></mxCell>
+        <mxCell id="d1s3" value="D3 Categories&#xa;&amp; Books" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="980" y="250" width="150" height="80" as="geometry"/></mxCell>
+        <mxCell id="d1s4" value="D4 Loans,&#xa;Sanctions, Procurements" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1180" y="290" width="180" height="90" as="geometry"/></mxCell>
+        <mxCell id="d1s5" value="D5 Settings,&#xa;Activity Logs, Backups" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1080" y="560" width="190" height="90" as="geometry"/></mxCell>
+        <mxCell id="d1a1" value="login / register" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e1" target="d1p1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a2" value="input admin" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e2" target="d1p1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a3" value="status login" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p1" target="d1e1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a4" value="kelola master data" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e2" target="d1p2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a5" value="hasil kelola data" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p2" target="d1e2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a6" value="ajukan pinjam / lihat buku" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e1" target="d1p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a7" value="kelola pinjaman / sanksi" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e2" target="d1p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a8" value="approve / reject pengadaan" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e3" target="d1p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a9" value="status transaksi" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p3" target="d1e1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a10" value="monitoring transaksi" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p3" target="d1e2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a11" value="status usulan" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p3" target="d1e3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a12" value="minta laporan / backup" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e2" target="d1p4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a13" value="lihat laporan" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e3" target="d1p4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a14" value="hasil laporan / file backup" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p4" target="d1e2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a15" value="ringkasan laporan" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p4" target="d1e3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a16" value="lihat dashboard / profil / riwayat" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1e1" target="d1p5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a17" value="informasi dashboard" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p5" target="d1e1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a18" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p1" target="d1s1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a19" value="cek role" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p1" target="d1s2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a20" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p2" target="d1s1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a21" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p2" target="d1s2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a22" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p2" target="d1s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a23" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p2" target="d1s5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a24" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p3" target="d1s1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a25" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p3" target="d1s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a26" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p3" target="d1s4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a27" value="log aktivitas" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p3" target="d1s5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a28" value="baca data" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p4" target="d1s1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a29" value="baca data" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p4" target="d1s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a30" value="baca data" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p4" target="d1s4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a31" value="baca/tulis" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p4" target="d1s5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a32" value="baca data" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p5" target="d1s1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a33" value="baca data" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p5" target="d1s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d1a34" value="baca data" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="d1p5" target="d1s4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

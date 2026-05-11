@@ -1,0 +1,43 @@
+<mxfile host="app.diagrams.net" modified="2026-05-08T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="dfd2-page" name="DFD Level 2 - Peminjaman">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="l2e1" value="Siswa / Guru" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="40" y="300" width="150" height="70" as="geometry"/></mxCell>
+        <mxCell id="l2e2" value="Petugas / Admin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="40" y="520" width="150" height="70" as="geometry"/></mxCell>
+        <mxCell id="l2p1" value="3.1&#xa;Permintaan&#xa;Peminjaman" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="280" y="120" width="170" height="90" as="geometry"/></mxCell>
+        <mxCell id="l2p2" value="3.2&#xa;Validasi Anggota,&#xa;Status Sanksi, dan Stok Buku" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="520" y="120" width="240" height="100" as="geometry"/></mxCell>
+        <mxCell id="l2p3" value="3.3&#xa;Simpan Peminjaman&#xa;dan Kurangi Stok" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="840" y="120" width="200" height="90" as="geometry"/></mxCell>
+        <mxCell id="l2p4" value="3.4&#xa;Proses Pengembalian&#xa;dan Hitung Denda" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="520" y="420" width="220" height="100" as="geometry"/></mxCell>
+        <mxCell id="l2p5" value="3.5&#xa;Simpan / Ubah&#xa;Sanksi" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="840" y="420" width="170" height="90" as="geometry"/></mxCell>
+        <mxCell id="l2s1" value="D1 Users" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1140" y="70" width="130" height="70" as="geometry"/></mxCell>
+        <mxCell id="l2s2" value="D2 Books" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1140" y="190" width="130" height="70" as="geometry"/></mxCell>
+        <mxCell id="l2s3" value="D3 Loans" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1140" y="330" width="130" height="70" as="geometry"/></mxCell>
+        <mxCell id="l2s4" value="D4 Sanctions" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1140" y="450" width="130" height="70" as="geometry"/></mxCell>
+        <mxCell id="l2s5" value="D5 Settings" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1140" y="570" width="130" height="70" as="geometry"/></mxCell>
+        <mxCell id="l2a1" value="form pinjam" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2e1" target="l2p1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a2" value="permintaan pinjam manual" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2e2" target="l2p1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a3" value="data permintaan" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p1" target="l2p2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a4" value="cek anggota" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p2" target="l2s1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a5" value="cek stok buku" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p2" target="l2s2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a6" value="cek pinjaman aktif" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p2" target="l2s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a7" value="cek sanksi aktif" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p2" target="l2s4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a8" value="ambil aturan lama pinjam / denda" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p2" target="l2s5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a9" value="valid" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p2" target="l2p3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a10" value="tolak / pesan error" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p2" target="l2e1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a11" value="simpan loan" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p3" target="l2s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a12" value="update stock_available / status" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p3" target="l2s2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a13" value="status berhasil pinjam" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p3" target="l2e1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a14" value="pengembalian buku" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2e2" target="l2p4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a15" value="ambil data loan" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p4" target="l2s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a16" value="ambil tarif denda" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p4" target="l2s5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a17" value="update returned_at, status, fine_amount" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p4" target="l2s3" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a18" value="tambah stok buku" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p4" target="l2s2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a19" value="jika perlu sanksi" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p4" target="l2p5" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a20" value="status pengembalian" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p4" target="l2e2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a21" value="simpan / update sanction" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p5" target="l2s4" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="l2a22" value="status sanksi" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" source="l2p5" target="l2e2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

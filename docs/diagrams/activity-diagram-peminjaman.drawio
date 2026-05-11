@@ -1,0 +1,25 @@
+<mxfile host="app.diagrams.net" modified="2026-05-08T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="activity-page" name="Activity Diagram - Peminjaman">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="a_start" value="" style="ellipse;html=1;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="520" y="40" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="a1" value="Anggota login ke sistem" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="420" y="100" width="230" height="60" as="geometry"/></mxCell>
+        <mxCell id="a2" value="Pilih buku / isi permintaan peminjaman" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="390" y="200" width="290" height="60" as="geometry"/></mxCell>
+        <mxCell id="a3" value="Sistem validasi anggota, sanksi aktif, pinjaman aktif, dan stok buku" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="320" y="300" width="430" height="70" as="geometry"/></mxCell>
+        <mxCell id="a4" value="Valid?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="455" y="410" width="120" height="90" as="geometry"/></mxCell>
+        <mxCell id="a5" value="Tampilkan pesan gagal&#xa;(stok habis / kena sanksi / tidak valid)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="100" y="425" width="240" height="70" as="geometry"/></mxCell>
+        <mxCell id="a6" value="Simpan data peminjaman ke tabel loans" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="400" y="550" width="240" height="60" as="geometry"/></mxCell>
+        <mxCell id="a7" value="Kurangi stock_available buku&#xa;dan ubah status buku bila perlu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="390" y="650" width="260" height="70" as="geometry"/></mxCell>
+        <mxCell id="a8" value="Petugas memproses pengembalian buku" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="400" y="760" width="240" height="60" as="geometry"/></mxCell>
+        <mxCell id="a9" value="Sistem hitung keterlambatan dan denda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="400" y="860" width="240" height="60" as="geometry"/></mxCell>
+        <mxCell id="a10" value="Terlambat / perlu sanksi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="450" y="960" width="140" height="90" as="geometry"/></mxCell>
+        <mxCell id="a11" value="Simpan sanksi ke tabel sanctions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="760" y="975" width="220" height="60" as="geometry"/></mxCell>
+        <mxCell id="a12" value="Update loans.returned_at, loans.status, loans.fine_amount" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="390" y="1100" width="280" height="70" as="geometry"/></mxCell>
+        <mxCell id="a13" value="Tambah stock_available buku" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="430" y="1210" width="200" height="60" as="geometry"/></mxCell>
+        <mxCell id="a14" value="Tampilkan status berhasil" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="430" y="1310" width="200" height="60" as="geometry"/></mxCell>
+        <mxCell id="a_end" value="" style="ellipse;html=1;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="520" y="1410" width="30" height="30" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

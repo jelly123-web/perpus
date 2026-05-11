@@ -92,8 +92,61 @@
     .camera-preview video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
     .camera-help{font-size:12px;color:var(--muted);line-height:1.6;margin-top:12px}
     .camera-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+    .book-shell{display:grid;grid-template-columns:400px 1fr;gap:24px}
+    .book-add,.book-card{background:#fff;border:1px solid var(--dbx-border, #e2e8f0);border-radius:12px;box-shadow:none}
+    .book-add{padding:24px;background:#fff}
+    .book-add:before{content:none}
+    .book-add-title,.book-list-title{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:20px;font-weight:700;letter-spacing:0;color:var(--dbx-text, #1e293b);margin:0 0 4px 0}
+    .book-card{padding:24px}
+    .book-list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--dbx-border, #e2e8f0)}
+    .book-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--dbx-border, #e2e8f0)}
+    .book-row:hover{background:#f8fafc}
+    .book-row:first-child{border-top:none}
+    .book-row:last-child{border-bottom:none}
+    .book-row-main{display:flex;align-items:center;gap:16px;flex:1}
+    .book-cover-chip{width:48px;height:64px;border-radius:6px;background:var(--dbx-primary-light, #fff7ed);color:var(--dbx-primary, #f97316);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;overflow:hidden;border:1px solid var(--dbx-border, #e2e8f0);box-shadow:none}
+    .book-row-title{font-size:15px;font-weight:600;color:var(--dbx-text, #1e293b)}
+    .book-row-sub{font-size:13px;color:var(--dbx-text-muted, #64748b)}
+    .book-row-sub2{font-size:11px;color:#94a3b8;margin-top:2px}
+    .book-actions{display:flex;align-items:center;gap:8px}
+    .btn-book-glow{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:8px;background:#fff;border:1px solid var(--dbx-border, #e2e8f0);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:none;color:var(--dbx-text, #1e293b)}
+    .btn-book-glow:hover{border-color:var(--dbx-primary, #f97316);color:var(--dbx-primary, #f97316);background:#fff;transform:none;box-shadow:none}
+    .btn-book-glow.primary{background:var(--dbx-primary, #f97316);color:#fff;border-color:var(--dbx-primary, #f97316)}
+    .btn-book-glow.primary:hover{background:var(--dbx-primary-hover, #ea580c);color:#fff;border-color:var(--dbx-primary-hover, #ea580c)}
+    .btn-book-glow.danger{color:var(--dbx-danger, #ef4444);border-color:transparent;background:#fee2e2}
+    .btn-book-glow.danger:hover{color:var(--dbx-danger, #ef4444);border-color:transparent;background:#fee2e2}
+    .member-toolbar{margin-bottom:24px;border-bottom:1px solid var(--dbx-border, #e2e8f0);padding-bottom:20px}
+    .member-title{font-size:24px;font-weight:800}
+    .member-subtitle{font-size:14px;color:var(--dbx-text-muted, #64748b);margin-top:4px}
+    .book-empty{border:1px dashed var(--dbx-border, #e2e8f0);border-radius:12px;padding:40px 20px;text-align:center;color:var(--dbx-text-muted, #64748b);background:#fff}
+    .book-drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .28s ease;z-index:70}
+    .book-drawer-mask.show{opacity:1;pointer-events:auto}
+    .book-drawer{position:fixed;top:0;right:0;width:100%;max-width:480px;height:100vh;background:#fff;box-shadow:-10px 0 30px rgba(0,0,0,.1);transform:translateX(100%);transition:transform .3s;z-index:80;display:flex;flex-direction:column}
+    .book-drawer-head{padding:20px 24px;border-bottom:1px solid var(--dbx-border, #e2e8f0)}
+    .book-drawer-title{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:20px;font-weight:700;color:var(--dbx-text, #1e293b)}
+    .book-drawer-sub{font-size:13px;color:var(--dbx-text-muted, #64748b);margin-top:4px}
+    .book-drawer-close{width:36px;height:36px;border-radius:8px;border:1px solid var(--dbx-border, #e2e8f0);background:#fff;color:var(--dbx-text-muted, #64748b);cursor:pointer}
+    .book-drawer-body{padding:24px;overflow-y:auto}
+    .book-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .book-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .book-category-box{padding:16px;border:1px solid var(--dbx-border, #e2e8f0);border-radius:12px;background:#fff}
+    .book-category-box--utility{background:#f8fafc;border-color:#dbe4f0}
+    .book-category-box--utility .book-category-title{color:var(--dbx-text, #1e293b)}
+    .book-category-box--utility .btn-soft{background:var(--dbx-primary, #f97316);color:#fff;border:1px solid var(--dbx-primary, #f97316)}
+    .book-category-box--utility .btn-soft:hover{background:var(--dbx-primary-hover, #ea580c);border-color:var(--dbx-primary-hover, #ea580c)}
+    .book-category-box--utility .btn-book-glow{background:#fff;color:var(--dbx-text, #1e293b);border-color:#cbd5e1}
+    .book-category-box--utility .btn-book-glow:hover{background:#f8fafc;color:var(--dbx-text, #1e293b);border-color:#94a3b8}
+    .book-category-title{font-size:12px;font-weight:600;color:var(--dbx-text-muted, #64748b);margin-bottom:8px;text-transform:uppercase;letter-spacing:0}
+    .book-actions-bottom{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .cover-upload{display:flex;flex-direction:column;gap:12px}
+    .cover-upload input[type="file"]{display:none}
+    .upload-source-actions{display:grid;grid-template-columns:1fr;gap:10px}
+    .upload-source-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:8px;background:#fff;border:1px solid var(--dbx-border, #e2e8f0);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--dbx-text, #1e293b)}
+    .upload-source-btn:hover{border-color:var(--dbx-primary, #f97316);color:var(--dbx-primary, #f97316);background:#fff}
+    .upload-selected-name{font-size:13px;color:var(--dbx-text-muted, #64748b);padding:2px 2px 0}
+    .upload-preview img{width:132px;height:176px;border-radius:12px;object-fit:cover;border:1px solid var(--dbx-border, #e2e8f0);background:#fff}
     @media (max-width:820px){.crop-stage-wrap{grid-template-columns:1fr}.crop-side{order:-1}.crop-preview{width:120px;height:160px}}
-    @media (max-width:1100px){.book-shell{grid-template-columns:1fr}}
+    @media (max-width:1024px){.book-shell{grid-template-columns:1fr}}
     @media (max-width:768px){.book-grid,.book-grid-3,.upload-source-actions{grid-template-columns:1fr}.book-row{flex-direction:column;align-items:flex-start}.book-actions{justify-content:flex-start}}
 </style>
 
@@ -112,7 +165,7 @@
 
     <section id="bookStatsWrap" class="member-mini-stats">
         <div class="member-mini-stat">
-            <div class="member-mini-icon" style="background:var(--accent);color:#fff;"><i data-lucide="book-copy" class="w-4 h-4"></i></div>
+            <div class="member-mini-icon" style="background:var(--dbx-primary-light, #fff7ed);color:var(--dbx-primary, #f97316);"><i data-lucide="book-copy" class="w-4 h-4"></i></div>
             <div><div class="member-mini-value">{{ $bookStats['total'] }}</div><div class="member-mini-label">Total Buku</div></div>
         </div>
         <div class="member-mini-stat">
@@ -135,10 +188,10 @@
                 <div>
                     <div class="book-add-title">Tambah Buku</div>
                 </div>
-                <div class="member-badge"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Buku Baru</div>
+                <div class="member-badge" style="background:#e2e8f0;color:#1e293b;"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Buku Baru</div>
             </div>
 
-            <div class="book-category-box" style="margin-top:18px;margin-bottom:18px;">
+            <div class="book-category-box book-category-box--utility" style="margin-top:18px;margin-bottom:18px;">
                 <div class="book-category-title">Import & Backup Buku</div>
                 <form method="POST" action="{{ route('admin.books.import') }}" enctype="multipart/form-data" class="space-y-3" data-async="true" data-reset-on-success="true" data-refresh-targets="#bookStatsWrap,#bookListWrap">
                     @csrf
@@ -153,11 +206,9 @@
                 <input name="title" class="form-input px-3 py-3 text-sm" placeholder="Judul buku" required>
                 <div class="cover-upload js-cover-upload">
                     <input type="file" name="cover_image" accept="image/*" class="js-file-upload">
-                    <input type="file" accept="image/*" capture="environment" class="js-camera-input">
                     <input type="file" accept="image/*" class="js-gallery-input">
                     <div class="upload-source-actions">
-                        <button type="button" class="upload-source-btn js-open-camera">Foto Langsung</button>
-                        <button type="button" class="upload-source-btn js-open-gallery">Pilih dari Galeri</button>
+                        <button type="button" class="upload-source-btn js-open-gallery">Pilih Foto</button>
                     </div>
                     <div class="upload-selected-name file-upload-name is-empty">Belum ada file dipilih</div>
                     <div class="upload-preview js-upload-preview">
@@ -354,11 +405,9 @@
             <input id="drawerBookTitle" name="title" class="form-input px-3 py-3 text-sm" placeholder="Judul buku" required>
             <div class="cover-upload js-cover-upload">
                 <input type="file" name="cover_image" accept="image/*" class="js-file-upload">
-                <input type="file" accept="image/*" capture="environment" class="js-camera-input">
                 <input type="file" accept="image/*" class="js-gallery-input">
                 <div class="upload-source-actions">
-                    <button type="button" class="upload-source-btn js-open-camera">Foto Langsung</button>
-                    <button type="button" class="upload-source-btn js-open-gallery">Pilih dari Galeri</button>
+                    <button type="button" class="upload-source-btn js-open-gallery">Pilih Foto</button>
                 </div>
                 <div class="upload-selected-name file-upload-name is-empty">Belum ada file dipilih</div>
                 <div class="upload-preview js-upload-preview">
@@ -411,23 +460,6 @@
 </aside>
 
 <div id="cropMask" class="crop-mask"></div>
-<div id="cameraModal" class="camera-modal" aria-hidden="true">
-    <div class="crop-head">
-        <div>
-            <div class="crop-title">Foto Langsung</div>
-            <div class="text-sm text-slate2-600 mt-1">Kamera dibuka langsung di aplikasi, lalu hasilnya masuk ke crop cover.</div>
-        </div>
-        <button type="button" class="btn-soft rounded-xl px-4 py-2 text-sm font-semibold" onclick="closeCameraModal()">Tutup</button>
-    </div>
-    <div class="camera-preview">
-        <video id="cameraVideo" autoplay playsinline muted></video>
-    </div>
-    <div class="camera-help">Perlu izin kamera dari browser. Fitur ini biasanya berjalan di `https` atau `localhost` pada HP.</div>
-    <div class="camera-actions">
-        <button type="button" class="btn-soft rounded-xl px-4 py-3 text-sm font-semibold" onclick="closeCameraModal()">Batal</button>
-        <button type="button" class="btn-primary rounded-xl px-4 py-3 text-sm font-semibold" onclick="captureCameraPhoto()">Ambil Foto</button>
-    </div>
-</div>
 <div id="cropModal" class="crop-modal" aria-hidden="true">
     <div class="crop-head">
         <div>
@@ -470,8 +502,6 @@
     const drawerBookPreviewWrap = document.getElementById('drawerBookPreviewWrap');
     const drawerBookPreview = document.getElementById('drawerBookPreview');
     const cropMask = document.getElementById('cropMask');
-    const cameraModal = document.getElementById('cameraModal');
-    const cameraVideo = document.getElementById('cameraVideo');
     const cropModal = document.getElementById('cropModal');
     const cropFrame = document.getElementById('cropFrame');
     const cropImage = document.getElementById('cropImage');
@@ -493,7 +523,6 @@
     let cropDragOriginX = 0;
     let cropDragOriginY = 0;
     let activeUploadRoot = null;
-    let cameraStream = null;
 
     function openBookDrawer(button) {
         editBookForm.action = "{{ url('/admin/books') }}/" + button.dataset.id;
@@ -538,11 +567,9 @@
         const previewImg = preview.querySelector('img');
         const nameNode = uploadRoot.querySelector('.file-upload-name');
         const realInput = uploadRoot.querySelector('.js-file-upload');
-        const cameraInput = uploadRoot.querySelector('.js-camera-input');
         const galleryInput = uploadRoot.querySelector('.js-gallery-input');
 
         realInput.value = '';
-        cameraInput.value = '';
         galleryInput.value = '';
         preview.classList.remove('show');
         previewImg.removeAttribute('src');
@@ -576,51 +603,6 @@
             cropModal.setAttribute('aria-hidden', 'false');
         };
         cropSourceImage.src = cropSourceUrl;
-    }
-
-    async function openCameraModal(uploadRoot) {
-        activeUploadRoot = uploadRoot;
-        activeSourceInput = null;
-        activeUploadInput = uploadRoot.querySelector('.js-file-upload');
-        activeUploadPreview = uploadRoot.querySelector('.js-upload-preview');
-        activeUploadName = uploadRoot.querySelector('.file-upload-name');
-
-        try {
-            cameraStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { ideal: 'environment' }
-                },
-                audio: false
-            });
-
-            cameraVideo.srcObject = cameraStream;
-            cropMask.classList.add('show');
-            cameraModal.classList.add('show');
-            cameraModal.setAttribute('aria-hidden', 'false');
-        } catch (error) {
-            alert('Kamera tidak bisa dibuka. Pastikan izin kamera aktif dan aplikasi dibuka lewat HTTPS atau localhost.');
-        }
-    }
-
-    function stopCameraStream() {
-        if (!cameraStream) {
-            return;
-        }
-
-        cameraStream.getTracks().forEach(function (track) {
-            track.stop();
-        });
-        cameraStream = null;
-        cameraVideo.srcObject = null;
-    }
-
-    function closeCameraModal() {
-        cameraModal.classList.remove('show');
-        cameraModal.setAttribute('aria-hidden', 'true');
-        stopCameraStream();
-        if (!cropModal.classList.contains('show')) {
-            cropMask.classList.remove('show');
-        }
     }
 
     function closeCropModal(resetInput = true) {
@@ -688,31 +670,6 @@
             }
 
             closeCropModal(false);
-        }, 'image/png');
-    }
-
-    function captureCameraPhoto() {
-        if (!cameraVideo.videoWidth || !cameraVideo.videoHeight || !activeUploadRoot) {
-            return;
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = cameraVideo.videoWidth;
-        canvas.height = cameraVideo.videoHeight;
-
-        const context = canvas.getContext('2d');
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-        context.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(function (blob) {
-            if (!blob) {
-                return;
-            }
-
-            const capturedFile = new File([blob], 'camera-cover.png', { type: 'image/png' });
-            closeCameraModal();
-            openCropModal(null, activeUploadRoot, capturedFile);
         }, 'image/png');
     }
 
@@ -803,24 +760,13 @@
         openBookDrawer(button);
     });
 
-    document.querySelectorAll('.js-open-camera').forEach(function (button) {
-        button.addEventListener('click', function () {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                button.closest('.js-cover-upload').querySelector('.js-camera-input').click();
-                return;
-            }
-
-            openCameraModal(button.closest('.js-cover-upload'));
-        });
-    });
-
     document.querySelectorAll('.js-open-gallery').forEach(function (button) {
         button.addEventListener('click', function () {
             button.closest('.js-cover-upload').querySelector('.js-gallery-input').click();
         });
     });
 
-    document.querySelectorAll('.js-camera-input, .js-gallery-input').forEach(function (input) {
+    document.querySelectorAll('.js-gallery-input').forEach(function (input) {
         input.addEventListener('change', function () {
             if (input.files && input.files.length) {
                 openCropModal(input, input.closest('.js-cover-upload'), input.files[0]);
@@ -835,7 +781,6 @@
     });
 
     cropMask.addEventListener('click', function () {
-        closeCameraModal();
         closeCropModal();
     });
 
@@ -887,7 +832,6 @@
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             closeBookDrawer();
-            closeCameraModal();
             closeCropModal();
         }
     });

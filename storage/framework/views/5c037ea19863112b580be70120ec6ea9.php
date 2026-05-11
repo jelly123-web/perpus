@@ -1,8 +1,6 @@
-@extends('layouts.admin')
-
-@section('content')
-@php($title = 'Restore Data')
-@php($eyebrow = 'Khusus Superadmin')
+<?php $__env->startSection('content'); ?>
+<?php ($title = 'Restore Data'); ?>
+<?php ($eyebrow = 'Khusus Superadmin'); ?>
 
 <style>
     .restore-head{border-bottom:1px solid var(--dbx-border, #e2e8f0);padding-bottom:24px;margin-bottom:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
@@ -37,69 +35,71 @@
             <h1 class="font-display restore-title">Restore Data</h1>
             <p class="restore-subtitle">Data yang telah dihapus sementara dapat dikembalikan atau dihapus permanen dari sini.</p>
         </div>
-        <div class="restore-badge"><i data-lucide="archive-restore" class="w-4 h-4"></i> {{ $deletedTotal }} Data Terhapus</div>
+        <div class="restore-badge"><i data-lucide="archive-restore" class="w-4 h-4"></i> <?php echo e($deletedTotal); ?> Data Terhapus</div>
     </div>
 
     <div id="restoreList">
-        @forelse($groups as $group)
+        <?php $__empty_1 = true; $__currentLoopData = $groups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $group): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
             <section class="restore-group">
                 <div class="restore-group-head">
-                    <div class="restore-group-title">{{ $group['label'] }}</div>
-                    <div class="restore-count">{{ $group['count'] }} data</div>
+                    <div class="restore-group-title"><?php echo e($group['label']); ?></div>
+                    <div class="restore-count"><?php echo e($group['count']); ?> data</div>
                 </div>
                 <div>
-                    @foreach($group['items'] as $item)
+                    <?php $__currentLoopData = $group['items']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <div class="restore-row">
                             <div>
-                                <div class="restore-meta-label">{{ $item['label'] }}</div>
-                                <div class="restore-name">{{ $item['name'] }}</div>
+                                <div class="restore-meta-label"><?php echo e($item['label']); ?></div>
+                                <div class="restore-name"><?php echo e($item['name']); ?></div>
                             </div>
                             <div>
                                 <div class="restore-meta-label">Dihapus oleh</div>
-                                <div class="restore-meta-value">{{ $item['deleted_by'] }}</div>
+                                <div class="restore-meta-value"><?php echo e($item['deleted_by']); ?></div>
                             </div>
                             <div>
                                 <div class="restore-meta-label">IP Address</div>
-                                <div class="restore-meta-value">{{ $item['deleted_ip'] }}</div>
+                                <div class="restore-meta-value"><?php echo e($item['deleted_ip']); ?></div>
                             </div>
                             <div>
                                 <div class="restore-meta-label">Hari</div>
-                                <div class="restore-meta-value">{{ $item['deleted_day'] }}</div>
+                                <div class="restore-meta-value"><?php echo e($item['deleted_day']); ?></div>
                             </div>
                             <div>
                                 <div class="restore-meta-label">Tanggal</div>
-                                <div class="restore-meta-value">{{ $item['deleted_date'] }}</div>
+                                <div class="restore-meta-value"><?php echo e($item['deleted_date']); ?></div>
                             </div>
                             <div>
                                 <div class="restore-meta-label">Jam</div>
-                                <div class="restore-meta-value">{{ $item['deleted_time'] }}</div>
+                                <div class="restore-meta-value"><?php echo e($item['deleted_time']); ?></div>
                             </div>
                             <div class="restore-actions">
-                                <form method="POST" action="{{ route('admin.restore.restore', [$item['table'], $item['id']]) }}" data-async="true" data-confirm="Kembalikan data ini?" data-remove-closest=".restore-row">
-                                    @csrf
-                                    @method('PATCH')
+                                <form method="POST" action="<?php echo e(route('admin.restore.restore', [$item['table'], $item['id']])); ?>" data-async="true" data-confirm="Kembalikan data ini?" data-remove-closest=".restore-row">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('PATCH'); ?>
                                     <button type="submit" class="restore-btn restore-btn-primary">
                                         <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restore
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('admin.restore.force-delete', [$item['table'], $item['id']]) }}" data-async="true" data-confirm="Hapus permanen data ini? Tindakan ini tidak bisa dibatalkan." data-remove-closest=".restore-row">
-                                    @csrf
-                                    @method('DELETE')
+                                <form method="POST" action="<?php echo e(route('admin.restore.force-delete', [$item['table'], $item['id']])); ?>" data-async="true" data-confirm="Hapus permanen data ini? Tindakan ini tidak bisa dibatalkan." data-remove-closest=".restore-row">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('DELETE'); ?>
                                     <button type="submit" class="restore-btn restore-btn-danger">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i> Hapus
                                     </button>
                                 </form>
                             </div>
                         </div>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
             </section>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <div class="restore-empty">
                 <i data-lucide="archive-restore"></i>
                 <p>Tidak ada data yang sedang terhapus.</p>
             </div>
-        @endforelse
+        <?php endif; ?>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/restore/index.blade.php ENDPATH**/ ?>

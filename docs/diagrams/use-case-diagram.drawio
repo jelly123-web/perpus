@@ -1,0 +1,38 @@
+<mxfile host="app.diagrams.net" modified="2026-05-08T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="usecase-page" name="Use Case Diagram">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="u_actor1" value="Siswa / Guru" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1"><mxGeometry x="30" y="200" width="50" height="100" as="geometry"/></mxCell>
+        <mxCell id="u_actor2" value="Petugas / Admin" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1"><mxGeometry x="30" y="470" width="50" height="100" as="geometry"/></mxCell>
+        <mxCell id="u_actor3" value="Kepala Sekolah" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1"><mxGeometry x="30" y="720" width="50" height="100" as="geometry"/></mxCell>
+        <mxCell id="u_actor4" value="Super Admin" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1"><mxGeometry x="1440" y="90" width="50" height="100" as="geometry"/></mxCell>
+        <mxCell id="u_actor5" value="Google" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1"><mxGeometry x="1440" y="350" width="50" height="100" as="geometry"/></mxCell>
+        <mxCell id="u_sys" value="Sistem Informasi Perpustakaan Sekolah" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="160" y="40" width="1220" height="900" as="geometry"/></mxCell>
+        <mxCell id="u1" value="Registrasi Akun" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="70" y="60" width="170" height="60" as="geometry"/></mxCell>
+        <mxCell id="u2" value="Login Username/Password" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="300" y="60" width="190" height="60" as="geometry"/></mxCell>
+        <mxCell id="u3" value="Login OTP Email" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="550" y="60" width="170" height="60" as="geometry"/></mxCell>
+        <mxCell id="u4" value="Login Google" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="790" y="60" width="150" height="60" as="geometry"/></mxCell>
+        <mxCell id="u5" value="Reset Password" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="1010" y="60" width="160" height="60" as="geometry"/></mxCell>
+        <mxCell id="u6" value="Lihat Dashboard" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="90" y="190" width="150" height="60" as="geometry"/></mxCell>
+        <mxCell id="u7" value="Lihat Profil" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="300" y="190" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="u8" value="Lihat Riwayat Peminjaman" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="500" y="190" width="210" height="60" as="geometry"/></mxCell>
+        <mxCell id="u9" value="Ajukan Peminjaman Buku" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="u_sys"><mxGeometry x="780" y="190" width="210" height="60" as="geometry"/></mxCell>
+        <mxCell id="u10" value="Kelola Kategori" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="100" y="340" width="150" height="60" as="geometry"/></mxCell>
+        <mxCell id="u11" value="Kelola Buku" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="320" y="340" width="130" height="60" as="geometry"/></mxCell>
+        <mxCell id="u12" value="Cari Buku dengan Gambar" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="520" y="340" width="210" height="60" as="geometry"/></mxCell>
+        <mxCell id="u13" value="Kelola Peminjaman" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="790" y="340" width="170" height="60" as="geometry"/></mxCell>
+        <mxCell id="u14" value="Kelola Sanksi" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="1020" y="340" width="150" height="60" as="geometry"/></mxCell>
+        <mxCell id="u15" value="Usulkan Pengadaan Buku" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="u_sys"><mxGeometry x="100" y="500" width="200" height="60" as="geometry"/></mxCell>
+        <mxCell id="u16" value="Setujui / Tolak Pengadaan" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="u_sys"><mxGeometry x="360" y="500" width="220" height="60" as="geometry"/></mxCell>
+        <mxCell id="u17" value="Lihat Laporan" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="u_sys"><mxGeometry x="640" y="500" width="150" height="60" as="geometry"/></mxCell>
+        <mxCell id="u18" value="Kelola User" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="860" y="500" width="130" height="60" as="geometry"/></mxCell>
+        <mxCell id="u19" value="Kelola Role &amp; Permission" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="1040" y="500" width="220" height="60" as="geometry"/></mxCell>
+        <mxCell id="u20" value="Backup Database" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="180" y="660" width="160" height="60" as="geometry"/></mxCell>
+        <mxCell id="u21" value="Restore Data Terhapus" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="410" y="660" width="190" height="60" as="geometry"/></mxCell>
+        <mxCell id="u22" value="Kelola Setting" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="u_sys"><mxGeometry x="680" y="660" width="150" height="60" as="geometry"/></mxCell>
+        <mxCell id="u23" value="Export Laporan PDF/Excel" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="u_sys"><mxGeometry x="910" y="660" width="210" height="60" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

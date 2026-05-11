@@ -1,25 +1,25 @@
-<form method="POST" action="{{ route('admin.users.update', $user) }}" class="space-y-6" data-async="true" data-refresh-targets="#usersStats,#accountList" data-success-call="closeEditDrawer">
-    @csrf
-    @method('PUT')
+<form method="POST" action="<?php echo e(route('admin.users.update', $user)); ?>" class="space-y-6" data-async="true" data-refresh-targets="#usersStats,#accountList" data-success-call="closeEditDrawer">
+    <?php echo csrf_field(); ?>
+    <?php echo method_field('PUT'); ?>
     
     <div class="space-y-1.5">
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Nama Lengkap</label>
-        <input name="name" value="{{ $user->name }}" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Nama lengkap..." required>
+        <input name="name" value="<?php echo e($user->name); ?>" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Nama lengkap..." required>
     </div>
     
     <div class="space-y-1.5">
         <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</label>
-        <input type="email" name="email" value="{{ $user->email }}" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Email aktif..." required>
+        <input type="email" name="email" value="<?php echo e($user->email); ?>" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Email aktif..." required>
     </div>
 
     <div class="grid grid-cols-2 gap-4">
         <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Username</label>
-            <input name="username" value="{{ $user->username }}" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Username..." required>
+            <input name="username" value="<?php echo e($user->username); ?>" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Username..." required>
         </div>
         <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Telepon</label>
-            <input name="phone" value="{{ $user->phone }}" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="No. HP/WA...">
+            <input name="phone" value="<?php echo e($user->phone); ?>" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="No. HP/WA...">
         </div>
     </div>
 
@@ -27,28 +27,28 @@
         <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Peran (Role)</label>
             <select name="role_id" class="form-select w-full px-4 py-3.5 text-sm rounded-xl" required onchange="toggleAcademicFields(this, '#academicFieldsEdit')">
-                @foreach($roles as $role)
-                    <option value="{{ $role->id }}" data-name="{{ $role->name }}" {{ $user->role_id == $role->id ? 'selected' : '' }}>{{ $role->label ?: $role->name }}</option>
-                @endforeach
+                <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($role->id); ?>" data-name="<?php echo e($role->name); ?>" <?php echo e($user->role_id == $role->id ? 'selected' : ''); ?>><?php echo e($role->label ?: $role->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
         </div>
         <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Status Akun</label>
             <select name="is_active" class="form-select w-full px-4 py-3.5 text-sm rounded-xl">
-                <option value="1" {{ $user->is_active ? 'selected' : '' }}>Aktif</option>
-                <option value="0" {{ !$user->is_active ? 'selected' : '' }}>Non-aktif</option>
+                <option value="1" <?php echo e($user->is_active ? 'selected' : ''); ?>>Aktif</option>
+                <option value="0" <?php echo e(!$user->is_active ? 'selected' : ''); ?>>Non-aktif</option>
             </select>
         </div>
     </div>
 
-    <div id="academicFieldsEdit" style="{{ in_array($user->role?->name, ['siswa', 'guru']) ? 'display: grid;' : 'display: none;' }}" class="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+    <div id="academicFieldsEdit" style="<?php echo e(in_array($user->role?->name, ['siswa', 'guru']) ? 'display: grid;' : 'display: none;'); ?>" class="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
         <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kelas</label>
-            <input name="kelas" value="{{ $user->kelas }}" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Contoh: XII RPL 1">
+            <input name="kelas" value="<?php echo e($user->kelas); ?>" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Contoh: XII RPL 1">
         </div>
         <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Jurusan</label>
-            <input name="jurusan" value="{{ $user->jurusan }}" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Contoh: Rekayasa Perangkat Lunak">
+            <input name="jurusan" value="<?php echo e($user->jurusan); ?>" class="form-input w-full px-4 py-3.5 text-sm rounded-xl" placeholder="Contoh: Rekayasa Perangkat Lunak">
         </div>
     </div>
 
@@ -70,3 +70,4 @@
         </button>
     </div>
 </form>
+<?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/users/edit.blade.php ENDPATH**/ ?>
