@@ -1,9 +1,7 @@
-@extends('layouts.auth')
+<?php $__env->startSection('heading', 'Buat Akun'); ?>
+<?php $__env->startSection('subheading', 'Daftarkan akun baru untuk masuk ke perpustakaan'); ?>
 
-@section('heading', 'Buat Akun')
-@section('subheading', 'Daftarkan akun baru untuk masuk ke perpustakaan')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <style>
         .register-form {
             display: flex;
@@ -106,8 +104,8 @@
         }
     </style>
 
-    <form method="POST" action="{{ route('register.store') }}" class="register-form" data-async-auth="true" data-loading-label="Mendaftar...">
-        @csrf
+    <form method="POST" action="<?php echo e(route('register.store')); ?>" class="register-form" data-async-auth="true" data-loading-label="Mendaftar...">
+        <?php echo csrf_field(); ?>
 
         <div class="register-field">
             <label for="name" class="register-label">Nama Lengkap</label>
@@ -116,7 +114,7 @@
                     type="text"
                     id="name"
                     name="name"
-                    value="{{ old('name') }}"
+                    value="<?php echo e(old('name')); ?>"
                     class="input-lib register-input"
                     placeholder="Masukkan nama lengkap"
                     autocomplete="name"
@@ -128,9 +126,16 @@
                 </svg>
             </div>
             <p data-error-for="name" class="hidden text-xs text-red-600 mt-1.5"></p>
-            @error('name')
-                <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
-            @enderror
+            <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                <p class="text-xs text-red-600 mt-1.5"><?php echo e($message); ?></p>
+            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
         </div>
 
         <div class="register-grid">
@@ -141,7 +146,7 @@
                         type="email"
                         id="email"
                         name="email"
-                        value="{{ old('email') }}"
+                        value="<?php echo e(old('email')); ?>"
                         class="input-lib register-input"
                         placeholder="contoh@gmail.com"
                         autocomplete="email"
@@ -153,9 +158,16 @@
                     </svg>
                 </div>
                 <p data-error-for="email" class="hidden text-xs text-red-600 mt-1.5"></p>
-                @error('email')
-                    <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
-                @enderror
+                <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                    <p class="text-xs text-red-600 mt-1.5"><?php echo e($message); ?></p>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
             </div>
 
             <div class="register-field">
@@ -165,7 +177,7 @@
                         type="text"
                         id="phone"
                         name="phone"
-                        value="{{ old('phone') }}"
+                        value="<?php echo e(old('phone')); ?>"
                         class="input-lib register-input"
                         placeholder="08xxxxxxxxxx"
                         autocomplete="tel"
@@ -175,9 +187,16 @@
                     </svg>
                 </div>
                 <p data-error-for="phone" class="hidden text-xs text-red-600 mt-1.5"></p>
-                @error('phone')
-                    <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
-                @enderror
+                <?php $__errorArgs = ['phone'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                    <p class="text-xs text-red-600 mt-1.5"><?php echo e($message); ?></p>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
             </div>
         </div>
 
@@ -189,7 +208,7 @@
                         type="text"
                         id="kelas"
                         name="kelas"
-                        value="{{ old('kelas') }}"
+                        value="<?php echo e(old('kelas')); ?>"
                         class="input-lib register-input"
                         placeholder="Contoh: 7"
                     >
@@ -199,9 +218,16 @@
                     </svg>
                 </div>
                 <p data-error-for="kelas" class="hidden text-xs text-red-600 mt-1.5"></p>
-                @error('kelas')
-                    <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
-                @enderror
+                <?php $__errorArgs = ['kelas'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                    <p class="text-xs text-red-600 mt-1.5"><?php echo e($message); ?></p>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
             </div>
 
             <div class="register-field">
@@ -211,7 +237,7 @@
                         type="text"
                         id="jurusan"
                         name="jurusan"
-                        value="{{ old('jurusan') }}"
+                        value="<?php echo e(old('jurusan')); ?>"
                         class="input-lib register-input"
                         placeholder="Contoh: RPL"
                     >
@@ -221,9 +247,16 @@
                     </svg>
                 </div>
                 <p data-error-for="jurusan" class="hidden text-xs text-red-600 mt-1.5"></p>
-                @error('jurusan')
-                    <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
-                @enderror
+                <?php $__errorArgs = ['jurusan'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                    <p class="text-xs text-red-600 mt-1.5"><?php echo e($message); ?></p>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
             </div>
         </div>
 
@@ -256,9 +289,16 @@
                 </button>
             </div>
             <p data-error-for="password" class="hidden text-xs text-red-600 mt-1.5"></p>
-            @error('password')
-                <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
-            @enderror
+            <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                <p class="text-xs text-red-600 mt-1.5"><?php echo e($message); ?></p>
+            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
         </div>
 
         <div class="register-field">
@@ -291,20 +331,27 @@
         </div>
 
         <div class="space-y-2">
-            @if ($googleRecaptchaEnabled)
+            <?php if($googleRecaptchaEnabled): ?>
                 <div class="register-recaptcha">
-                    <div class="g-recaptcha" data-sitekey="{{ $googleRecaptchaSiteKey }}"></div>
+                    <div class="g-recaptcha" data-sitekey="<?php echo e($googleRecaptchaSiteKey); ?>"></div>
                 </div>
-            @else
+            <?php else: ?>
                 <div class="register-recaptcha-note">
                     Google reCAPTCHA belum aktif karena key belum diisi di file environment.
                 </div>
-            @endif
+            <?php endif; ?>
 
             <p data-error-for="g-recaptcha-response" class="hidden text-xs text-red-600 mt-1.5"></p>
-            @error('g-recaptcha-response')
-                <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
-            @enderror
+            <?php $__errorArgs = ['g-recaptcha-response'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                <p class="text-xs text-red-600 mt-1.5"><?php echo e($message); ?></p>
+            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
         </div>
 
         <button type="submit" class="auth-button w-full py-3.5 rounded-xl font-bold text-sm">
@@ -314,12 +361,12 @@
 
     <p class="text-center mt-7 text-sm text-slate-500">
         Sudah punya akun?
-        <a href="{{ route('login') }}" class="auth-link">Masuk sekarang</a>
+        <a href="<?php echo e(route('login')); ?>" class="auth-link">Masuk sekarang</a>
     </p>
 
-    @if ($googleRecaptchaEnabled)
+    <?php if($googleRecaptchaEnabled): ?>
         <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    @endif
+    <?php endif; ?>
 
     <script>
         document.querySelectorAll('.password-toggle').forEach((toggle) => {
@@ -333,4 +380,6 @@
             });
         });
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.auth', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/auth/register.blade.php ENDPATH**/ ?>

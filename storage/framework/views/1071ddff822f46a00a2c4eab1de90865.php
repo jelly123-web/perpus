@@ -1,18 +1,17 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    @php
+    <?php
         $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
         $appNameColor = \App\Models\Setting::valueOr('app_name_color', '#21323a');
         $appLogo = \App\Models\Setting::appLogoPath();
         $showAppName = \App\Models\Setting::valueOr('show_app_name', '1') === '1';
         $isLoginPage = request()->routeIs('login');
-        $isRegisterPage = request()->routeIs('register');
-    @endphp
+    ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Auth' }} - {{ $appName }}</title>
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo e($title ?? 'Auth'); ?> - <?php echo e($appName); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -60,7 +59,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: {{ ($isLoginPage || $isRegisterPage) ? "'Plus Jakarta Sans', sans-serif" : "'Inter', sans-serif" }};
+            font-family: <?php echo e($isLoginPage ? "'Plus Jakarta Sans', sans-serif" : "'Inter', sans-serif"); ?>;
             min-height: 100vh;
             overflow-x: hidden;
             color: #2C1810;
@@ -92,8 +91,7 @@
         .auth-shell {
             background: linear-gradient(160deg, #FDF8F0 0%, #FEFCF9 40%, #FBF8F1 100%);
         }
-        .auth-shell.login-shell,
-        .auth-shell.register-shell {
+        .auth-shell.login-shell {
             background: #FFFFFF;
             overflow: hidden;
         }
@@ -109,16 +107,14 @@
         .brand-glow {
             box-shadow: 0 0 24px rgba(201, 168, 76, 0.22);
         }
-        .login-shell .login-card,
-        .register-shell .login-card {
+        .login-shell .login-card {
             background: #FFFFFF;
             backdrop-filter: none;
             border: 1px solid #E2E8F0;
             border-radius: 24px;
             box-shadow: 0 20px 40px rgba(148, 163, 184, 0.1);
         }
-        .login-shell .brand-glow,
-        .register-shell .brand-glow {
+        .login-shell .brand-glow {
             box-shadow: none;
         }
         .logo-slot {
@@ -144,8 +140,7 @@
             background: #FEFCF9;
             transition: all 0.25s ease;
         }
-        .login-shell .input-lib,
-        .register-shell .input-lib {
+        .login-shell .input-lib {
             border: 2px solid transparent;
             background: #F8FAFC;
             color: #1E293B;
@@ -156,8 +151,7 @@
             background: #fff;
             outline: none;
         }
-        .login-shell .input-lib:focus,
-        .register-shell .input-lib:focus {
+        .login-shell .input-lib:focus {
             border-color: #F97316;
             box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08);
             background: #FFFFFF;
@@ -168,8 +162,7 @@
             transition: all 0.25s ease;
             box-shadow: 0 12px 24px rgba(201,161,91,0.25);
         }
-        .login-shell .auth-button,
-        .register-shell .auth-button {
+        .login-shell .auth-button {
             background: #F97316;
             box-shadow: 0 10px 15px rgba(249, 115, 22, 0.2);
         }
@@ -178,8 +171,7 @@
             transform: translateY(-1px);
             box-shadow: 0 16px 30px rgba(191,149,80,0.3);
         }
-        .login-shell .auth-button:hover,
-        .register-shell .auth-button:hover {
+        .login-shell .auth-button:hover {
             background: #EA580C;
             box-shadow: 0 12px 20px rgba(249, 115, 22, 0.25);
         }
@@ -201,14 +193,12 @@
             background: #C9A15B;
             border-color: #C9A15B;
         }
-        .login-shell .checkbox-lib,
-        .register-shell .checkbox-lib {
+        .login-shell .checkbox-lib {
             border: 2px solid #CBD5E1;
             border-radius: 5px;
             background: #FFFFFF;
         }
-        .login-shell .checkbox-lib:checked,
-        .register-shell .checkbox-lib:checked {
+        .login-shell .checkbox-lib:checked {
             background: #F97316;
             border-color: #F97316;
         }
@@ -228,13 +218,11 @@
             text-decoration: none;
         }
         .auth-link:hover { color: #276C4B; }
-        .login-shell .auth-link,
-        .register-shell .auth-link {
+        .login-shell .auth-link {
             color: #F97316;
             font-weight: 700;
         }
-        .login-shell .auth-link:hover,
-        .register-shell .auth-link:hover {
+        .login-shell .auth-link:hover {
             color: #EA580C;
         }
         .status-box {
@@ -277,94 +265,72 @@
             left: 60%;
             transform: translate(-50%, -50%);
         }
-        .register-shape {
-            position: absolute;
-            border-radius: 9999px;
-            filter: blur(80px);
-            z-index: 0;
-            opacity: 0.6;
-            pointer-events: none;
-        }
-        .register-shape-1 {
-            width: 600px;
-            height: 600px;
-            background: #FFF7ED;
-            top: -200px;
-            left: -100px;
-        }
-        .register-shape-2 {
-            width: 500px;
-            height: 500px;
-            background: #F1F5F9;
-            bottom: -150px;
-            right: -100px;
-        }
         @media (max-width: 1023px) {
             .side-illustration { display: none !important; }
         }
     </style>
 </head>
 <body class="min-h-screen">
-    <main class="auth-shell {{ $isLoginPage ? 'login-shell' : ($isRegisterPage ? 'register-shell' : '') }} min-h-screen flex items-center justify-center px-6 py-12 relative">
-        @if ($isLoginPage)
+    <main class="auth-shell <?php echo e($isLoginPage ? 'login-shell' : ''); ?> min-h-screen flex items-center justify-center px-6 py-12 relative">
+        <?php if($isLoginPage): ?>
             <div class="login-shape login-shape-1"></div>
             <div class="login-shape login-shape-2"></div>
             <div class="login-shape login-shape-3"></div>
-        @elseif ($isRegisterPage)
-            <div class="register-shape register-shape-1"></div>
-            <div class="register-shape register-shape-2"></div>
-        @else
+        <?php else: ?>
             <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-30" style="background: radial-gradient(circle, rgba(201,168,76,0.15), transparent 70%);"></div>
             <div class="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20" style="background: radial-gradient(circle, rgba(27,69,50,0.1), transparent 70%);"></div>
-        @endif
+        <?php endif; ?>
 
         <div class="w-full max-w-md relative z-10">
             <div class="lg:hidden flex items-center justify-center gap-3 mb-10">
-                <div class="{{ $appLogo && file_exists(public_path($appLogo)) ? 'w-auto max-w-[12rem] h-auto max-h-[4.5rem] px-3' : 'w-11 h-11' }} rounded-xl flex items-center justify-center text-lib-300 text-sm font-bold overflow-hidden">
-                    @if ($appLogo && file_exists(public_path($appLogo)))
-                        <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain">
-                    @else
-                        {{ strtoupper(substr($appName, 0, 2)) }}
-                    @endif
+                <div class="<?php echo e($appLogo && file_exists(public_path($appLogo)) ? 'w-auto max-w-[12rem] h-auto max-h-[4.5rem] px-3' : 'w-11 h-11'); ?> rounded-xl flex items-center justify-center text-lib-300 text-sm font-bold overflow-hidden">
+                    <?php if($appLogo && file_exists(public_path($appLogo))): ?>
+                        <img src="<?php echo e(asset($appLogo)); ?>" alt="<?php echo e($appName); ?>" class="w-full h-full object-contain">
+                    <?php else: ?>
+                        <?php echo e(strtoupper(substr($appName, 0, 2))); ?>
+
+                    <?php endif; ?>
                 </div>
-                @if ($showAppName)
+                <?php if($showAppName): ?>
                     <div class="flex flex-col items-center gap-1.5">
-                        <h1 class="text-xl font-bold tracking-tight" style="color: {{ $appNameColor }}">{{ $appName }}</h1>
+                        <h1 class="text-xl font-bold tracking-tight" style="color: <?php echo e($appNameColor); ?>"><?php echo e($appName); ?></h1>
                     </div>
-                @endif
+                <?php endif; ?>
             </div>
 
             <div class="login-card rounded-3xl p-8 sm:p-10 brand-glow">
-                @if (session('status'))
+                <?php if(session('status')): ?>
                     <div class="status-box rounded-2xl px-4 py-3 text-sm mb-5">
-                        {{ session('status') }}
-                    </div>
-                @endif
+                        <?php echo e(session('status')); ?>
 
-                @if ($errors->any())
-                    <div class="error-box rounded-2xl px-4 py-3 text-sm mb-5">
-                        {{ $errors->first() }}
                     </div>
-                @endif
+                <?php endif; ?>
+
+                <?php if($errors->any()): ?>
+                    <div class="error-box rounded-2xl px-4 py-3 text-sm mb-5">
+                        <?php echo e($errors->first()); ?>
+
+                    </div>
+                <?php endif; ?>
 
                 <div class="text-center mb-8">
-                    <div class="logo-slot {{ $appLogo && file_exists(public_path($appLogo)) ? 'has-image' : 'w-24 h-24' }} inline-flex items-center justify-center rounded-[1.75rem] mb-4 overflow-hidden">
-                        @if ($appLogo && file_exists(public_path($appLogo)))
-                            <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="w-full h-full object-contain">
-                        @else
+                    <div class="logo-slot <?php echo e($appLogo && file_exists(public_path($appLogo)) ? 'has-image' : 'w-24 h-24'); ?> inline-flex items-center justify-center rounded-[1.75rem] mb-4 overflow-hidden">
+                        <?php if($appLogo && file_exists(public_path($appLogo))): ?>
+                            <img src="<?php echo e(asset($appLogo)); ?>" alt="<?php echo e($appName); ?>" class="w-full h-full object-contain">
+                        <?php else: ?>
                             <div class="text-center leading-tight">
                                 <div class="text-lib-900 text-xs font-semibold tracking-[0.3em] uppercase">Logo</div>
-                                <div class="text-[11px] mt-1" style="color: {{ $appNameColor }}">{{ $appName }}</div>
+                                <div class="text-[11px] mt-1" style="color: <?php echo e($appNameColor); ?>"><?php echo e($appName); ?></div>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    <h2 class="{{ $isLoginPage || $isRegisterPage ? 'text-2xl font-extrabold text-slate-800 mb-2' : 'text-2xl font-serif font-bold text-lib-950 mb-1' }}">@yield('heading')</h2>
-                    <p class="{{ $isLoginPage || $isRegisterPage ? 'text-sm text-slate-500' : 'text-sm text-lib-700/60 font-light' }}">@yield('subheading')</p>
+                    <h2 class="<?php echo e($isLoginPage ? 'text-2xl font-extrabold text-slate-800 mb-2' : 'text-2xl font-serif font-bold text-lib-950 mb-1'); ?>"><?php echo $__env->yieldContent('heading'); ?></h2>
+                    <p class="<?php echo e($isLoginPage ? 'text-sm text-slate-500' : 'text-sm text-lib-700/60 font-light'); ?>"><?php echo $__env->yieldContent('subheading'); ?></p>
                 </div>
 
                 <div id="authAsyncMessage" class="hidden rounded-2xl px-4 py-3 text-sm mb-5"></div>
 
-                @yield('content')
+                <?php echo $__env->yieldContent('content'); ?>
             </div>
         </div>
     </main>
@@ -490,3 +456,4 @@
     </script>
 </body>
 </html>
+<?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views\layouts\auth.blade.php ENDPATH**/ ?>

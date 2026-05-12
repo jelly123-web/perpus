@@ -6,6 +6,8 @@
         $appNameColor = \App\Models\Setting::valueOr('app_name_color', '#21323a');
         $appLogo = \App\Models\Setting::appLogoPath();
         $showAppName = \App\Models\Setting::valueOr('show_app_name', '1') === '1';
+        $isLoginPage = request()->routeIs('login');
+        $isRegisterPage = request()->routeIs('register');
     ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +15,7 @@
     <title><?php echo e($title ?? 'Auth'); ?> - <?php echo e($appName); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -58,7 +60,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: <?php echo e(($isLoginPage || $isRegisterPage) ? "'Plus Jakarta Sans', sans-serif" : "'Inter', sans-serif"); ?>;
             min-height: 100vh;
             overflow-x: hidden;
             color: #2C1810;
@@ -90,6 +92,11 @@
         .auth-shell {
             background: linear-gradient(160deg, #FDF8F0 0%, #FEFCF9 40%, #FBF8F1 100%);
         }
+        .auth-shell.login-shell,
+        .auth-shell.register-shell {
+            background: #FFFFFF;
+            overflow: hidden;
+        }
         .login-card {
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(20px);
@@ -101,6 +108,18 @@
         }
         .brand-glow {
             box-shadow: 0 0 24px rgba(201, 168, 76, 0.22);
+        }
+        .login-shell .login-card,
+        .register-shell .login-card {
+            background: #FFFFFF;
+            backdrop-filter: none;
+            border: 1px solid #E2E8F0;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(148, 163, 184, 0.1);
+        }
+        .login-shell .brand-glow,
+        .register-shell .brand-glow {
+            box-shadow: none;
         }
         .logo-slot {
             background: transparent;
@@ -125,11 +144,23 @@
             background: #FEFCF9;
             transition: all 0.25s ease;
         }
+        .login-shell .input-lib,
+        .register-shell .input-lib {
+            border: 2px solid transparent;
+            background: #F8FAFC;
+            color: #1E293B;
+        }
         .input-lib:focus {
             border-color: #C9A84C;
             box-shadow: 0 0 0 3px rgba(201,168,76,0.15), 0 1px 2px rgba(0,0,0,0.05);
             background: #fff;
             outline: none;
+        }
+        .login-shell .input-lib:focus,
+        .register-shell .input-lib:focus {
+            border-color: #F97316;
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08);
+            background: #FFFFFF;
         }
         .auth-button {
             background: #C9A15B;
@@ -137,10 +168,20 @@
             transition: all 0.25s ease;
             box-shadow: 0 12px 24px rgba(201,161,91,0.25);
         }
+        .login-shell .auth-button,
+        .register-shell .auth-button {
+            background: #F97316;
+            box-shadow: 0 10px 15px rgba(249, 115, 22, 0.2);
+        }
         .auth-button:hover {
             background: #bf9550;
             transform: translateY(-1px);
             box-shadow: 0 16px 30px rgba(191,149,80,0.3);
+        }
+        .login-shell .auth-button:hover,
+        .register-shell .auth-button:hover {
+            background: #EA580C;
+            box-shadow: 0 12px 20px rgba(249, 115, 22, 0.25);
         }
         .auth-button:disabled {
             opacity: 0.7;
@@ -160,6 +201,17 @@
             background: #C9A15B;
             border-color: #C9A15B;
         }
+        .login-shell .checkbox-lib,
+        .register-shell .checkbox-lib {
+            border: 2px solid #CBD5E1;
+            border-radius: 5px;
+            background: #FFFFFF;
+        }
+        .login-shell .checkbox-lib:checked,
+        .register-shell .checkbox-lib:checked {
+            background: #F97316;
+            border-color: #F97316;
+        }
         .checkbox-lib:checked::after {
             content: '✓';
             position: absolute;
@@ -176,6 +228,15 @@
             text-decoration: none;
         }
         .auth-link:hover { color: #276C4B; }
+        .login-shell .auth-link,
+        .register-shell .auth-link {
+            color: #F97316;
+            font-weight: 700;
+        }
+        .login-shell .auth-link:hover,
+        .register-shell .auth-link:hover {
+            color: #EA580C;
+        }
         .status-box {
             border: 1px solid rgba(39,108,75,0.18);
             background: rgba(240,247,244,0.9);
@@ -186,15 +247,76 @@
             background: rgba(254,242,242,0.9);
             color: #b91c1c;
         }
+        .login-shape {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .login-shape-1 {
+            width: 600px;
+            height: 600px;
+            background: #FFF7ED;
+            top: -200px;
+            left: -100px;
+        }
+        .login-shape-2 {
+            width: 500px;
+            height: 500px;
+            background: #F1F5F9;
+            bottom: -150px;
+            right: -100px;
+        }
+        .login-shape-3 {
+            width: 300px;
+            height: 300px;
+            background: #FFEDD5;
+            top: 40%;
+            left: 60%;
+            transform: translate(-50%, -50%);
+        }
+        .register-shape {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .register-shape-1 {
+            width: 600px;
+            height: 600px;
+            background: #FFF7ED;
+            top: -200px;
+            left: -100px;
+        }
+        .register-shape-2 {
+            width: 500px;
+            height: 500px;
+            background: #F1F5F9;
+            bottom: -150px;
+            right: -100px;
+        }
         @media (max-width: 1023px) {
             .side-illustration { display: none !important; }
         }
     </style>
 </head>
 <body class="min-h-screen">
-    <main class="auth-shell min-h-screen flex items-center justify-center px-6 py-12 relative">
-        <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-30" style="background: radial-gradient(circle, rgba(201,168,76,0.15), transparent 70%);"></div>
-        <div class="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20" style="background: radial-gradient(circle, rgba(27,69,50,0.1), transparent 70%);"></div>
+    <main class="auth-shell <?php echo e($isLoginPage ? 'login-shell' : ($isRegisterPage ? 'register-shell' : '')); ?> min-h-screen flex items-center justify-center px-6 py-12 relative">
+        <?php if($isLoginPage): ?>
+            <div class="login-shape login-shape-1"></div>
+            <div class="login-shape login-shape-2"></div>
+            <div class="login-shape login-shape-3"></div>
+        <?php elseif($isRegisterPage): ?>
+            <div class="register-shape register-shape-1"></div>
+            <div class="register-shape register-shape-2"></div>
+        <?php else: ?>
+            <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-30" style="background: radial-gradient(circle, rgba(201,168,76,0.15), transparent 70%);"></div>
+            <div class="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20" style="background: radial-gradient(circle, rgba(27,69,50,0.1), transparent 70%);"></div>
+        <?php endif; ?>
 
         <div class="w-full max-w-md relative z-10">
             <div class="lg:hidden flex items-center justify-center gap-3 mb-10">
@@ -239,8 +361,8 @@
                             </div>
                         <?php endif; ?>
                     </div>
-                    <h2 class="text-2xl font-serif font-bold text-lib-950 mb-1"><?php echo $__env->yieldContent('heading'); ?></h2>
-                    <p class="text-sm text-lib-700/60 font-light"><?php echo $__env->yieldContent('subheading'); ?></p>
+                    <h2 class="<?php echo e($isLoginPage || $isRegisterPage ? 'text-2xl font-extrabold text-slate-800 mb-2' : 'text-2xl font-serif font-bold text-lib-950 mb-1'); ?>"><?php echo $__env->yieldContent('heading'); ?></h2>
+                    <p class="<?php echo e($isLoginPage || $isRegisterPage ? 'text-sm text-slate-500' : 'text-sm text-lib-700/60 font-light'); ?>"><?php echo $__env->yieldContent('subheading'); ?></p>
                 </div>
 
                 <div id="authAsyncMessage" class="hidden rounded-2xl px-4 py-3 text-sm mb-5"></div>

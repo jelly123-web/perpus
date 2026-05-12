@@ -5,14 +5,50 @@
 
 @section('content')
     <style>
+        .login-page-form .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .login-page-form .input-wrap {
+            position: relative;
+        }
+
+        .login-page-form .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .login-page-form .input-lib {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            font-size: 15px;
+            border-radius: 12px;
+        }
+
+        .login-page-form .input-wrap:focus-within .input-icon {
+            color: #F97316;
+        }
+
         .password-toggle {
             position: absolute;
-            inset-block: 0;
-            right: 0.85rem;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #b8923a;
+            color: #94a3b8;
             background: transparent;
             border: none;
             cursor: pointer;
@@ -20,30 +56,51 @@
         }
 
         .password-toggle:hover {
-            color: #9a7530;
+            color: #F97316;
         }
 
         .auth-icon-link {
-            width: 3.5rem;
-            height: 3.5rem;
+            min-height: 48px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .social-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .social-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 
-    <form method="POST" action="{{ route('login.authenticate') }}" class="space-y-5" data-async-auth="true" data-loading-label="Masuk...">
+    <form method="POST" action="{{ route('login.authenticate') }}" class="login-page-form space-y-5" data-async-auth="true" data-loading-label="Masuk...">
         @csrf
 
         <div>
-            <label for="username" class="block text-xs font-semibold text-lib-800 uppercase tracking-wider mb-2">username</label>
-            <input
-                type="text"
-                id="username"
-                name="username"
-                value="{{ old('username') }}"
-                class="input-lib w-full px-4 py-3.5 rounded-xl text-sm text-lib-950"
-                placeholder="masukkan username"
-                autocomplete="username"
-                required
-            >
+            <label for="username" class="form-label">username</label>
+            <div class="input-wrap">
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value="{{ old('username') }}"
+                    class="input-lib text-sm text-lib-950"
+                    placeholder="masukkan username"
+                    autocomplete="username"
+                    required
+                >
+                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
             <p data-error-for="username" class="hidden text-xs text-red-600 mt-1.5"></p>
             @error('username')
                 <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>
@@ -51,17 +108,21 @@
         </div>
 
         <div>
-            <label for="password" class="block text-xs font-semibold text-lib-800 uppercase tracking-wider mb-2">password</label>
-            <div class="relative">
+            <label for="password" class="form-label">password</label>
+            <div class="input-wrap">
                 <input
                     type="password"
                     id="password"
                     name="password"
-                    class="input-lib w-full pl-4 pr-12 py-3.5 rounded-xl text-sm text-lib-950"
+                    class="input-lib pr-12 text-sm text-lib-950"
                     placeholder="Masukkan password"
                     autocomplete="current-password"
                     required
                 >
+                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
                 <button type="button" class="password-toggle" data-target="password" aria-label="Tampilkan password login">
                     <svg class="toggle-show w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -80,12 +141,12 @@
             @enderror
         </div>
 
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-3">
             <label class="flex items-center gap-2.5 cursor-pointer">
                 <input type="checkbox" class="checkbox-lib" name="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
-                <span class="text-xs text-lib-700/70">Ingat saya</span>
+                <span class="text-xs text-slate-500">Ingat saya</span>
             </label>
-            <a href="{{ route('password.request') }}" class="text-xs text-lib-500 hover:text-lib-700 transition-colors">Forgot password?</a>
+            <a href="{{ route('password.request') }}" class="text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors">Forgot password?</a>
         </div>
 
         <button type="submit" class="auth-button w-full py-3.5 rounded-xl font-semibold text-sm tracking-wide">
@@ -93,16 +154,16 @@
         </button>
     </form>
     
-    <div class="my-5 flex items-center gap-3">
-        <div class="h-px flex-1 bg-lib-200"></div>
-        <span class="text-[11px] font-semibold uppercase tracking-[0.18em] text-lib-500">atau</span>
-        <div class="h-px flex-1 bg-lib-200"></div>
+    <div class="my-7 flex items-center gap-4">
+        <div class="h-px flex-1 bg-slate-100"></div>
+        <span class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">atau</span>
+        <div class="h-px flex-1 bg-slate-100"></div>
     </div>
 
-    <div class="flex items-center justify-center gap-4">
+    <div class="social-grid">
         <a
             href="{{ route('login.otp') }}"
-            class="auth-icon-link inline-flex items-center justify-center rounded-2xl border border-lib-200 bg-lib-50 text-lib-900 transition hover:border-lib-300 hover:bg-lib-100"
+            class="auth-icon-link inline-flex items-center justify-center gap-2 border border-slate-200 bg-white text-slate-800 transition hover:border-slate-300 hover:bg-slate-50"
             aria-label="Login pakai OTP"
             title="Login pakai OTP"
         >
@@ -118,11 +179,12 @@
                 <path d="M42.5 31h3"></path>
                 <path d="M47.5 31h2"></path>
             </svg>
+            <span>Login OTP</span>
         </a>
 
         <a
             href="{{ route('auth.google.redirect') }}"
-            class="auth-icon-link inline-flex items-center justify-center rounded-2xl border border-lib-200 bg-white text-lib-900 transition hover:border-lib-300 hover:bg-lib-50"
+            class="auth-icon-link inline-flex items-center justify-center gap-2 border border-slate-200 bg-white text-slate-800 transition hover:border-slate-300 hover:bg-slate-50"
             aria-label="Masuk dengan Google"
             title="Masuk dengan Google"
         >
@@ -132,10 +194,11 @@
                 <path fill="#4A90E2" d="M6.51 13.95A5.99 5.99 0 016.2 12c0-.68.12-1.34.31-1.95V7.43H3.12A9.99 9.99 0 002 12c0 1.61.39 3.13 1.12 4.57l3.39-2.62z"/>
                 <path fill="#FBBC05" d="M12 5.98c1.47 0 2.79.51 3.83 1.49l2.87-2.87C16.95 2.98 14.69 2 12 2a9.99 9.99 0 00-8.88 5.43l3.39 2.62C7.28 7.71 9.44 5.98 12 5.98z"/>
             </svg>
+            <span>Google</span>
         </a>
     </div>
 
-    <p class="text-center mt-7 text-sm text-lib-700/60">
+    <p class="text-center mt-8 text-sm text-slate-500">
         Belum punya akun?
         <a href="{{ route('register') }}" class="auth-link">Daftar sekarang</a>
     </p>

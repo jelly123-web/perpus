@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <?php
+        $user = auth()->user();
+        $appName = \App\Models\Setting::valueOr('app_name', 'LibraVault');
+        $appNameColor = \App\Models\Setting::valueOr('app_name_color', '#21323a');
+        $appLogo = \App\Models\Setting::appLogoPath();
+        $showAppName = \App\Models\Setting::valueOr('show_app_name', '1') === '1';
+        $isPetugasPanel = $user?->role?->name === 'petugas';
+        $headerNotifications = collect();
+        $adminRoute = fn (string $name, array $parameters = []) => route($name, $parameters, false);
+        $sidebarSections = collect([
+            [
+                'title' => 'Utama',
+                'items' => [
+                    ['label' => 'Dashboard', 'icon' => 'layout-grid', 'route' => 'dashboard', 'match' => 'dashboard', 'permission' => 'access_dashboard'],
+                    ['label' => 'Laporan', 'icon' => 'file-text', 'route' => 'admin.reports.index', 'match' => 'admin.reports.*', 'permission' => 'view_reports'],
+                    ['label' => 'Peminjaman Buku', 'icon' => 'book-up-2', 'route' => 'admin.loans.index', 'match' => 'admin.loans.*', 'permission' => 'manage_loans'],
+                    ['label' => 'Riwayat Peminjaman', 'icon' => 'history', 'route' => 'borrower.history', 'match' => 'borrower.history', 'permission' => 'view_borrower_history'],
+                ],
+            ],
+            [
+                'title' => 'Manajemen Sistem',
+                'items' => [
+                    ['label' => 'Kelola Akun Pengguna', 'icon' => 'users-round', 'route' => 'admin.users.index', 'match' => 'admin.users.*', 'permission' => 'manage_users'],
+                    ['label' => 'Table Access', 'icon' => 'shield-check', 'route' => 'admin.roles.index', 'match' => 'admin.roles.*', 'permission' => 'manage_roles'],
+                    ['label' => 'Kelola Data Buku', 'icon' => 'book-copy', 'route' => 'admin.books.index', 'match' => 'admin.books.index', 'permission' => 'manage_books'],
+                    ['label' => 'Backup & Restore Database', 'icon' => 'database-backup', 'route' => 'admin.backups.index', 'match' => 'admin.backups.*', 'permission' => 'manage_backups'],
+                    ['label' => 'Restore Data', 'icon' => 'archive-restore', 'route' => 'admin.restore.index', 'match' => 'admin.restore.*', 'permission' => 'manage_users', 'super_admin_only' => true],
+                    ['label' => 'Setting', 'icon' => 'settings-2', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'permission' => 'manage_settings'],
+                ],
+            ],
+        ])->map(function (array $section) use ($user): array {
+            $items = collect($section['items'])
+                ->filter(fn (array $item) => $user?->hasPermission($item['permission']) && (! ($item['super_admin_only'] ?? false) || $user?->isSuperAdmin()))
+                ->values();
+
+            return [
+                'title' => $section['title'],
+                'items' => $items,
+            ];
+        })->filter(fn (array $section) => $section['items']->isNotEmpty())->values();
+
+        if ($user?->hasPermission('manage_loans')) {
+            $headerNotifications = $headerNotifications
+                ->merge(
+                    \App\Models\Loan::query()
+                        ->with(['book', 'member'])
+                        ->where('status', 'late')
+                        ->latest('updated_at')
+                        ->take(5)
+                        ->get()
+                        ->map(fn ($loan) => [
+                            'icon' => 'triangle-alert',
+                            'tone' => 'danger',
+                            'title' => 'Buku terlambat dikembalikan',
+                            'body' => ($loan->member?->name ?? 'Anggota').' terlambat mengembalikan buku "'.($loan->book?->title ?? 'Buku').'".',
+                            'time' => optional($loan->updated_at)->diffForHumans(),
+                            'timestamp' => optional($loan->updated_at)->timestamp ?? 0,
+                            'href' => $adminRoute('admin.loans.index'),
+                        ])
+                )
+                ->merge(
+                    \App\Models\Loan::query()
+                        ->with(['book', 'member'])
+                        ->where('status', 'requested')
+                        ->latest('created_at')
+                        ->take(5)
+                        ->get()
+                        ->map(fn ($loan) => [
+                            'icon' => 'info',
+                            'tone' => 'info',
+                            'title' => 'Permintaan pinjam baru',
+                            'body' => ($loan->member?->name ?? 'Anggota').' mengajukan pinjam buku "'.($loan->book?->title ?? 'Buku').'".',
+                            'time' => optional($loan->created_at)->diffForHumans(),
+                            'timestamp' => optional($loan->created_at)->timestamp ?? 0,
+                            'href' => $adminRoute('admin.loans.index'),
+                        ])
+                );
+        }
+
+        if ($user?->role?->name === 'kepsek') {
+            $headerNotifications = $headerNotifications->merge(
+                \App\Models\BookProcurement::query()
+                    ->with(['category', 'proposer'])
+                    ->where('status', 'pending')
+                    ->latest('created_at')
+                    ->take(5)
+                    ->get()
+                    ->map(fn ($procurement) => [
+                        'icon' => 'clipboard-plus',
+                        'tone' => 'info',
+                        'title' => 'Usulan pengadaan baru',
+                        'body' => ($procurement->proposer?->name ?? 'Petugas').' mengusulkan buku "'.($procurement->title ?? 'Buku').'"'
+                            .($procurement->category?->name ? ' kategori '.$procurement->category->name : '')
+                            .' sebanyak '.((int) $procurement->quantity).' buku.',
+                        'time' => optional($procurement->created_at)->diffForHumans(),
+                        'timestamp' => optional($procurement->created_at)->timestamp ?? 0,
+                        'href' => $adminRoute('dashboard'),
+                    ])
+            );
+        }
+
+        if ($user?->isSuperAdmin()) {
+            $headerNotifications = $headerNotifications->merge(
+                \App\Models\BookProcurement::query()
+                    ->with(['proposer', 'approver', 'rejector'])
+                    ->whereIn('status', ['approved', 'rejected'])
+                    ->orderByRaw('COALESCE(rejected_at, approved_at, updated_at) DESC')
+                    ->take(5)
+                    ->get()
+                    ->map(function ($procurement) use ($adminRoute) {
+                        $isRejected = $procurement->status === 'rejected';
+                        $decisionMaker = $isRejected
+                            ? ($procurement->rejector?->name ?? 'Pemeriksa')
+                            : ($procurement->approver?->name ?? 'Pemeriksa');
+
+                        return [
+                            'icon' => $isRejected ? 'circle-x' : 'badge-check',
+                            'tone' => $isRejected ? 'danger' : 'success',
+                            'title' => $isRejected ? 'Usulan pengadaan ditolak' : 'Usulan pengadaan disetujui',
+                            'body' => 'Usulan buku "'.($procurement->title ?? 'Buku').'" dari '.($procurement->proposer?->name ?? 'Petugas')
+                                .' telah '.($isRejected ? 'ditolak' : 'disetujui').' oleh '.$decisionMaker.'.',
+                            'time' => optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->diffForHumans(),
+                            'timestamp' => optional($isRejected ? $procurement->rejected_at : $procurement->approved_at)?->timestamp ?? (optional($procurement->updated_at)->timestamp ?? 0),
+                            'href' => $adminRoute('admin.books.index'),
+                        ];
+                    })
+            );
+        }
+
+        $headerNotifications = $headerNotifications
+            ->sortByDesc('timestamp')
+            ->take(6)
+            ->values();
+        $headerNotificationCount = $headerNotifications->count();
+    ?>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo e($title ?? 'Admin'); ?> - <?php echo e($appName); ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <?php if($appLogo): ?>
+        <link rel="icon" type="image/png" href="<?php echo e(asset($appLogo)); ?>">
+    <?php endif; ?>
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
+    <style>
+        :root{
+            --bg:#f8fafc;--bg-raised:#ffffff;--bg-card:#ffffff;--bg-soft:#fff7ed;--fg:#1e293b;--muted:#64748b;--dim:#94a3b8;
+            --accent:#f97316;--accent-light:#fb923c;--accent-dark:#ea580c;--accent-glow:rgba(249,115,22,.18);--gold:#f97316;--gold-light:#fff7ed;
+            --red:#ef4444;--red-light:#fef2f2;--teal:#22c55e;--teal-light:rgba(34,197,94,.10);--purple:#d946ef;--purple-light:#fdf4ff;
+            --orange:#f97316;--orange-light:rgba(249,115,22,.12);--border:#e2e8f0;--border-light:#cbd5e1;--shadow-sm:0 1px 3px rgba(15,23,42,.05);
+            --shadow-md:0 12px 32px rgba(15,23,42,.08);--shadow-lg:0 18px 42px rgba(15,23,42,.12);
+            --primary:#f97316;--primary-dark:#ea580c
+        }
+        *{box-sizing:border-box} html,body{margin:0;padding:0} body{font-family:'Inter',ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
+        .font-display{font-family:'Inter',ui-sans-serif,system-ui,sans-serif}
+        .admin-shell{display:flex;min-height:100vh;position:relative}
+        .admin-shell:before{content:'';position:fixed;inset:0;background-image:linear-gradient(#f1f5f9 1px, transparent 1px),linear-gradient(90deg, #f1f5f9 1px, transparent 1px);background-size:20px 20px;pointer-events:none;z-index:0;opacity:.7}
+        .side-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.22);z-index:35}
+        .sidebar{width:280px;background:var(--bg-raised);border-right:1px solid var(--border);position:fixed;left:0;top:0;bottom:0;z-index:40;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:transform .35s cubic-bezier(.4,0,.2,1);transform:translateX(-100%);padding:24px 20px}
+        .sidebar.open{transform:translateX(0)}
+        .side-mask.show{display:block}
+        .sidebar-logo{padding:0 12px 32px;border-bottom:1px solid var(--border-light);margin-bottom:24px}
+        .sidebar-nav{flex:1;padding:0;overflow-y:auto}
+        .nav-section{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);padding:24px 12px 12px;font-weight:800}
+        .nav-link{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;transition:.2s ease;position:relative;margin-bottom:6px;border:1px solid transparent}
+        .nav-link:hover{background:var(--bg-soft);color:var(--accent);border-color:#ffedd5;transform:translateX(2px)}
+        .nav-link.active{background:var(--accent);color:#fff;font-weight:700;box-shadow:0 8px 20px var(--accent-glow)}
+        .nav-link.active:before{display:none}
+        .nav-link .nav-icon{width:20px;height:20px}
+        .nav-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:999px;padding:2px 7px;font-size:10px;font-weight:700}
+        .sidebar-foot{padding:16px 12px 0;margin-top:auto}
+        .sidebar-upgrade{background:linear-gradient(135deg, #ffffff, #fff7ed);border:1px solid #ffedd5;border-radius:16px;padding:20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+        .sidebar-upgrade:after{content:'';position:absolute;right:-20px;bottom:-20px;width:60px;height:60px;border-radius:999px;background:var(--accent-glow);z-index:0}
+        .sidebar-upgrade > *{position:relative;z-index:1}
+        .sidebar-focus-title{font-size:13px;font-weight:800;color:var(--fg);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+        .sidebar-focus-sub{font-size:12px;color:var(--muted);line-height:1.6;margin:0}
+        .sidebar-focus-link{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px;padding:12px 16px;background:var(--accent);color:#fff;border-radius:12px;font-size:12px;font-weight:700;text-decoration:none;transition:.2s ease}
+        .sidebar-focus-link:hover{background:var(--accent-dark);transform:translateY(-2px);box-shadow:0 4px 12px var(--accent-glow)}
+        .main-area{margin-left:0;flex:1;min-height:100vh;position:relative;z-index:1}
+        @media (min-width:1024px){
+            .sidebar{z-index:40;border-right:1px solid var(--border-light);background:var(--bg-raised)}
+            .sidebar.open + .main-area{margin-left:280px}
+            .side-mask{display:none!important}
+            .sidebar.open + .main-area .topbar-brand{display:none}
+        }
+        .topbar{position:sticky;top:0;z-index:30;background:#ffffff;border-bottom:1px solid var(--border);box-shadow:0 4px 6px -1px rgba(0,0,0,.05)}
+        .topbar-inner{height:64px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .topbar-left,.topbar-right{display:flex;align-items:center;gap:12px}
+        .hamburger{display:flex;width:40px;height:40px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--fg);align-items:center;justify-content:center;cursor:pointer;font-size:24px;font-weight:700;line-height:1;letter-spacing:.04em}
+        .hamburger:hover{color:var(--accent-dark);border-color:#fdba74;background:var(--bg-soft)}
+        .topbar-brand{display:flex;align-items:center;gap:12px}
+        .topbar-brand-mark,.sidebar-brand-mark{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;box-shadow:none}
+        .topbar-brand-mark{height:44px;min-width:44px;border-radius:14px}
+        .sidebar-brand-mark{height:44px;min-width:44px;border-radius:12px}
+        .topbar-brand-mark.has-image{width:auto;max-width:180px;padding:4px 8px;background:transparent;border:none;box-shadow:none}
+        .sidebar-brand-mark.has-image{width:auto;max-width:180px;padding:4px 8px;background:transparent;border:none;box-shadow:none}
+        .topbar-brand-mark img,.sidebar-brand-mark img{height:100%;width:auto;object-fit:contain;padding:8px}
+        .topbar-brand-mark.has-image img,.sidebar-brand-mark.has-image img{padding:0}
+        .topbar-brand-text{display:flex;flex-direction:column;justify-content:center}
+        .topbar-brand-title{font-size:18px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+        .topbar-brand-sub{font-size:11px;color:var(--muted);line-height:1.1;margin-top:3px}
+        .topbar-btn,.user-chip{border:1px solid var(--border);background:#fff;box-shadow:var(--shadow-sm)}
+        .topbar-btn{width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:var(--fg)}
+        .topbar-btn:hover{color:var(--accent-dark);background:var(--bg-soft);border-color:#fdba74}
+        .notif-wrap{position:relative}
+        .notif-btn{position:relative}
+        .notif-badge{position:absolute;top:-6px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--accent-dark);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px var(--accent-glow);border:2px solid #fff}
+        .notif-panel{position:absolute;top:calc(100% + 12px);right:0;width:min(380px,calc(100vw - 32px));background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);overflow:hidden;opacity:0;pointer-events:none;transform:translateY(8px);transition:.2s ease;z-index:60}
+        .notif-panel.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+        .notif-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 18px 14px;border-bottom:1px solid var(--border);background:var(--bg-soft)}
+        .notif-head-title{font-size:14px;font-weight:800;color:var(--fg)}
+        .notif-head-sub{font-size:12px;color:var(--muted);margin-top:4px}
+        .notif-list{max-height:420px;overflow:auto}
+        .notif-item{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;background:#fff}
+        .notif-item:last-child{border-bottom:none}
+        .notif-item:hover{background:var(--bg-soft)}
+        .notif-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .notif-icon.info{background:#fff7ed;color:var(--primary)}
+        .notif-icon.success{background:#f0fdf4;color:var(--teal)}
+        .notif-icon.danger{background:#fef2f2;color:var(--danger)}
+        .notif-body{min-width:0;flex:1}
+        .notif-title{font-size:13px;font-weight:700;color:var(--fg)}
+        .notif-text{font-size:12px;color:var(--muted);line-height:1.55;margin-top:4px}
+        .notif-time{font-size:11px;color:var(--dim);margin-top:7px}
+        .notif-empty{padding:24px 18px;text-align:center;color:var(--muted);font-size:13px}
+        .user-chip{display:flex;align-items:center;gap:10px;border-radius:12px;padding:6px 10px}
+        .avatar{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-light));display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+        .page-wrap{padding:28px 24px}
+        .crd{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);transition:.25s}
+        .crd:hover{border-color:var(--border-light);box-shadow:var(--shadow-md)}
+        .tag-input,.form-input,.form-select,.form-textarea{width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card);color:var(--fg);font-family:inherit;transition:.2s;font-size:14px}
+        .tag-input:focus,.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(15,76,92,0.1)}
+        .form-select{appearance:none}
+        .btn-primary,.btn-soft{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:12px;cursor:pointer;transition:.2s;font-family:inherit;font-weight:700;padding:12px 16px;font-size:13px}
+        .btn-primary{background:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(196,149,106,.28)}
+        .btn-primary:hover{background:var(--accent-light);transform:translateY(-1px);box-shadow:0 8px 20px rgba(196,149,106,.35)}
+        .btn-soft{background:var(--accent);color:#fff;border:1px solid var(--accent);box-shadow:0 6px 16px rgba(196,149,106,.28)}
+        .btn-soft:hover{background:var(--accent-light);color:#fff;border-color:var(--accent-light);transform:translateY(-1px);box-shadow:0 8px 20px rgba(196,149,106,.35)}
+        .btn-logout{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:12px;background:#fff;border:1px solid var(--border-light);color:var(--fg);font-size:13px;font-weight:700;cursor:pointer;transition:.25s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-sm);text-decoration:none}
+        .btn-logout:hover{background:var(--bg-soft);color:var(--accent);border-color:var(--accent);transform:translateY(-1px);box-shadow:0 8px 24px var(--accent-glow)}
+        .btn-logout:active{transform:translateY(0);box-shadow:0 4px 10px var(--accent-glow)}
+        .alert-box{border-radius:14px;border:1px solid var(--border);padding:14px 16px;font-size:14px}
+        .alert-success{background:rgba(45,134,89,.1);color:var(--teal);border-color:rgba(45,134,89,.12)}
+        .alert-error{background:var(--red-light);color:var(--red);border-color:rgba(196,69,54,.12)}
+        .async-toast{position:fixed;right:20px;bottom:20px;z-index:200;min-width:260px;max-width:min(420px,calc(100vw - 24px));padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:#fff;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(12px);pointer-events:none;transition:.24s ease}
+        .async-toast.show{opacity:1;transform:translateY(0)}
+        .async-toast.success{border-color:rgba(45,134,89,.18);background:rgba(45,134,89,.08);color:var(--teal)}
+        .async-toast.error{border-color:rgba(196,69,54,.18);background:var(--red-light);color:var(--red)}
+        .page-wrap input[type="checkbox"]{accent-color:var(--accent)}
+        .page-wrap .border,.page-wrap [class*="border-slate2-100"]{border-color:var(--border)!important}
+        .page-wrap .rounded-2xl{border-radius:16px}
+        .page-wrap .text-slate2-900,.page-wrap .text-slate2-800{color:var(--fg)!important}
+        .page-wrap .text-slate2-600{color:var(--muted)!important}
+        .page-wrap .text-slate2-400{color:var(--dim)!important}
+        .page-wrap .font-serif{font-family:'Inter',ui-sans-serif,system-ui,sans-serif}
+        .page-wrap .text-sage-700{color:var(--accent)!important}
+        .page-wrap .bg-sage-50{background:rgba(15,76,92,.08)!important}
+        .page-wrap .bg-red-50{background:var(--red-light)!important}
+        .page-wrap .border-red-100,.page-wrap .border-sage-100{border-color:var(--border)!important}
+        .page-wrap .space-y-4 > .border,.page-wrap .space-y-4 > form.border{background:#fff;box-shadow:var(--shadow-sm)}
+        .page-wrap .space-y-4 > .border:hover,.page-wrap .space-y-4 > form.border:hover{box-shadow:var(--shadow-md)}
+        .page-wrap nav[role="navigation"]{margin-top:16px}
+        .page-wrap nav[role="navigation"] > div{gap:10px}
+        .page-wrap nav[role="navigation"] a,.page-wrap nav[role="navigation"] span{border-radius:10px}
+        ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:999px}
+        @media(max-width:1023px){
+            .topbar-inner{padding:0 16px}.page-wrap{padding:20px 16px}
+        }
+        @media(max-width:640px){
+            .user-chip div:last-child{display:none}
+        }
+        <?php if(!request()->routeIs('dashboard')): ?>
+        .member-page{display:flex;flex-direction:column;gap:24px}
+        .member-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+        .member-title{font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--fg)}
+        .member-subtitle{font-size:14px;color:var(--muted);margin-top:4px}
+        .member-mini-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+        .member-mini-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-sm);transition:.25s}
+        .member-mini-stat:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+        .member-mini-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+        .member-mini-value{font-size:22px;font-weight:700;line-height:1}
+        .member-mini-label{font-size:12px;color:var(--muted);margin-top:2px}
+        .member-add-card{position:relative;overflow:hidden;border-radius:18px;padding:22px;background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+        .member-add-card:before{content:'';position:absolute;right:-40px;top:-50px;width:180px;height:180px;border-radius:999px;background:radial-gradient(circle,rgba(13,155,106,.10),transparent 70%)}
+        .member-add-card:after{content:'';position:absolute;left:-60px;bottom:-90px;width:180px;height:180px;border-radius:999px;background:radial-gradient(circle,rgba(184,134,11,.08),transparent 70%)}
+        .member-add-card > *{position:relative;z-index:1}
+        .member-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
+        .member-card-title{font-family:'Inter',ui-sans-serif,system-ui,sans-serif;font-size:24px;font-weight:700;color:var(--fg);letter-spacing:-.03em}
+        .member-card-sub{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6}
+        .member-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+        .member-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .member-check{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--border);background:var(--bg);border-radius:10px;color:var(--muted);font-size:13px}
+        .member-list-card{padding:20px}
+        .member-item{border:1px solid var(--border)!important;background:var(--bg-card);box-shadow:var(--shadow-sm);transition:.25s}
+        .member-item:hover{box-shadow:var(--shadow-md);border-color:var(--border-light)!important}
+        @media (max-width:1024px){.member-mini-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media (max-width:768px){.member-form-grid,.member-mini-stats{grid-template-columns:1fr}.member-card-head{flex-direction:column}.member-title{font-size:24px}}
+        <?php endif; ?>
+
+        /* Dashboard Styles - Globalized */
+        .dbx{position:relative;min-height:100%;padding:4px 0 8px}
+        .dbx-pattern{position:absolute;inset:0;border-radius:24px;background-image:
+            radial-gradient(ellipse at 20% 20%, rgba(15,76,92,.03) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 80%, rgba(196,149,106,.05) 0%, transparent 50%),
+            url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230f4c5c' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events:none}
+        .dbx-body{position:relative;z-index:1}
+        .dbx-welcome{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;padding:4px 2px}
+        .dbx-welcome-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(196,149,106,.12);color:#9a7530;font-size:11px;font-weight:700}
+        .dbx-welcome-title{font-family:'Inter',ui-sans-serif,system-ui,sans-serif;font-size:30px;font-weight:700;letter-spacing:-.03em;color:#1a2e35;margin-top:12px}
+        .dbx-welcome-sub{font-size:14px;color:#5a6d73;line-height:1.7;margin-top:8px}
+        .dbx-book-grid{display:grid;grid-auto-flow:column;grid-auto-columns:120px;gap:16px;justify-content:start}
+        .dbx-borrower-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:24px}
+        .dbx-borrower-stat{background:#fff;border:1px solid #e2ddd4;border-radius:18px;padding:18px 20px;box-shadow:0 8px 24px rgba(15,76,92,.04)}
+        .dbx-borrower-stat-value{font-size:28px;font-weight:700;color:#1a2e35}
+        .dbx-borrower-stat-label{font-size:13px;color:#5a6d73;margin-top:4px}
+        .dbx-borrower-alert{margin-bottom:20px;padding:16px 18px;border-radius:18px;border:1px solid rgba(196,69,54,.18);background:rgba(253,240,238,.9);color:#9f2d20}
+        .dbx-borrower-profile{display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:24px}
+        .dbx-borrower-panel{background:#fff;border:1px solid #e2ddd4;border-radius:18px;padding:18px 20px;box-shadow:0 8px 24px rgba(15,76,92,.04)}
+        .dbx-borrower-panel-title{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7b6d60}
+        .dbx-borrower-panel-value{font-size:22px;font-weight:700;color:#1a2e35;margin-top:8px}
+        .dbx-borrower-panel-sub{font-size:13px;color:#5a6d73;line-height:1.7;margin-top:8px}
+        .dbx-notif-list{display:grid;gap:12px;margin-bottom:24px}
+        .dbx-notif-item{padding:16px 18px;border-radius:18px;border:1px solid #e2ddd4;background:#fff;box-shadow:0 8px 24px rgba(15,76,92,.04)}
+        .dbx-notif-item.info{border-color:rgba(15,76,92,.15);background:rgba(15,76,92,.04)}
+        .dbx-notif-item.success{border-color:rgba(45,134,89,.18);background:rgba(45,134,89,.06)}
+        .dbx-notif-item.danger{border-color:rgba(196,69,54,.18);background:rgba(253,240,238,.9)}
+        .dbx-notif-title{font-size:14px;font-weight:700;color:#1a2e35}
+        .dbx-notif-body{font-size:12px;color:#5a6d73;line-height:1.7;margin-top:6px}
+        .dbx-toast-wrap{position:fixed;right:22px;bottom:22px;display:grid;gap:10px;z-index:120}
+        .dbx-toast{min-width:min(320px,calc(100vw - 32px));max-width:360px;padding:14px 16px;border-radius:16px;border:1px solid #e2ddd4;background:#fff;box-shadow:0 18px 38px rgba(15,76,92,.16);transform:translateY(18px);opacity:0;transition:.28s ease}
+        .dbx-toast.show{transform:translateY(0);opacity:1}
+        .dbx-toast.info{border-color:rgba(15,76,92,.18)}
+        .dbx-toast.success{border-color:rgba(45,134,89,.18)}
+        .dbx-toast.danger{border-color:rgba(196,69,54,.18)}
+        .dbx-toast-title{font-size:13px;font-weight:700;color:#1a2e35}
+        .dbx-toast-body{font-size:12px;color:#5a6d73;line-height:1.6;margin-top:4px}
+        .dbx-book-filters{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(180px,.8fr) minmax(180px,.8fr) auto;gap:12px;margin-bottom:22px}
+        .dbx-book-filter-field{width:100%;padding:12px 14px;border:1px solid #e2ddd4;border-radius:12px;background:#fff;font-size:14px;color:#1a2e35}
+        .dbx-book-filter-field:focus{outline:none;border-color:#0f4c5c;box-shadow:0 0 0 3px rgba(15,76,92,.08)}
+        .dbx-book-filter-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border:none;border-radius:12px;background:#c4956a;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+        .dbx-book-filter-btn:hover{background:#b78558}
+        .dbx-book-showcase{position:relative;padding:10px 0 2px}
+        .dbx-book-grid-wrap{overflow-x:auto;padding-bottom:8px}
+        .dbx-book-grid-wrap::-webkit-scrollbar{height:8px}
+        .dbx-book-grid-wrap::-webkit-scrollbar-thumb{background:rgba(15,76,92,.18);border-radius:999px}
+        .dbx-book-card{display:flex;flex-direction:column;align-items:flex-start;background:transparent;border:none;border-radius:20px;padding:0;box-shadow:none;transition:.2s;cursor:pointer}
+        .dbx-book-card:hover{transform:translateY(-3px)}
+        .dbx-book-thumb{width:100%;aspect-ratio:3/4.35;border-radius:16px;background:linear-gradient(160deg,#f4eee3,#fffdf9);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 14px 30px rgba(15,76,92,.10);border:1px solid rgba(226,221,212,.9)}
+        .dbx-book-thumb img{width:100%;height:100%;object-fit:cover}
+        .dbx-book-fallback{width:58px;height:82px;border-radius:12px;background:linear-gradient(135deg,#c4956a,#d4a574);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:800}
+        .dbx-book-body{min-width:0;flex:1;padding:10px 2px 0}
+        .dbx-book-chip{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:rgba(45,134,89,.1);color:#2d8659;font-size:10px;font-weight:700}
+        .dbx-book-chip.unavailable{background:rgba(196,69,54,.1);color:#c44536}
+        .dbx-book-name{font-size:14px;font-weight:700;color:#1a2e35;line-height:1.38;margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:38px}
+        .dbx-book-author{font-size:11px;color:#7a8a8f;margin-top:4px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+        .dbx-book-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:11px;color:#7a8a8f}
+        .dbx-book-stock{font-weight:700;color:#0f4c5c}
+        .dbx-book-form{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+        .dbx-book-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .dbx-book-note{width:100%;padding:11px 12px;border:1px solid #e2ddd4;border-radius:12px;background:#fff;font-size:13px;color:#1a2e35;min-height:78px}
+        .dbx-book-note:focus{outline:none;border-color:#0f4c5c;box-shadow:0 0 0 3px rgba(15,76,92,.08)}
+        .dbx-book-submit{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border:none;border-radius:12px;background:#c4956a;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+        .dbx-book-submit:hover:not([disabled]){background:#b78558}
+        .dbx-book-submit[disabled]{opacity:.55;cursor:not-allowed}
+        .dbx-book-open{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;font-weight:700;color:#0f4c5c}
+        .dbx-book-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:14px}
+        .dbx-book-section-copy{max-width:540px}
+        .dbx-book-section-sub{font-size:12px;color:#7a8a8f;line-height:1.6;margin-top:6px}
+        .dbx-book-section-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#f8f6f1;color:#7b6d60;font-size:11px;font-weight:700;border:1px solid #eee3d8;white-space:nowrap}
+        .dbx-drawer-mask{position:fixed;inset:0;background:rgba(8,15,12,.34);opacity:0;pointer-events:none;transition:opacity .28s ease;z-index:70}
+        .dbx-drawer-mask.show{opacity:1;pointer-events:auto}
+        .dbx-drawer{position:fixed;top:0;right:0;width:min(460px,100vw);height:100vh;background:#fff;box-shadow:-16px 0 40px rgba(15,76,92,.14);transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);z-index:80;display:flex;flex-direction:column}
+        .dbx-drawer.open{transform:translateX(0)}
+        .dbx-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 22px 18px;border-bottom:1px solid #e2ddd4}
+        .dbx-drawer-title{font-family:'Inter',ui-sans-serif,system-ui,sans-serif;font-size:28px;font-weight:700;color:#1a2e35;line-height:1.1}
+        .dbx-drawer-sub{font-size:13px;color:#5a6d73;margin-top:8px;line-height:1.6}
+        .dbx-drawer-close{width:40px;height:40px;border-radius:12px;border:1px solid #c4956a;background:#c4956a;color:#fff;cursor:pointer;flex-shrink:0}
+        .dbx-drawer-close:hover{background:#b78558;border-color:#b78558}
+        .dbx-drawer-body{padding:20px 22px 24px;overflow-y:auto}
+        .dbx-drawer-book{display:flex;gap:14px;align-items:flex-start;padding:14px;border-radius:18px;background:#f8f6f1;border:1px solid #eee3d8;margin-bottom:20px}
+        .dbx-drawer-thumb{width:78px;height:108px;border-radius:16px;background:linear-gradient(135deg,#f1e8d8,#fffdf9);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .dbx-drawer-thumb img{width:100%;height:100%;object-fit:cover}
+        .dbx-drawer-fallback{width:44px;height:64px;border-radius:12px;background:linear-gradient(135deg,#c4956a,#d4a574);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:800}
+        .dbx-drawer-book-title{font-size:18px;font-weight:700;color:#1a2e35;line-height:1.4}
+        .dbx-drawer-book-author{font-size:13px;color:#5a6d73;margin-top:6px}
+        .dbx-drawer-book-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+        .dbx-drawer-book-box{padding:12px;border-radius:14px;background:#fff;border:1px solid #e2ddd4}
+        .dbx-drawer-book-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7b6d60}
+        .dbx-drawer-book-value{font-size:13px;color:#1a2e35;margin-top:6px;line-height:1.5}
+        .dbx-drawer-help{margin:16px 0 0;font-size:12px;color:#5a6d73;line-height:1.6}
+        .dbx-empty-drawer{padding:36px 18px;border:1px dashed #e2ddd4;border-radius:18px;text-align:center;color:#5a6d73;background:#fcfbf8}
+        .dbx-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:32px}
+        .dbx-stat{background:#fff;border-radius:16px;padding:24px;border:1px solid #e2ddd4;position:relative;overflow:hidden;transition:.3s}
+        .dbx-stat:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(15,76,92,.1)}
+        .dbx-stat:before{content:'';position:absolute;top:0;right:0;width:100px;height:100px;border-radius:50%;opacity:.1;transform:translate(30%,-30%)}
+        .dbx-stat.books:before{background:#0f4c5c}.dbx-stat.members:before{background:#c4956a}.dbx-stat.borrowed:before{background:#2d8659}.dbx-stat.overdue:before{background:#c44536}
+        .dbx-stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+        .dbx-stat.books .dbx-stat-icon{background:rgba(15,76,92,.1);color:#0f4c5c}
+        .dbx-stat.members .dbx-stat-icon{background:rgba(196,149,106,.15);color:#c4956a}
+        .dbx-stat.borrowed .dbx-stat-icon{background:rgba(45,134,89,.1);color:#2d8659}
+        .dbx-stat.overdue .dbx-stat-icon{background:rgba(196,69,54,.1);color:#c44536}
+        .dbx-stat-value{font-size:32px;font-weight:700;color:#1a2e35;letter-spacing:-1px;margin-bottom:4px}
+        .dbx-stat-label{font-size:14px;color:#5a6d73;margin-bottom:12px}
+        .dbx-stat-trend{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+        .dbx-stat-trend.up{color:#2d8659}.dbx-stat-trend.down{color:#c44536}
+        .dbx-content{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+        .dbx-card{background:#fff;border-radius:16px;border:1px solid #e2ddd4;overflow:hidden;transition:.3s}
+        .dbx-card:hover{box-shadow:0 12px 32px rgba(15,76,92,.06)}
+        .dbx-card-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #e2ddd4;gap:14px}
+        .dbx-card-title{font-size:16px;font-weight:600;color:#1a2e35}
+        .dbx-card-action{font-size:13px;color:#0f4c5c;font-weight:500;text-decoration:none}
+        .dbx-card-body{padding:24px}
+        .dbx-table-wrap{overflow-x:auto}
+        .dbx-table{width:100%;border-collapse:collapse}
+        .dbx-table th{text-align:left;padding:12px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#5a6d73;border-bottom:1px solid #e2ddd4}
+        .dbx-table td{padding:16px;border-bottom:1px solid #e2ddd4;font-size:14px}
+        .dbx-table tr:last-child td{border-bottom:none}
+        .dbx-table tbody tr:hover{background:rgba(15,76,92,.02)}
+        .dbx-book-info,.dbx-member-info{display:flex;align-items:center;gap:12px}
+        .dbx-book-cover{width:40px;height:54px;border-radius:6px;background:linear-gradient(135deg,#0f4c5c,#1a6b7c);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;flex-shrink:0;overflow:hidden}
+        .dbx-book-details h4,.dbx-member-name{font-size:14px;font-weight:600;color:#1a2e35;margin-bottom:2px}
+        .dbx-book-details span,.dbx-member-meta{font-size:12px;color:#5a6d73}
+        .dbx-member-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#c4956a,#d4a574);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:11px;flex-shrink:0}
+        .dbx-status{display:inline-flex;align-items:center;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500}
+        .dbx-status.active{background:rgba(45,134,89,.1);color:#2d8659}
+        .dbx-status.pending{background:rgba(212,160,58,.1);color:#d4a03a}
+        .dbx-status.overdue{background:rgba(196,69,54,.1);color:#c44536}
+        .dbx-side{display:flex;flex-direction:column;gap:24px}
+        .dbx-quick{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+        .dbx-quick-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px 16px;background:#f8f6f1;border:1px solid #e2ddd4;border-radius:12px;text-decoration:none;transition:.2s;color:#1a2e35}
+        .dbx-quick-btn:hover{background:#c4956a;border-color:#c4956a;transform:translateY(-2px);color:#fff}
+        .dbx-quick-btn i{width:24px;height:24px;color:#c4956a}.dbx-quick-btn:hover i{color:#fff}
+        .dbx-quick-btn span{font-size:12px;font-weight:500;text-align:center}
+        .dbx-popular-item,.dbx-activity-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #e2ddd4}
+        .dbx-popular-item:last-child,.dbx-activity-item:last-child{border-bottom:none}
+        .dbx-rank{width:28px;height:28px;border-radius:8px;background:#f8f6f1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#5a6d73;flex-shrink:0}
+        .dbx-rank.top{background:linear-gradient(135deg,#c4956a,#d4a574);color:#fff}
+        .dbx-popular-cover{width:36px;height:48px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,#0f4c5c,#1a6b7c);overflow:hidden}
+        .dbx-popular-info{flex:1;min-width:0}
+        .dbx-popular-info h4{font-size:13px;font-weight:600;color:#1a2e35;margin-bottom:2px}
+        .dbx-popular-info span{font-size:11px;color:#5a6d73}
+        .dbx-borrow-count{font-size:12px;font-weight:600;color:#0f4c5c;background:rgba(15,76,92,.08);padding:4px 8px;border-radius:6px;flex-shrink:0}
+        .dbx-activity-icon{width:36px;height:36px;border-radius:10px;background:#f8f6f1;display:flex;align-items:center;justify-content:center;color:#0f4c5c;flex-shrink:0}
+        .dbx-activity-content{min-width:0}
+        .dbx-activity-content h4{font-size:13px;font-weight:600;color:#1a2e35}
+        .dbx-activity-content p{font-size:12px;color:#5a6d73;line-height:1.5;margin-top:2px}
+        .dbx-activity-content span{display:block;font-size:11px;color:#5a6d73;margin-top:4px}
+        .dbx-activity-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+        .dbx-activity-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
+        .dbx-activity-badge.create{background:rgba(45,134,89,.1);color:#2d8659}
+        .dbx-activity-badge.update{background:rgba(15,76,92,.08);color:#0f4c5c}
+        .dbx-activity-badge.delete{background:rgba(196,69,54,.1);color:#c44536}
+        .dbx-activity-module{font-size:11px;color:#5a6d73;text-transform:capitalize}
+        .dbx-drawer-alert{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:rgba(212,160,58,.12);border:1px solid rgba(212,160,58,.3);color:#d4a03a;font-size:12px;margin-bottom:18px;line-height:1.5}
+        .dbx-drawer-alert i{flex-shrink:0}
+        .dbx-drawer-alert strong{font-weight:700;color:#1a2e35}
+        .dbx{
+            --dbx-primary:#f97316;
+            --dbx-primary-hover:#ea580c;
+            --dbx-primary-light:#fff7ed;
+            --dbx-bg:#f8fafc;
+            --dbx-card-bg:#ffffff;
+            --dbx-text:#1e293b;
+            --dbx-text-muted:#64748b;
+            --dbx-border:#e2e8f0;
+            --dbx-success:#22c55e;
+            --dbx-danger:#ef4444;
+            --dbx-info:#3b82f6;
+            --dbx-radius:12px;
+            --dbx-shadow:0 1px 3px 0 rgba(0,0,0,.05);
+            --dbx-shadow-card:0 4px 6px -1px rgba(0,0,0,.05);
+            font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+            background:var(--dbx-bg);
+            color:var(--dbx-text);
+            min-height:100vh;
+            border-radius:24px;
+        }
+        .dbx-pattern{
+            border-radius:24px;
+            background-image:
+                linear-gradient(#f1f5f9 1px, transparent 1px),
+                linear-gradient(90deg, #f1f5f9 1px, transparent 1px);
+            background-size:20px 20px;
+            opacity:.6;
+        }
+        .dbx-body{max-width:1400px;margin:0 auto;padding:24px 16px}
+        .dbx-welcome{margin-bottom:32px;padding:0}
+        .dbx-welcome-badge{
+            background:var(--dbx-primary-light);
+            color:var(--dbx-primary);
+            border:1px solid #ffedd5;
+            padding:6px 14px;
+            font-size:12px;
+            text-transform:uppercase;
+        }
+        .dbx-welcome-title{
+            font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+            font-size:28px;
+            font-weight:800;
+            color:var(--dbx-text);
+            margin:0 0 4px;
+        }
+        .dbx-welcome-sub,.dbx-book-section-sub,.dbx-drawer-sub,.dbx-drawer-help,.dbx-book-author,.dbx-book-meta,.dbx-activity-content p,.dbx-activity-content span,.dbx-popular-info span,.dbx-book-details span,.dbx-member-meta,.dbx-notif-body,.dbx-toast-body,.dbx-borrower-panel-sub,.dbx-borrower-stat-label{color:var(--dbx-text-muted)}
+        .dbx-borrower-stat,.dbx-borrower-panel,.dbx-notif-item,.dbx-card,.dbx-stat,.dbx-toast,.dbx-drawer-book-box{
+            background:var(--dbx-card-bg);
+            border:1px solid var(--dbx-border);
+            box-shadow:var(--dbx-shadow);
+        }
+        .dbx-borrower-stat,.dbx-borrower-panel,.dbx-notif-item,.dbx-stat,.dbx-card,.dbx-drawer-book,.dbx-empty-drawer{border-radius:var(--dbx-radius)}
+        .dbx-borrower-stat-value,.dbx-borrower-panel-value,.dbx-stat-value,.dbx-card-title,.dbx-book-name,.dbx-drawer-book-title,.dbx-notif-title,.dbx-toast-title,.dbx-book-details h4,.dbx-member-name,.dbx-popular-info h4,.dbx-activity-content h4{color:var(--dbx-text)}
+        .dbx-borrower-alert{
+            border:1px solid #fecaca;
+            background:#fef2f2;
+            color:#991b1b;
+            border-radius:var(--dbx-radius);
+        }
+        .dbx-notif-item.info{border-color:#bfdbfe;background:#eff6ff}
+        .dbx-notif-item.success{border-color:#bbf7d0;background:#f0fdf4}
+        .dbx-notif-item.danger{border-color:#fecaca;background:#fef2f2}
+        .dbx-toast{border-radius:16px;box-shadow:0 18px 38px rgba(15,23,42,.12)}
+        .dbx-toast.info{border-color:#bfdbfe}
+        .dbx-toast.success{border-color:#bbf7d0}
+        .dbx-toast.danger{border-color:#fecaca}
+        .dbx-book-filter-field,.dbx-book-note{
+            border:1px solid var(--dbx-border);
+            border-radius:10px;
+            background:#fff;
+            color:var(--dbx-text);
+        }
+        .dbx-book-filter-field:focus,.dbx-book-note:focus{
+            outline:none;
+            border-color:var(--dbx-primary);
+            box-shadow:0 0 0 3px rgba(249,115,22,.12);
+        }
+        .dbx-book-filter-btn,.dbx-book-submit{
+            background:var(--dbx-primary);
+            color:#fff;
+            border-radius:8px;
+        }
+        .dbx-book-filter-btn:hover,.dbx-book-submit:hover:not([disabled]),.dbx-drawer-close:hover{
+            background:var(--dbx-primary-hover);
+        }
+        .dbx-book-thumb,.dbx-drawer-thumb{
+            background:linear-gradient(160deg,#fff7ed,#fffbf5);
+            border:1px solid #fed7aa;
+            box-shadow:0 10px 22px rgba(249,115,22,.10);
+        }
+        .dbx-book-fallback,.dbx-drawer-fallback,.dbx-member-avatar{
+            background:linear-gradient(135deg,#f97316,#fb923c);
+        }
+        .dbx-book-chip{
+            background:#dcfce7;
+            color:#166534;
+        }
+        .dbx-book-chip.unavailable{
+            background:#fee2e2;
+            color:#991b1b;
+        }
+        .dbx-book-stock,.dbx-book-open,.dbx-card-action,.dbx-borrow-count{color:var(--dbx-primary)}
+        .dbx-card-action:hover{color:var(--dbx-primary-hover)}
+        .dbx-book-section-badge{
+            background:var(--dbx-primary-light);
+            color:var(--dbx-primary);
+            border:1px solid #ffedd5;
+        }
+        .dbx-drawer{background:#fff;box-shadow:-16px 0 40px rgba(15,23,42,.12)}
+        .dbx-drawer-head,.dbx-card-header{border-bottom:1px solid var(--dbx-border)}
+        .dbx-drawer-close{
+            border:1px solid var(--dbx-primary);
+            background:var(--dbx-primary);
+            color:#fff;
+        }
+        .dbx-drawer-book{
+            background:#fffaf5;
+            border:1px solid #ffedd5;
+        }
+        .dbx-drawer-book-label,.dbx-borrower-panel-title{color:#9a3412}
+        .dbx-empty-drawer{
+            border:1px dashed #fdba74;
+            background:#fffaf5;
+        }
+        .dbx-stats{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+        .dbx-stat{
+            padding:20px;
+            border-radius:var(--dbx-radius);
+        }
+        .dbx-stat:hover{
+            transform:none;
+            border-color:var(--dbx-primary);
+            box-shadow:0 10px 15px -3px rgba(249,115,22,.1);
+        }
+        .dbx-stat:before{display:none}
+        .dbx-stat-icon{
+            width:42px;
+            height:42px;
+            border-radius:10px;
+            margin-bottom:14px;
+            background:var(--dbx-bg);
+            color:var(--dbx-text-muted);
+        }
+        .dbx-stat.books .dbx-stat-icon{background:#fff7ed;color:var(--dbx-primary)}
+        .dbx-stat.members .dbx-stat-icon{background:#fdf4ff;color:#d946ef}
+        .dbx-stat.borrowed .dbx-stat-icon{background:#f0fdf4;color:var(--dbx-success)}
+        .dbx-stat.overdue .dbx-stat-icon{background:#fef2f2;color:var(--dbx-danger)}
+        .dbx-stat-value{font-size:28px;font-weight:800;letter-spacing:0}
+        .dbx-stat-label{color:var(--dbx-text-muted);margin-top:4px;margin-bottom:0}
+        .dbx-stat-trend{margin-top:12px;font-size:12px}
+        .dbx-stat-trend.up{color:var(--dbx-success)}
+        .dbx-stat-trend.down{color:var(--dbx-danger)}
+        .dbx-content{display:grid;grid-template-columns:1fr;gap:24px}
+        .dbx-side{gap:24px}
+        .dbx-card:hover{box-shadow:var(--dbx-shadow-card)}
+        .dbx-card-header{padding:16px 20px}
+        .dbx-card-title{font-size:16px;font-weight:700}
+        .dbx-card-action{font-size:13px;font-weight:600;text-decoration:none}
+        .dbx-card-body{padding:20px}
+        .dbx-table{font-size:14px}
+        .dbx-table th{
+            padding:12px 16px;
+            font-size:12px;
+            color:var(--dbx-text-muted);
+            border-bottom:1px solid var(--dbx-border);
+        }
+        .dbx-table td{
+            padding:16px;
+            border-bottom:1px solid var(--dbx-border);
+        }
+        .dbx-table tbody tr:hover{background:#fff7ed}
+        .dbx-book-cover{
+            background:#f1f5f9;
+            color:#94a3b8;
+            border-radius:4px;
+        }
+        .dbx-status{
+            border-radius:6px;
+            font-size:12px;
+            font-weight:600;
+        }
+        .dbx-status.active{background:#dcfce7;color:#166534}
+        .dbx-status.pending{background:#ffedd5;color:#9a3412}
+        .dbx-status.overdue{background:#fee2e2;color:#991b1b}
+        .dbx-quick-btn{
+            background:#fff;
+            border:1px solid var(--dbx-border);
+            color:var(--dbx-text);
+        }
+        .dbx-quick-btn:hover{
+            background:var(--dbx-primary);
+            border-color:var(--dbx-primary);
+            color:#fff;
+        }
+        .dbx-quick-btn i{color:var(--dbx-primary)}
+        .dbx-quick-btn:hover i{color:#fff}
+        .dbx-popular-item,.dbx-activity-item{border-bottom:1px solid var(--dbx-border)}
+        .dbx-rank{
+            background:var(--dbx-bg);
+            color:var(--dbx-text-muted);
+            border-radius:6px;
+            width:24px;
+            height:24px;
+        }
+        .dbx-rank.top{
+            background:#fff7ed;
+            color:var(--dbx-primary);
+            border:1px solid #fed7aa;
+        }
+        .dbx-popular-cover{
+            width:32px;
+            height:44px;
+            border-radius:4px;
+            background:linear-gradient(135deg,#f97316,#fb923c);
+        }
+        .dbx-borrow-count{
+            background:transparent;
+            padding:0;
+            font-weight:700;
+        }
+        .dbx-activity-icon{
+            width:32px;
+            height:32px;
+            border-radius:999px;
+            background:var(--dbx-primary-light);
+            color:var(--dbx-primary);
+        }
+        .dbx-activity-badge.create{background:#dcfce7;color:#166534}
+        .dbx-activity-badge.update{background:#eff6ff;color:#1d4ed8}
+        .dbx-activity-badge.delete{background:#fee2e2;color:#991b1b}
+        .dbx-drawer-alert{
+            background:#fff7ed;
+            border:1px solid #fdba74;
+            color:#9a3412;
+        }
+        .dbx-drawer-alert strong{color:var(--dbx-text)}
+        @media (min-width:1024px){.dbx-content{grid-template-columns:2fr 1fr}}
+        .chatbot-fab{position:fixed;right:18px;bottom:18px;width:54px;height:54px;border-radius:18px;border:1px solid rgba(196,149,106,.25);background:#fff;color:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 18px 40px rgba(87,59,33,.14);transition:.25s cubic-bezier(.4,0,.2,1);z-index:160}
+        .chatbot-fab:hover{transform:translateY(-2px);box-shadow:0 22px 50px rgba(87,59,33,.18)}
+        .chatbot-panel{position:fixed;right:18px;bottom:86px;width:min(380px,calc(100vw - 36px));height:520px;background:var(--bg-raised);border:1px solid var(--border);border-radius:22px;box-shadow:0 28px 70px rgba(0,0,0,.18);opacity:0;pointer-events:none;transform:translateY(10px) scale(.98);transition:.22s cubic-bezier(.4,0,.2,1);z-index:160;display:flex;flex-direction:column;overflow:hidden}
+        .chatbot-panel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+        .chatbot-head{padding:14px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fffdf9,#fbf8f2)}
+        .chatbot-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--fg)}
+        .chatbot-actions{display:flex;align-items:center;gap:8px}
+        .chatbot-close{width:34px;height:34px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer}
+        .chatbot-menu{position:relative}
+        .chatbot-menu-btn{width:34px;height:34px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+        .chatbot-menu-btn:hover{color:var(--accent);border-color:rgba(196,149,106,.45);background:rgba(196,149,106,.06)}
+        .chatbot-menu-pop{position:absolute;right:0;top:42px;min-width:190px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.16);padding:8px;display:none;z-index:180}
+        .chatbot-menu-pop.open{display:block}
+        .chatbot-menu-item{width:100%;display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:12px;border:none;background:transparent;color:var(--fg);font-size:13px;font-weight:700;cursor:pointer;text-align:left;transition:.18s}
+        .chatbot-menu-item:hover{background:rgba(196,149,106,.08)}
+        .chatbot-menu-item.danger{color:var(--red)}
+        .chatbot-menu-item.danger:hover{background:rgba(196,69,54,.08)}
+        .chatbot-menu-item i{width:16px;height:16px}
+        .chatbot-messages{flex:1;overflow:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px}
+        .chatbot-bubble{max-width:86%;padding:10px 12px;border-radius:16px;font-size:13px;line-height:1.5;white-space:pre-line}
+        .chatbot-bubble.user{align-self:flex-end;background:rgba(15,76,92,.10);color:var(--fg);border:1px solid rgba(15,76,92,.14)}
+        .chatbot-bubble.bot{align-self:flex-start;background:#fff;border:1px solid var(--border);color:var(--fg)}
+        .chatbot-bubble.has-books{max-width:100%}
+        .chatbot-book-results{display:grid;gap:10px;margin-top:10px}
+        .chatbot-book-card{border:1px solid var(--border);border-radius:14px;padding:12px;background:linear-gradient(180deg,#fff,#fcfaf6);display:grid;gap:8px}
+        .chatbot-book-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+        .chatbot-book-name{font-size:13px;font-weight:800;color:var(--fg)}
+        .chatbot-book-chip{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:rgba(45,134,89,.12);color:#2d8659;font-size:11px;font-weight:700;white-space:nowrap}
+        .chatbot-book-chip.muted{background:rgba(90,109,115,.12);color:#5a6d73}
+        .chatbot-book-meta{font-size:12px;color:#5a6d73;line-height:1.55}
+        .chatbot-book-action{display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:12px;padding:10px 12px;background:#0f4c5c;color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+        .chatbot-book-action:hover{background:#0b3945}
+        .chatbot-form{display:flex;gap:10px;padding:12px 12px;border-top:1px solid var(--border);background:#fff}
+        .chatbot-input{flex:1;border:1px solid var(--border);border-radius:14px;padding:12px 12px;font-size:13px;background:var(--bg-soft)}
+        .chatbot-input:focus{outline:none;border-color:rgba(196,149,106,.6);box-shadow:0 0 0 3px rgba(196,149,106,.14);background:#fff}
+        .chatbot-send{width:46px;height:46px;border-radius:14px;border:1px solid rgba(196,149,106,.25);background:#fff;color:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}
+        .chatbot-send:hover{background:rgba(196,149,106,.08);border-color:rgba(196,149,106,.45)}
+        @media (max-width:1200px){.dbx-stats{grid-template-columns:repeat(2,1fr)}.dbx-content{grid-template-columns:1fr}.dbx-book-filters{grid-template-columns:1fr 1fr}}
+        @media (max-width:900px){.dbx-book-filters,.dbx-book-form-grid,.dbx-borrower-stats,.dbx-drawer-book-meta,.dbx-borrower-profile{grid-template-columns:1fr}.dbx-book-section-head{display:flex;flex-direction:column;align-items:flex-start}}
+        @media (max-width:640px){.dbx-stats,.dbx-quick,.dbx-book-grid{grid-template-columns:1fr}.dbx-welcome-title{font-size:24px}.dbx-card-body{padding:16px}.dbx-table td{padding:12px 8px}.dbx-drawer{width:100vw}}
+        @media print {
+            #chatbotRoot, .chatbot-fab, .chatbot-panel, .async-toast, .notif-panel { display: none !important; }
+        }
+        .spa-progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:2000;width:0;transition:width .3s ease,opacity .3s ease;pointer-events:none;box-shadow:0 0 10px var(--accent-glow)}
+        .spa-progress.loading{width:70%;opacity:1}
+        .spa-progress.finish{width:100%;opacity:0}
+    </style>
+</head>
+<body>
+    <div id="spaProgress" class="spa-progress"></div>
+    <div class="admin-shell">
+        <div id="sideMask" class="side-mask" onclick="closeSide()"></div>
+
+        <aside id="lightSide" class="sidebar" aria-hidden="true">
+            <div class="sidebar-logo">
+                <div class="flex items-center gap-3">
+                    <div class="sidebar-brand-mark<?php echo e($appLogo ? ' has-image' : ''); ?>">
+                        <?php if($appLogo): ?>
+                            <img src="<?php echo e(asset($appLogo)); ?>" alt="<?php echo e($appName); ?>">
+                        <?php else: ?>
+                            <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
+                        <?php endif; ?>
+                    </div>
+                    <?php if($showAppName): ?>
+                        <div class="font-display text-xl font-bold tracking-tight text-slate-800"><?php echo e($appName); ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <?php $__currentLoopData = $sidebarSections; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $section): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div class="nav-section"><?php echo e($section['title']); ?></div>
+                    <?php $__currentLoopData = $section['items']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <a href="<?php echo e($adminRoute($item['route'])); ?>" class="nav-link <?php echo e(request()->routeIs($item['match']) ? 'active' : ''); ?>" data-async="true">
+                            <i data-lucide="<?php echo e($item['icon']); ?>" class="nav-icon"></i>
+                            <span><?php echo e($item['label']); ?></span>
+                        </a>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </nav>
+        </aside>
+
+        <div class="main-area">
+            <header class="topbar">
+                <div class="topbar-inner">
+                    <div class="topbar-left">
+                        <button
+                            id="sideToggle"
+                            class="hamburger"
+                            type="button"
+                            aria-label="Buka sidebar"
+                            aria-controls="lightSide"
+                            aria-expanded="false"
+                            onclick="toggleSide()"
+                        >=</button>
+                        <div class="topbar-brand">
+                            <div class="topbar-brand-mark<?php echo e($appLogo ? ' has-image' : ''); ?>">
+                                <?php if($appLogo): ?>
+                                    <img src="<?php echo e(asset($appLogo)); ?>" alt="<?php echo e($appName); ?>">
+                                <?php else: ?>
+                                    <i data-lucide="book-open" style="width:18px;height:18px;color:#7A5A28;"></i>
+                                <?php endif; ?>
+                            </div>
+                            <?php if($showAppName): ?>
+                                <div class="topbar-brand-text">
+                                    <div class="topbar-brand-title font-display" style="color: <?php echo e($appNameColor); ?>"><?php echo e($appName); ?></div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="topbar-right">
+                        <div class="notif-wrap">
+                            <button
+                                id="notifToggle"
+                                class="topbar-btn notif-btn"
+                                type="button"
+                                aria-label="Buka notifikasi"
+                                aria-expanded="false"
+                                onclick="toggleNotifPanel()"
+                            >
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span id="headerNotifBadge" class="notif-badge" style="<?php echo e($headerNotificationCount > 0 ? '' : 'display:none;'); ?>">
+                                    <?php echo e(min($headerNotificationCount, 9)); ?>
+
+                                </span>
+                            </button>
+
+                            <div id="notifPanel" class="notif-panel" aria-hidden="true">
+                                <div class="notif-head">
+                                    <div>
+                                        <div class="notif-head-title">Notifikasi</div>
+                                        <div id="headerNotifSub" class="notif-head-sub"><?php echo e($headerNotificationCount); ?> update terbaru dari database</div>
+                                    </div>
+                                </div>
+                                <div id="headerNotifList" class="notif-list">
+                                    <?php $__empty_1 = true; $__currentLoopData = $headerNotifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                        <a href="<?php echo e($notification['href'] ?? '#'); ?>" class="notif-item" data-async="true">
+                                            <div class="notif-icon <?php echo e($notification['tone']); ?>">
+                                                <i data-lucide="<?php echo e($notification['icon'] ?? 'info'); ?>" class="w-4 h-4"></i>
+                                            </div>
+                                            <div class="notif-body">
+                                                <div class="notif-title"><?php echo e($notification['title']); ?></div>
+                                                <div class="notif-text"><?php echo e($notification['body']); ?></div>
+                                                <div class="notif-time"><?php echo e($notification['time'] ?? 'Baru saja'); ?></div>
+                                            </div>
+                                        </a>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                        <div class="notif-empty">Belum ada notifikasi terbaru.</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <form method="POST" action="<?php echo e(route('logout')); ?>"><?php echo csrf_field(); ?><button type="submit" class="btn-logout"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button></form>
+                        <a href="<?php echo e($adminRoute('profile.show')); ?>" class="user-chip" style="text-decoration:none;" data-async="true">
+                            <div class="avatar js-global-profile-avatar" style="overflow:hidden;">
+                                <?php if(auth()->user()?->profile_photo_url): ?>
+                                    <img src="<?php echo e(auth()->user()->profile_photo_url); ?>" alt="<?php echo e(auth()->user()->name); ?>" class="js-global-profile-photo" style="width:100%;height:100%;object-fit:cover;">
+                                <?php else: ?>
+                                    <span class="js-global-profile-fallback"><?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <div>
+                                <div style="font-size:12px;font-weight:700;color:var(--fg);line-height:1.2;"><?php echo e(auth()->user()->name); ?></div>
+                                <div style="font-size:10px;color:var(--dim);line-height:1.2;"><?php echo e(auth()->user()->role?->label ?? 'Tanpa role'); ?></div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <main id="lightMain" class="page-wrap space-y-6">
+                <div id="asyncToast" class="async-toast" aria-live="polite"></div>
+                <div id="asyncPageLoader" style="position:sticky;top:0;z-index:35;height:3px;border-radius:999px;overflow:hidden;background:transparent;opacity:0;pointer-events:none;transition:opacity .2s ease;">
+                    <div id="asyncPageLoaderBar" style="width:100%;height:100%;transform:translateX(-100%);background:linear-gradient(90deg,var(--accent),var(--accent-light));transition:transform .35s ease;"></div>
+                </div>
+                <div id="asyncPageContent">
+                    <?php if(session('status')): ?>
+                        <div class="alert-box alert-success"><?php echo e(session('status')); ?></div>
+                    <?php endif; ?>
+                    <?php if($errors->any()): ?>
+                        <div class="alert-box alert-error"><?php echo e($errors->first()); ?></div>
+                    <?php endif; ?>
+
+                    <?php echo $__env->yieldContent('content'); ?>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div
+        id="chatbotRoot"
+        data-user-id="<?php echo e(auth()->id()); ?>"
+        data-endpoint="<?php echo e($adminRoute('chatbot.respond')); ?>"
+        data-is-borrower="<?php echo e(auth()->user()?->hasPermission('view_borrower_history') ? '1' : '0'); ?>"
+    >
+        <button id="chatbotFab" class="chatbot-fab" type="button" aria-label="Chatbot" aria-expanded="false">
+            <i data-lucide="message-circle" class="w-5 h-5"></i>
+        </button>
+        <div id="chatbotPanel" class="chatbot-panel" aria-hidden="true">
+            <div class="chatbot-head">
+                <div class="chatbot-title">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>ChatBot Perpus</span>
+                </div>
+                <div class="chatbot-actions">
+                    <div class="chatbot-menu">
+                        <button type="button" id="chatbotMenuBtn" class="chatbot-menu-btn" aria-label="Menu" aria-expanded="false">
+                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                        </button>
+                        <div id="chatbotMenuPop" class="chatbot-menu-pop" aria-hidden="true">
+                            <button type="button" class="chatbot-menu-item danger" data-action="clear-chat">
+                                <i data-lucide="trash-2"></i>
+                                Hapus chat
+                            </button>
+                            <button type="button" class="chatbot-menu-item" data-action="close-chat">
+                                <i data-lucide="x"></i>
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" id="chatbotClose" class="chatbot-close" aria-label="Tutup">X</button>
+                </div>
+            </div>
+            <div id="chatbotMessages" class="chatbot-messages"></div>
+            <form id="chatbotForm" class="chatbot-form">
+                <input id="chatbotInput" class="chatbot-input" placeholder="Tulis pesan..." autocomplete="off">
+                <button class="chatbot-send" type="submit" aria-label="Kirim">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const side = document.getElementById('lightSide');
+        const sideMask = document.getElementById('sideMask');
+        const sideToggle = document.getElementById('sideToggle');
+        const notifPanel = document.getElementById('notifPanel');
+        const notifToggle = document.getElementById('notifToggle');
+        const headerNotifBadge = document.getElementById('headerNotifBadge');
+        const headerNotifList = document.getElementById('headerNotifList');
+        const headerNotifSub = document.getElementById('headerNotifSub');
+        
+        let seenSignatures = new Set();
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function showToast(notification) {
+            // Check if dashboard has its own toast wrap, otherwise we might need a global one
+            let toastWrap = document.getElementById('borrowerToastWrap');
+            if (!toastWrap) {
+                toastWrap = document.createElement('div');
+                toastWrap.id = 'globalToastWrap';
+                toastWrap.className = 'dbx-toast-wrap';
+                document.body.appendChild(toastWrap);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'dbx-toast ' + (notification.tone || 'info');
+            toast.innerHTML = '<div class="dbx-toast-title">' + escapeHtml(notification.title || 'Notifikasi baru') + '</div>'
+                + '<div class="dbx-toast-body">' + escapeHtml(notification.body || '') + '</div>';
+            toastWrap.appendChild(toast);
+
+            requestAnimationFrame(function () {
+                toast.classList.add('show');
+            });
+
+            window.setTimeout(function () {
+                toast.classList.remove('show');
+                window.setTimeout(function () {
+                    toast.remove();
+                }, 300);
+            }, 4500);
+        }
+
+        async function refreshGlobalNotifications(isInitialLoad) {
+            <?php
+                $canPoll = $user?->hasAnyPermission(['view_borrower_history', 'manage_loans', 'view_reports']) || $user?->role?->name === 'kepsek' || $user?->isSuperAdmin();
+            ?>
+            const canPoll = <?php echo json_encode($canPoll, 15, 512) ?>;
+            if (!canPoll || window.__suspendGlobalPolling === true) return;
+
+            try {
+                const response = await fetch('<?php echo e($adminRoute('borrower.notifications')); ?>?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+                
+                // Update badge
+                if (headerNotifBadge) {
+                    if (notifications.length > 0) {
+                        headerNotifBadge.style.display = 'flex';
+                        headerNotifBadge.textContent = notifications.length > 9 ? '9+' : notifications.length;
+                    } else {
+                        headerNotifBadge.style.display = 'none';
+                    }
+                }
+
+                // Update sub text
+                if (headerNotifSub) {
+                    headerNotifSub.textContent = notifications.length + ' update terbaru dari database';
+                }
+
+                // Update list
+                if (headerNotifList) {
+                    if (notifications.length === 0) {
+                        headerNotifList.innerHTML = '<div class="notif-empty">Belum ada notifikasi terbaru.</div>';
+                    } else {
+                        headerNotifList.innerHTML = notifications.map(function (n) {
+                            const icon = n.icon || (n.tone === 'danger' ? 'triangle-alert' : (n.tone === 'success' ? 'check-circle' : 'info'));
+                            return '<a href="' + escapeHtml(n.href || '#') + '" class="notif-item">'
+                                + '<div class="notif-icon ' + escapeHtml(n.tone || 'info') + '">'
+                                + '<i data-lucide="' + icon + '" class="w-4 h-4"></i>'
+                                + '</div>'
+                                + '<div class="notif-body">'
+                                + '<div class="notif-title">' + escapeHtml(n.title || 'Notifikasi') + '</div>'
+                                + '<div class="notif-text">' + escapeHtml(n.body || '') + '</div>'
+                                + '<div class="notif-time">Baru saja</div>'
+                                + '</div>'
+                                + '</a>';
+                        }).join('');
+                        
+                        if (window.lucide) window.lucide.createIcons();
+                    }
+                }
+
+                // Show toasts for new ones
+                if (!isInitialLoad) {
+                    notifications.forEach(n => {
+                        if (n.signature && !seenSignatures.has(n.signature)) {
+                            showToast(n);
+                        }
+                    });
+                }
+
+                // Update seen signatures
+                seenSignatures = new Set(notifications.map(n => n.signature));
+
+                // Dispatch event for dashboard-specific updates
+                const event = new CustomEvent('notificationsUpdated', { detail: data });
+                document.dispatchEvent(event);
+
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+            }
+        }
+
+        let loanPageLiveSignature = null;
+        let loanPageLiveBusy = false;
+        let bookPageLiveSignature = null;
+        let bookPageLiveBusy = false;
+
+        async function pollGlobalLoanPage() {
+            const loanStatsWrap = document.getElementById('loanStatsWrap');
+            const loanPageWrap = document.getElementById('loanPageWrap');
+
+            if (!loanStatsWrap || !loanPageWrap || loanPageLiveBusy || window.__suspendGlobalPolling === true || document.hidden) {
+                return;
+            }
+
+            loanPageLiveBusy = true;
+
+            try {
+                const response = await fetch('<?php echo e($adminRoute('admin.loans.live-snapshot')); ?>?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const nextSignature = data.signature || null;
+
+                if (loanPageLiveSignature !== null && nextSignature && nextSignature !== loanPageLiveSignature) {
+                    await refreshAsyncTargets(['#loanStatsWrap', '#loanPageWrap']);
+                }
+
+                loanPageLiveSignature = nextSignature;
+            } catch (error) {
+                console.error('Error polling loan page:', error);
+            } finally {
+                loanPageLiveBusy = false;
+            }
+        }
+
+        async function syncGlobalLoanPageSignature() {
+            const loanPageWrap = document.getElementById('loanPageWrap');
+
+            if (!loanPageWrap) {
+                loanPageLiveSignature = null;
+                return;
+            }
+
+            try {
+                const response = await fetch('<?php echo e($adminRoute('admin.loans.live-snapshot')); ?>?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                loanPageLiveSignature = data.signature || null;
+            } catch (error) {
+                console.error('Error syncing loan page signature:', error);
+            }
+        }
+
+        async function pollGlobalBookPage() {
+            const bookStatsWrap = document.getElementById('bookStatsWrap');
+            const bookListWrap = document.getElementById('bookListWrap');
+
+            if (!bookStatsWrap || !bookListWrap || bookPageLiveBusy || window.__suspendGlobalPolling === true || document.hidden) {
+                return;
+            }
+
+            bookPageLiveBusy = true;
+
+            try {
+                const response = await fetch('<?php echo e($adminRoute('admin.books.live-snapshot')); ?>?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const nextSignature = data.signature || null;
+
+                if (bookPageLiveSignature !== null && nextSignature && nextSignature !== bookPageLiveSignature) {
+                    await refreshAsyncTargets(['#bookStatsWrap', '#bookListWrap', '#procurementListWrap']);
+                }
+
+                bookPageLiveSignature = nextSignature;
+            } catch (error) {
+                console.error('Error polling book page:', error);
+            } finally {
+                bookPageLiveBusy = false;
+            }
+        }
+
+        async function syncGlobalBookPageSignature() {
+            const bookListWrap = document.getElementById('bookListWrap');
+
+            if (!bookListWrap) {
+                bookPageLiveSignature = null;
+                return;
+            }
+
+            try {
+                const response = await fetch('<?php echo e($adminRoute('admin.books.live-snapshot')); ?>?_t=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                bookPageLiveSignature = data.signature || null;
+            } catch (error) {
+                console.error('Error syncing book page signature:', error);
+            }
+        }
+
+        function toggleNotifPanel() {
+            const isOpen = notifPanel.classList.contains('show');
+            if (isOpen) {
+                notifPanel.classList.remove('show');
+                notifPanel.setAttribute('aria-hidden', 'true');
+                notifToggle.setAttribute('aria-expanded', 'false');
+            } else {
+                notifPanel.classList.add('show');
+                notifPanel.setAttribute('aria-hidden', 'false');
+                notifToggle.setAttribute('aria-expanded', 'true');
+                closeSide();
+            }
+        }
+
+        // Close panels when clicking outside
+        document.addEventListener('click', function (event) {
+            if (notifPanel.classList.contains('show') && !notifPanel.contains(event.target) && !notifToggle.contains(event.target)) {
+                notifPanel.classList.remove('show');
+                notifPanel.setAttribute('aria-hidden', 'true');
+                notifToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        function setSideState(isOpen) {
+            side.classList.toggle('open', isOpen);
+            sideMask.classList.toggle('show', isOpen);
+            side.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            sideToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
+        function toggleSide() {
+            setSideState(!side.classList.contains('open'));
+        }
+
+        function setNotifState(isOpen) {
+            if (!notifPanel || !notifToggle) {
+                return;
+            }
+
+            notifPanel.classList.toggle('show', isOpen);
+            notifPanel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            notifToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
+        function toggleNotifPanel() {
+            setNotifState(!notifPanel.classList.contains('show'));
+        }
+
+        function closeSide() {
+            setSideState(false);
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeSide();
+                setNotifState(false);
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 1023) {
+                closeSide();
+            }
+        });
+
+        document.querySelectorAll('#lightSide .nav-link').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 1023) {
+                    closeSide();
+                }
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!notifPanel || !notifToggle) {
+                return;
+            }
+
+            if (!notifPanel.contains(event.target) && !notifToggle.contains(event.target)) {
+                setNotifState(false);
+            }
+        });
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
+        let asyncNavigationToken = 0;
+        let asyncPageRequestController = null;
+        const asyncPageLoader = document.getElementById('asyncPageLoader');
+        const asyncPageLoaderBar = document.getElementById('asyncPageLoaderBar');
+
+        function getAsyncToast() {
+            return document.getElementById('asyncToast');
+        }
+
+        function getAsyncPageContent() {
+            return document.getElementById('asyncPageContent');
+        }
+
+        let asyncToastTimer = null;
+
+        function showAsyncToast(message, tone = 'success') {
+            const asyncToast = getAsyncToast();
+            if (!asyncToast || !message) {
+                return;
+            }
+
+            asyncToast.textContent = message;
+            asyncToast.className = 'async-toast ' + tone;
+            asyncToast.classList.add('show');
+
+            if (asyncToastTimer) {
+                window.clearTimeout(asyncToastTimer);
+            }
+
+            asyncToastTimer = window.setTimeout(function () {
+                asyncToast.classList.remove('show');
+            }, 3200);
+        }
+
+        function setAsyncPageLoading(isLoading) {
+            if (!asyncPageLoader || !asyncPageLoaderBar) {
+                return;
+            }
+
+            asyncPageLoader.style.opacity = isLoading ? '1' : '0';
+            asyncPageLoaderBar.style.transform = isLoading ? 'translateX(0)' : 'translateX(-100%)';
+        }
+
+        function shouldHandleAsyncLink(link) {
+            if (!link || link.dataset.async === 'false' || link.hasAttribute('download')) {
+                return false;
+            }
+
+            if (link.target && link.target !== '_self') {
+                return false;
+            }
+
+            const href = link.getAttribute('href') || '';
+            if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+                return false;
+            }
+
+            const url = new URL(link.href, window.location.origin);
+            if (url.origin !== window.location.origin) {
+                return false;
+            }
+
+            if (/(\/export|\/download)(\/|$|\?)/i.test(url.pathname)) {
+                return false;
+            }
+
+            return link.dataset.async === 'true'
+                || !!link.closest('#asyncPageContent')
+                || !!link.closest('.notif-panel')
+                || !!link.closest('#lightSide');
+        }
+
+        function syncAsyncNavState(pathname) {
+            document.querySelectorAll('#lightSide .nav-link').forEach(function (link) {
+                try {
+                    const linkPath = new URL(link.href, window.location.origin).pathname;
+                    const isDashboard = linkPath === '/dashboard' && pathname === '/dashboard';
+                    const isMatch = isDashboard || (linkPath !== '/dashboard' && pathname.startsWith(linkPath));
+                    link.classList.toggle('active', isMatch);
+                } catch (error) {}
+            });
+        }
+
+        function executeAsyncPageScripts(root) {
+            if (!root) {
+                return;
+            }
+
+            root.querySelectorAll('script').forEach(function (script) {
+                const replacement = document.createElement('script');
+
+                Array.from(script.attributes).forEach(function (attribute) {
+                    replacement.setAttribute(attribute.name, attribute.value);
+                });
+
+                replacement.textContent = script.textContent;
+                script.replaceWith(replacement);
+            });
+        }
+
+        async function navigateAsyncPage(url, options = {}) {
+            const targetUrl = url instanceof URL ? url : new URL(url, window.location.origin);
+            const currentUrl = new URL(window.location.href);
+
+            if (!options.force && targetUrl.pathname === currentUrl.pathname && targetUrl.search === currentUrl.search) {
+                closeSide();
+                return;
+            }
+
+            const requestToken = ++asyncNavigationToken;
+
+            if (asyncPageRequestController) {
+                asyncPageRequestController.abort();
+            }
+
+            asyncPageRequestController = new AbortController();
+            closeSide();
+            setNotifState(false);
+            setAsyncPageLoading(true);
+
+            try {
+                const response = await fetch(targetUrl.toString(), {
+                    cache: 'no-store',
+                    signal: asyncPageRequestController.signal,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal memuat halaman.');
+                }
+
+                const html = await response.text();
+
+                if (requestToken !== asyncNavigationToken) {
+                    return;
+                }
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const freshContent = doc.getElementById('asyncPageContent');
+                const currentContent = getAsyncPageContent();
+
+                if (!freshContent || !currentContent) {
+                    window.location.href = targetUrl.toString();
+                    return;
+                }
+
+                document.dispatchEvent(new CustomEvent('async:before-page-replace', {
+                    detail: {
+                        from: window.location.href,
+                        to: targetUrl.toString(),
+                    }
+                }));
+
+                currentContent.innerHTML = freshContent.innerHTML;
+                document.title = doc.title || document.title;
+
+                if (!options.replace) {
+                    window.history.pushState({ async: true, url: targetUrl.toString() }, '', targetUrl.toString());
+                }
+
+                syncAsyncNavState(targetUrl.pathname);
+                executeAsyncPageScripts(currentContent);
+
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                document.dispatchEvent(new CustomEvent('async:page-loaded', {
+                    detail: {
+                        url: targetUrl.toString(),
+                    }
+                }));
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
+                window.location.href = targetUrl.toString();
+            } finally {
+                if (requestToken === asyncNavigationToken) {
+                    setAsyncPageLoading(false);
+                }
+            }
+        }
+
+        async function refreshAsyncTargets(selectors) {
+            if (!selectors || selectors.length === 0) {
+                return;
+            }
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('_t', Date.now());
+
+            const response = await fetch(url.toString(), {
+                cache: 'no-store',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal memuat ulang data tampilan.');
+            }
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const replacedNodes = [];
+
+            selectors.forEach(function (selector) {
+                const currentNode = document.querySelector(selector);
+                const freshNode = doc.querySelector(selector);
+
+                if (currentNode && freshNode) {
+                    currentNode.replaceWith(freshNode);
+                    replacedNodes.push(freshNode);
+                }
+            });
+
+            replacedNodes.forEach(function (node) {
+                executeAsyncPageScripts(node);
+            });
+
+            if (selectors.includes('#asyncPageContent')) {
+                document.title = doc.title || document.title;
+                syncAsyncNavState(window.location.pathname);
+            }
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+
+            document.dispatchEvent(new CustomEvent('async:refreshed', { detail: { selectors } }));
+        }
+
+        async function handleAsyncFormSubmit(form) {
+            const confirmMessage = form.dataset.confirm;
+            if (confirmMessage && !window.confirm(confirmMessage)) {
+                return;
+            }
+
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalLabel = submitButton ? submitButton.innerHTML : null;
+            const shouldDisableSubmit = form.dataset.disableSubmit !== 'false';
+            const shouldPreserveSubmitLabel = form.dataset.preserveSubmitLabel === 'true';
+
+            if (submitButton) {
+                if (shouldDisableSubmit) {
+                    submitButton.disabled = true;
+                    submitButton.dataset.originalDisabled = submitButton.disabled ? '1' : '0';
+                }
+
+                if (!shouldPreserveSubmitLabel) {
+                    submitButton.innerHTML = form.dataset.loadingLabel || 'Memproses...';
+                }
+            }
+
+            try {
+                const formData = new FormData(form);
+                const isGet = (form.method || 'POST').toUpperCase() === 'GET';
+                let url = form.action;
+                
+                let fetchOptions = {
+                    method: isGet ? 'GET' : 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                };
+
+                if (isGet) {
+                    const params = new URLSearchParams(formData);
+                    params.set('_t', Date.now());
+                    url += (url.includes('?') ? '&' : '?') + params.toString();
+                    fetchOptions.cache = 'no-store';
+                } else {
+                    fetchOptions.body = formData;
+                }
+
+                const response = await fetch(url, {
+                    ...fetchOptions,
+                    headers: {
+                        ...fetchOptions.headers,
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                    }
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    const message = data.message || Object.values(data.errors || {}).flat()[0] || 'Terjadi kesalahan.';
+                    throw new Error(message);
+                }
+
+                if (form.dataset.removeClosest) {
+                    const row = form.closest(form.dataset.removeClosest);
+                    if (row) {
+                        row.remove();
+                    }
+                }
+
+                if (form.dataset.resetOnSuccess === 'true') {
+                    form.reset();
+                    // Reset custom file upload previews if any
+                    form.querySelectorAll('.js-upload-preview').forEach(el => el.classList.remove('show'));
+                    form.querySelectorAll('.file-upload-name').forEach(el => {
+                        el.textContent = 'Belum ada file dipilih';
+                        el.classList.add('is-empty');
+                    });
+                }
+
+                if (form.dataset.successCall && typeof window[form.dataset.successCall] === 'function') {
+                    window[form.dataset.successCall](data, form);
+                }
+
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+
+                const refreshTargets = (form.dataset.refreshTargets || '')
+                    .split(',')
+                    .map(function (item) { return item.trim(); })
+                    .filter(Boolean);
+
+                if (refreshTargets.length > 0) {
+                    await refreshAsyncTargets(refreshTargets);
+                }
+
+                // Update URL if it was a GET filter form
+                if (isGet && form.dataset.updateUrl !== 'false') {
+                    window.history.pushState({}, '', url);
+                }
+
+                document.dispatchEvent(new CustomEvent('async:form-success', { detail: { form, data } }));
+                showAsyncToast(data.message || 'Berhasil disimpan.', 'success');
+            } catch (error) {
+                document.dispatchEvent(new CustomEvent('async:form-error', { detail: { form, error } }));
+                showAsyncToast(error.message || 'Terjadi kesalahan.', 'error');
+            } finally {
+                if (submitButton) {
+                    if (shouldDisableSubmit) {
+                        submitButton.disabled = false;
+                    }
+
+                    if (!shouldPreserveSubmitLabel && originalLabel !== null) {
+                        submitButton.innerHTML = originalLabel;
+                    }
+                }
+            }
+        }
+
+        const chatbotRoot = document.getElementById('chatbotRoot');
+        const chatbotFab = document.getElementById('chatbotFab');
+        const chatbotPanel = document.getElementById('chatbotPanel');
+        const chatbotClose = document.getElementById('chatbotClose');
+        const chatbotMenuBtn = document.getElementById('chatbotMenuBtn');
+        const chatbotMenuPop = document.getElementById('chatbotMenuPop');
+        const chatbotMessages = document.getElementById('chatbotMessages');
+        const chatbotForm = document.getElementById('chatbotForm');
+        const chatbotInput = document.getElementById('chatbotInput');
+
+        function defaultChatbotGreeting() {
+            if (chatbotRoot?.dataset?.isBorrower === '1') {
+                return 'Halo! Kalau kamu mau pinjam buku, tulis saja seperti "saya mau pinjam buku matematika" atau "buku apa aja yang tersedia?".';
+            }
+
+            return 'Halo! Saya AI assistant di aplikasi ini. Kamu bisa tanya apa saja, misalnya pelajaran, ide, coding, ringkasan, atau hal terkait perpustakaan.';
+        }
+
+        function chatbotStorageKey() {
+            const userId = chatbotRoot?.dataset?.userId || 'guest';
+            return 'chatbot_history_' + userId;
+        }
+
+        function loadChatbotHistory() {
+            try {
+                const raw = localStorage.getItem(chatbotStorageKey());
+                const parsed = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(parsed)) {
+                    return [];
+                }
+
+                return parsed.map(function (item) {
+                    const bookResults = Array.isArray(item?.book_results)
+                        ? item.book_results.filter(function (book) {
+                            return book && typeof book === 'object' && book.id;
+                        })
+                        : [];
+
+                    return {
+                        role: item?.role === 'user' ? 'user' : 'bot',
+                        text: typeof item?.text === 'string' ? item.text : '',
+                        book_results: bookResults
+                    };
+                }).filter(function (item) {
+                    return item.text !== '' || item.book_results.length > 0;
+                });
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveChatbotHistory(items) {
+            try {
+                localStorage.setItem(chatbotStorageKey(), JSON.stringify(items.slice(-50)));
+            } catch (e) {}
+        }
+
+        function getChatbotBookStatusLabel(book) {
+            if (book.borrow_state === 'requested') return 'Menunggu petugas';
+            if (book.borrow_state === 'borrowed') return 'Sedang dipinjam';
+            if (book.borrow_state === 'sanctioned') return 'Akun disanksi';
+            if (book.borrow_state === 'available') return 'Tersedia';
+            return 'Tidak tersedia';
+        }
+
+        function appendChatbotBubble(role, text, options = {}) {
+            if (!chatbotMessages) return;
+            const bubble = document.createElement('div');
+            const bookResults = Array.isArray(options.bookResults) ? options.bookResults : [];
+            bubble.className = 'chatbot-bubble ' + (role === 'user' ? 'user' : 'bot') + (bookResults.length ? ' has-books' : '');
+
+            if (text) {
+                const textNode = document.createElement('div');
+                textNode.textContent = text;
+                bubble.appendChild(textNode);
+            }
+
+            if (role !== 'user' && bookResults.length) {
+                const list = document.createElement('div');
+                list.className = 'chatbot-book-results';
+
+                bookResults.forEach(function (book) {
+                    const statusLabel = getChatbotBookStatusLabel(book);
+                    const card = document.createElement('div');
+                    card.className = 'chatbot-book-card';
+                    card.innerHTML = '<div class="chatbot-book-top">'
+                        + '<div class="chatbot-book-name">' + escapeHtml(book.title || 'Judul buku') + '</div>'
+                        + '<div class="chatbot-book-chip' + (book.can_borrow ? '' : ' muted') + '">' + escapeHtml(statusLabel) + '</div>'
+                        + '</div>'
+                        + '<div class="chatbot-book-meta">'
+                        + escapeHtml(book.author || 'Penulis tidak tersedia')
+                        + '<br>Stok: ' + escapeHtml(String(book.stock ?? 0))
+                        + ' | ' + escapeHtml(book.category || 'Tanpa kategori')
+                        + '</div>'
+                        + '<button type="button" class="chatbot-book-action" data-chatbot-book=\'' + escapeHtml(JSON.stringify(book)) + '\'>' + (book.can_borrow ? 'Pinjam buku ini' : 'Lihat buku') + '</button>';
+                    list.appendChild(card);
+                });
+
+                bubble.appendChild(list);
+            }
+
+            chatbotMessages.appendChild(bubble);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        function renderChatbotHistory() {
+            if (!chatbotMessages) return;
+            chatbotMessages.innerHTML = '';
+            const history = loadChatbotHistory();
+            if (history.length === 0) {
+                appendChatbotBubble('bot', defaultChatbotGreeting());
+                return;
+            }
+            history.forEach(function (item) {
+                appendChatbotBubble(item.role, item.text, {
+                    bookResults: item.book_results || []
+                });
+            });
+        }
+
+        function openChatbotBorrowBook(book) {
+            if (!book || typeof openBorrowDrawer !== 'function') {
+                return;
+            }
+
+            const tempButton = document.createElement('button');
+            tempButton.dataset.id = String(book.id || '');
+            tempButton.dataset.title = book.title || 'Judul buku';
+            tempButton.dataset.author = book.author || 'Penulis tidak tersedia';
+            tempButton.dataset.category = book.category || 'Tanpa kategori';
+            tempButton.dataset.stock = String(book.stock ?? 0);
+            tempButton.dataset.coverUrl = book.cover_url || '';
+            tempButton.dataset.borrowedAt = book.borrowed_at || '';
+            tempButton.dataset.dueAt = book.due_at || '';
+            tempButton.dataset.borrowState = book.borrow_state || 'unavailable';
+            tempButton.dataset.canBorrow = book.can_borrow ? '1' : '0';
+            openBorrowDrawer(tempButton);
+        }
+
+        function setChatbotOpen(isOpen) {
+            if (!chatbotPanel || !chatbotFab) return;
+            chatbotPanel.classList.toggle('open', isOpen);
+            chatbotPanel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            chatbotFab.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (isOpen) {
+                renderChatbotHistory();
+                setTimeout(() => chatbotInput?.focus(), 0);
+            }
+        }
+
+        function setChatbotMenuOpen(isOpen) {
+            if (!chatbotMenuPop || !chatbotMenuBtn) return;
+            chatbotMenuPop.classList.toggle('open', isOpen);
+            chatbotMenuPop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            chatbotMenuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (isOpen && window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        if (chatbotFab) {
+            chatbotFab.addEventListener('click', function () {
+                setChatbotOpen(!chatbotPanel.classList.contains('open'));
+            });
+        }
+
+        if (chatbotClose) {
+            chatbotClose.addEventListener('click', function () {
+                setChatbotOpen(false);
+            });
+        }
+
+        if (chatbotMenuBtn) {
+            chatbotMenuBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                setChatbotMenuOpen(!chatbotMenuPop.classList.contains('open'));
+            });
+        }
+
+        if (chatbotMenuPop) {
+            chatbotMenuPop.addEventListener('click', function (e) {
+                const item = e.target.closest('[data-action]');
+                if (!item) return;
+                const action = item.dataset.action;
+
+                if (action === 'clear-chat') {
+                    try {
+                        localStorage.removeItem(chatbotStorageKey());
+                    } catch (e) {}
+                    renderChatbotHistory();
+                    if (typeof showAsyncToast === 'function') {
+                        showAsyncToast('Chat berhasil dihapus.', 'success');
+                    }
+                    setChatbotMenuOpen(false);
+                }
+
+                if (action === 'close-chat') {
+                    setChatbotMenuOpen(false);
+                    setChatbotOpen(false);
+                }
+            });
+        }
+
+        document.addEventListener('click', function (event) {
+            if (chatbotMenuPop?.classList.contains('open')) {
+                const clickedInsideMenu = event.target.closest('.chatbot-menu');
+                if (!clickedInsideMenu) {
+                    setChatbotMenuOpen(false);
+                }
+            }
+
+            const chatbotBookButton = event.target.closest('[data-chatbot-book]');
+            if (!chatbotBookButton) {
+                return;
+            }
+
+            try {
+                openChatbotBorrowBook(JSON.parse(chatbotBookButton.dataset.chatbotBook || '{}'));
+            } catch (error) {
+                console.error('Error opening chatbot book:', error);
+            }
+        });
+
+        if (chatbotForm) {
+            chatbotForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const message = (chatbotInput?.value || '').trim();
+                if (!message) return;
+
+                const history = loadChatbotHistory();
+                history.push({ role: 'user', text: message });
+                saveChatbotHistory(history);
+                appendChatbotBubble('user', message);
+                chatbotInput.value = '';
+
+                appendChatbotBubble('bot', 'Mengetik...');
+                const typingNode = chatbotMessages?.lastElementChild;
+
+                try {
+                    const endpoint = chatbotRoot?.dataset?.endpoint;
+                    const requestHistory = history.slice(-6);
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]')?.content
+                        },
+                        body: JSON.stringify({
+                            message,
+                            history: requestHistory
+                        })
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+                    const reply = data.reply || 'Maaf, terjadi kesalahan.';
+                    const bookResults = Array.isArray(data.book_results) ? data.book_results : [];
+
+                    if (typingNode) typingNode.remove();
+
+                    const updated = loadChatbotHistory();
+                    updated.push({ role: 'bot', text: reply, book_results: bookResults });
+                    saveChatbotHistory(updated);
+                    appendChatbotBubble('bot', reply, { bookResults });
+                } catch (error) {
+                    if (typingNode) typingNode.remove();
+                    const updated = loadChatbotHistory();
+                    updated.push({ role: 'bot', text: 'Maaf, AI sedang tidak bisa dihubungi. Cek API key, model Gemini, quota, atau koneksi server lalu coba lagi.' });
+                    saveChatbotHistory(updated);
+                    appendChatbotBubble('bot', 'Maaf, AI sedang tidak bisa dihubungi. Cek API key, model Gemini, quota, atau koneksi server lalu coba lagi.');
+                }
+            });
+        }
+
+        document.addEventListener('submit', function (event) {
+            const form = event.target.closest('form[data-async="true"]');
+            if (!form) {
+                return;
+            }
+
+            event.preventDefault();
+            handleAsyncFormSubmit(form);
+        });
+
+        document.addEventListener('click', function (event) {
+            const link = event.target.closest('a[href]');
+            if (!shouldHandleAsyncLink(link)) {
+                return;
+            }
+
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+
+            event.preventDefault();
+            navigateAsyncPage(link.href);
+        });
+
+        window.addEventListener('popstate', function () {
+            navigateAsyncPage(window.location.href, { replace: true, force: true });
+        });
+
+        document.addEventListener('async:refreshed', function (event) {
+            const selectors = event.detail?.selectors || [];
+
+            if (selectors.includes('#loanPageWrap') || selectors.includes('#loanStatsWrap')) {
+                syncGlobalLoanPageSignature();
+            }
+        });
+
+        document.addEventListener('async:form-success', function () {
+            refreshGlobalNotifications(false);
+            syncGlobalLoanPageSignature();
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                refreshGlobalNotifications(false);
+                pollGlobalLoanPage();
+                pollGlobalBookPage();
+            }
+        });
+
+        // Initialize Global Notifications
+        <?php
+            $notificationPollInterval = $user?->hasPermission('manage_loans')
+                || $user?->hasPermission('view_borrower_history')
+                || $user?->role?->name === 'kepsek'
+                || $user?->isSuperAdmin()
+                ? 5000
+                : 15000;
+        ?>
+        refreshGlobalNotifications(true);
+        syncAsyncNavState(window.location.pathname);
+        window.setInterval(function () {
+            refreshGlobalNotifications(false);
+        }, <?php echo json_encode($notificationPollInterval, 15, 512) ?>);
+        syncGlobalLoanPageSignature();
+        window.setInterval(function () {
+            pollGlobalLoanPage();
+        }, 3000);
+        syncGlobalBookPageSignature();
+        window.setInterval(function () {
+            pollGlobalBookPage();
+        }, 4000);
+    </script>
+</body>
+</html>
+<?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views\layouts\admin.blade.php ENDPATH**/ ?>

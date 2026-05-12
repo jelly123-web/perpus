@@ -47,4 +47,4 @@
         </div>
     </div>
 </div>
-<?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/loans/_requested-panel.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views\admin\loans\_requested-panel.blade.php ENDPATH**/ ?>

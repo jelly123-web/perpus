@@ -229,4 +229,4 @@ unset($__errorArgs, $__bag); ?>
     </script>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.auth', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/auth/login.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.auth', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views\auth\login.blade.php ENDPATH**/ ?>

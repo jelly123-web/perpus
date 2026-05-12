@@ -526,4 +526,4 @@
         }
     })();
 </script>
-<?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views/admin/settings/_autosave-script.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\HP\Downloads\laravel\perpustakaan sekolah\perpus\resources\views\admin\settings\_autosave-script.blade.php ENDPATH**/ ?>
